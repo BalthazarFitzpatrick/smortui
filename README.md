@@ -140,7 +140,6 @@ Four tokens carry the vertical rhythm, named for what they space rather than how
 | `--gap` | between rows inside a panel |
 | `--inset` | a panel's own top and bottom |
 | `--inset-x` | a panel's sides, and any row's own gutter |
-| `--rule-gap` | above and below an `.h-divider` |
 | `--font-size` | the only size there is |
 
 **One font size, everywhere.** There were nine, between 10px and 13px. Emphasis is carried by
@@ -151,8 +150,13 @@ of different applications. A test fails the build if a `font-size` is set anywhe
 Use them instead of literals. A consumer that hardcodes `8px` looks identical until the day the
 rhythm changes, and then it is the one tab that did not move.
 
-`.h-divider` already carries `--rule-gap` above and below, so a rule between two rows needs nothing
-added around it. Row primitives — `.field-label`, `.row-label`, `.field-value`, `.run-controls`,
+`.h-divider` adds **no** vertical space of its own — the parent's `gap` spaces it like any other
+child, so a rule costs its 2px and nothing more. Giving it a margin as well stacked the two and made
+a ruled gap four times a plain one.
+
+`.strip` is a row of equal `.cell`s, divided and vertically centred — a telemetry or status row.
+Cells share the width rather than being sized by content, so they line up with whatever sits below
+them. Row primitives — `.field-label`, `.row-label`, `.field-value`, `.run-controls`,
 `.filter-row`, `.stat`, `.spacer` — live here so two consumers cannot disagree about what a row of
 controls looks like. `.row-label` is a caption that occupies a full `--row-height`, so a panel
 opening with a label starts at the same height as one opening with buttons.

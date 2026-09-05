@@ -4,11 +4,20 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
+// openAt asks `where instanceof Element` to tell a trigger from an {x, y} point, so the stub's
+// nodes have to be instances of something by that name
+class Element {}
+globalThis.Element = Element;
+
 function element(tag) {
-  const el = {
+  const el = Object.assign(new globalThis.Element(), {
     tag, className: '', textContent: '', innerHTML: '', title: '',
     dataset: {}, children: [], onclick: null, style: {}, tabIndex: 0,
     replaceWith() {},
+    focus() {}, remove() {}, setAttribute() {}, removeAttribute() {},
+    // real containment, so a click inside the panel is told from one outside it
+    contains(n) { return n === el || (el.children || []).some(c => c.contains && c.contains(n)); },
+    insertAdjacentHTML() {},
     querySelector: () => null,
     querySelectorAll: () => [],
     getBoundingClientRect: () => ({left: 0, top: 0, bottom: 0, right: 0, width: 0, height: 0}),
@@ -27,11 +36,15 @@ function element(tag) {
       add(name) { if (!this.contains(name)) el.className = `${el.className} ${name}`.trim(); },
       remove(name) { el.className = el.className.split(' ').filter(c => c && c !== name).join(' '); },
     },
-  };
+  });
   return el;
 }
 
-globalThis.document = {createElement: element, addEventListener() {}, removeEventListener() {}};
+const docBody = element('body');
+globalThis.document = {
+  createElement: element, addEventListener() {}, removeEventListener() {},
+  body: docBody, activeElement: null,
+};
 globalThis.window = {addEventListener() {}, removeEventListener() {}, innerWidth: 1200, innerHeight: 800};
 globalThis.addEventListener = () => {};
 globalThis.removeEventListener = () => {};
@@ -185,5 +198,34 @@ withVerb.el = withVerb._build();
 const verbRow = walk(withVerb.el).filter(n => n.className === 'menu-buttons')[0];
 const ids = walk(verbRow).filter(n => n.dataset && n.dataset.id).map(n => n.dataset.id);
 assert.deepEqual(ids, ['open', 'menu-close'], `close goes last, got ${ids}`);
+
+// ---- a head toggles its own menu shut
+const trigger = element('div');
+trigger.contains = n => n === trigger;
+const toggling = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+toggling.openAt(trigger);
+assert.ok(toggling.el, 'first click opens');
+toggling.openAt(trigger);
+assert.equal(toggling.el, null, 'clicking the same head again must shut it, not reopen it');
+
+// ---- and a FRESH menu on the same head toggles too, which is how every dropdown is written:
+// the onclick handler builds a new Menu each time, so instance identity says nothing
+const first = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+first.openAt(trigger);
+assert.ok(first.el, 'a fresh menu opens on the head');
+const second = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+second.openAt(trigger);
+assert.equal(first.el, null, 'the panel already on that head is shut');
+assert.equal(second.el, null, 'and no replacement is opened in its place');
+
+// ---- and a mousedown inside the trigger does not close it out from under that click
+const held = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+held.openAt(trigger);
+const childOfHead = element('span');
+trigger.contains = n => n === trigger || n === childOfHead;
+held._onDocDown({target: childOfHead});
+assert.ok(held.el, 'a click on the head\u2019s own child is the head\u2019s to handle');
+held._onDocDown({target: element('div')});
+assert.equal(held.el, null, 'a click anywhere else still closes it');
 
 console.log('ok');
