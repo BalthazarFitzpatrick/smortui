@@ -130,4 +130,60 @@ assert.deepEqual(names, ['b'], 'refresh should render the sections it was given'
 const unopened = new Menu({sections: []});
 unopened.refresh([{kind: 'list', items: []}]);
 
+// ---- a column can be divided into sections by a heading item
+const sectioned = menu._section({
+  kind: 'columns',
+  columns: [{label: 'recordings', items: [
+    {heading: 'open'}, {id: 'a', label: 'a', on: true},
+    {heading: 'everything else'}, {id: 'b', label: 'b'},
+  ]}],
+});
+const inner = walk(sectioned).filter(n => n.className.includes('menu-heading'))
+  .map(n => n.textContent);
+assert.deepEqual(inner, ['open', 'everything else'], 'a heading item should divide a column');
+const picks = walk(sectioned).filter(n => n.className.includes('menu-item'));
+assert.equal(picks.length, 2, 'a heading is not a pickable row');
+assert.ok(!picks.some(p => p.onclick === null), 'the real rows keep their handlers');
+
+// ---- a persistent menu stays open when you pick, and grows its own way out
+let closed = 0;
+const worked = new Menu({
+  persistent: true,
+  sections: [{kind: 'list', multi: false, items: [{id: 'a', label: 'a'}], onPick: () => {}}],
+});
+worked.el = worked._build();
+worked.close = () => { closed += 1; };
+const only = walk(worked.el).filter(n => n.className.includes('menu-item'))[0];
+only.onclick();
+assert.equal(closed, 0, 'a persistent menu must not close when a single-select row is picked');
+
+// the section wrapper and the row inside it both carry the class; the row is the one with rows
+const buttons = walk(worked.el).filter(n => n.className === 'menu-buttons');
+assert.equal(buttons.length, 1, 'it should grow a footer with a way out');
+const labels = walk(buttons[0]).filter(n => n.dataset && n.dataset.id).map(n => n.dataset.id);
+assert.ok(labels.includes('menu-close'), `expected a close button, got ${labels}`);
+
+// ---- a non-persistent single-select still closes, which is the common case
+let alsoClosed = 0;
+const quick = new Menu({
+  sections: [{kind: 'list', multi: false, items: [{id: 'a', label: 'a'}], onPick: () => {}}],
+});
+quick.el = quick._build();
+quick.close = () => { alsoClosed += 1; };
+walk(quick.el).filter(n => n.className.includes('menu-item'))[0].onclick();
+assert.equal(alsoClosed, 1, 'an ordinary single-select menu still closes on pick');
+
+// ---- the caller's own verbs survive beside the close button
+const withVerb = new Menu({
+  persistent: true,
+  sections: [
+    {kind: 'list', items: [{id: 'a', label: 'a'}]},
+    {kind: 'buttons', buttons: [{id: 'open', label: 'open'}]},
+  ],
+});
+withVerb.el = withVerb._build();
+const verbRow = walk(withVerb.el).filter(n => n.className === 'menu-buttons')[0];
+const ids = walk(verbRow).filter(n => n.dataset && n.dataset.id).map(n => n.dataset.id);
+assert.deepEqual(ids, ['open', 'menu-close'], `close goes last, got ${ids}`);
+
 console.log('ok');

@@ -97,6 +97,12 @@ any flag means:
 // -> <div class="toggle menu-item done">
 ```
 
+`persistent: true` is for a menu you *work in* rather than pick from — opening three datasets
+should not mean reopening the menu three times. Picking never dismisses it; clicking away, Escape
+or its own `close` button does, and it grows that close button itself so there is always a visible
+way out. An item with a `heading` instead of a `label` divides a column into sections, the same
+shape `renderTree` takes.
+
 `menu.refresh(sections)` rebuilds an open menu in place, keeping its position — for columns that
 move items between themselves as you pick, where closing and reopening would flicker.
 

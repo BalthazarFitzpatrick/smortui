@@ -348,6 +348,9 @@ body {
 .dropdown-head.narrow { min-width: 74px; max-width: 74px; }
 .menu-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; }
 .menu-section .field-label { padding: 0; }
+/* a section heading inside a column - the first needs no space above it, the rest do */
+.menu-heading { padding: 6px 0 2px; }
+.col > .menu-heading:first-child { padding-top: 0; }
 .menu-item { display: flex; align-items: center; gap: 12px; width: auto; justify-content: flex-start; }
 /* THE NAME IS WHAT TRUNCATES, NOT THE STATS, and it used to be the other way round. the name was
    flex:0 0 auto so it never shrank - a long recording name pushed the row past the panel and the

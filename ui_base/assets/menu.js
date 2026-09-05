@@ -23,9 +23,16 @@ class Menu {
   // measured against each other, a button row, an editable slug - and rebuilding that from
   // sections would risk the layout for no behavioural gain. what it actually needed from this
   // class is anchor / clamp / dismiss / one-at-a-time, which is what it gets.
-  constructor({title = '', sections = [], onDismiss = null, adopt = null, columns = false} = {}) {
+  // `persistent` is for a menu you WORK IN rather than pick from: opening three datasets should
+  // not mean reopening the menu three times. Picking never dismisses it; only clicking away,
+  // Escape, or its own close button does - and it grows that close button itself, because a panel
+  // with no visible way out is a panel people click away from and lose their ticks in.
+  constructor({
+    title = '', sections = [], onDismiss = null, adopt = null, columns = false, persistent = false,
+  } = {}) {
     this.title = title;
     this.columns = columns;
+    this.persistent = persistent;
     this.sections = sections;
     this.onDismiss = onDismiss;
     this.adopt = adopt;
@@ -42,6 +49,16 @@ class Menu {
 
   // ---- building ------------------------------------------------------------------
   _row(item, section) {
+    // A HEADING INSIDE A COLUMN, the same `{heading}` shape renderTree takes. A column label says
+    // what the whole column is; this divides one into sections - "open" above "everything else" -
+    // which is the difference between sorting the open ones to the top and SHOWING that they are
+    // the open ones.
+    if (item.heading) {
+      const head = document.createElement('div');
+      head.className = 'field-label menu-heading';
+      head.textContent = item.heading;
+      return head;
+    }
     const row = document.createElement('div');
     // `state` is an object of flags, each truthy one becoming a class - the SAME convention
     // renderTree has always used, rather than a second dialect for the same idea. the caller keeps
@@ -70,7 +87,9 @@ class Menu {
           section.onPick?.(item, row.classList.contains('on'), this);
         } else {
           section.onPick?.(item, true, this);
-          this.close();          // a single-select menu has done its job
+          // a single-select menu has done its job - unless it is one you work in, where the pick
+          // is an action rather than an answer
+          if (!this.persistent) this.close();
         }
       };
     }
@@ -206,6 +225,14 @@ class Menu {
     // that scrolls away with the list is one you have to hunt for
     const stacked = this.sections.filter(s => s.kind !== 'buttons');
     const footer = this.sections.filter(s => s.kind === 'buttons');
+    // A PERSISTENT MENU MUST SAY HOW TO LEAVE IT. clicking away works and always has, but a panel
+    // that stays open through every pick reads as stuck without a visible exit
+    if (this.persistent) {
+      const given = footer.length ? footer[footer.length - 1] : null;
+      const close = {id: 'menu-close', label: 'close', onClick: m => m.close()};
+      if (given) given.buttons = [...given.buttons.filter(b => b.id !== 'menu-close'), close];
+      else footer.push({kind: 'buttons', buttons: [close]});
+    }
     stacked.forEach((section, i) => {
       if (i && section.rule !== false) {
         const rule = document.createElement('div');
