@@ -438,6 +438,29 @@ window.renderTree = renderTree;
 // a threshold is a POSITION ON A RANGE, not one of seven listed numbers, and a dropdown of
 // discrete choices hides that. the axis shows where the value sits between its ends, which is the
 // thing you actually reason about when a model's peaks top out at 0.33 against a floor of 0.5.
+// the page's own monospace at the one size the design system uses, so a width measured here is
+// the width that gets painted. the token is read rather than restated, and the character count
+// survives only as the fallback for an environment with no canvas - the node dom stub the tests
+// run against being the one that matters.
+const SLIDER_FALLBACK_FAMILY = '"SF Mono", Menlo, monospace';
+let _textRuler = null;
+
+function textWidth(text) {
+  if (_textRuler === null) {
+    try {
+      _textRuler = document.createElement('canvas').getContext('2d') || false;
+    } catch (err) {
+      _textRuler = false;
+    }
+  }
+  const size = (typeof getComputedStyle === 'function'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--font-size').trim()
+    : '') || '13px';
+  if (!_textRuler) return text.length * parseFloat(size) * 0.62;
+  _textRuler.font = `${size} ${SLIDER_FALLBACK_FAMILY}`;
+  return _textRuler.measureText(text).width;
+}
+
 function makeSlider(container, {
   id = '', label = '', min = 0, max = 1, step = 0.01, value = 0.5,
   format = v => v.toFixed(2), onChange = null, onCommit = null, distribution = null,
@@ -479,11 +502,18 @@ function makeSlider(container, {
   const readout = ends.querySelector('.slider-value');
   const minLabel = ends.firstElementChild;
   const maxLabel = ends.lastElementChild;
-  // MONOSPACE, so a character count is a real width rather than a guess - app.css sets the page
-  // font to SF Mono/Menlo throughout. ~0.62em per glyph at this weight; the end labels run 10.5px,
-  // the readout 11.5px (see .slider-ends / .slider-ends .slider-value in app.css).
-  const charWidth = text => text.length * 10.5 * 0.62;
-  const readoutWidth = text => text.length * 11.5 * 0.62;
+  // MEASURED, NOT GUESSED, and still safe inside a display:none tab.
+  //
+  // this counted characters at hardcoded sizes - 10.5px for the end labels, 11.5px for the
+  // readout, 0.62em a glyph. the guess went stale the moment the design system unified on ONE
+  // font size: both now render at var(--font-size) with a 7.83px advance against the 6.51 and
+  // 7.13 assumed here, so the estimate ran ~20% short, ate the whole 6px gap, and the readout
+  // sat flush against the end label reading "100%100%".
+  //
+  // canvas measures the real advance and, unlike offsetWidth, needs no layout - which is the
+  // property the old comment actually wanted.
+  const charWidth = text => textWidth(text);
+  const readoutWidth = text => textWidth(text);
   const paint = () => {
     const v = Number(input.value);
     const text = format(v);
