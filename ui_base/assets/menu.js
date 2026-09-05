@@ -311,16 +311,22 @@ class Menu {
 
   // ---- lifecycle -----------------------------------------------------------------
   openAt(where) {
+    const trigger = where instanceof Element ? where : null;
+    // ALREADY OPEN ON THIS HEAD MEANS SHUT IT. the test was `this.el`, the instance's own panel -
+    // but every dropdown in the app builds a FRESH Menu on each click, so `this.el` is always null
+    // there and the head reopened forever. what the user toggles is the trigger, not the object
+    // behind it, so that is what has to be compared
+    if (openMenu && (openMenu === this || (trigger && openMenu._trigger === trigger))) {
+      openMenu.close();
+      return this;
+    }
     // ONE AT A TIME. opening a second menu while another is up used to leave both on screen,
     // because each panel only knew how to hide itself
-    if (openMenu && openMenu !== this) openMenu.close();
-    // ALREADY OPEN MEANS SHUT IT. a head that opens on every click and never closes is a head with
-    // no way back except clicking away from it
-    if (this.el) { this.close(); return this; }
+    if (openMenu) openMenu.close();
 
     this.el = this._build();
     if (!this.adopt) document.body.appendChild(this.el);
-    this._trigger = where instanceof Element ? where : null;
+    this._trigger = trigger;
 
     const rect = this.el.getBoundingClientRect();
     let left, top;

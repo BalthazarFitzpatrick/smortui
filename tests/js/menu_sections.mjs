@@ -208,6 +208,16 @@ assert.ok(toggling.el, 'first click opens');
 toggling.openAt(trigger);
 assert.equal(toggling.el, null, 'clicking the same head again must shut it, not reopen it');
 
+// ---- and a FRESH menu on the same head toggles too, which is how every dropdown is written:
+// the onclick handler builds a new Menu each time, so instance identity says nothing
+const first = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+first.openAt(trigger);
+assert.ok(first.el, 'a fresh menu opens on the head');
+const second = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+second.openAt(trigger);
+assert.equal(first.el, null, 'the panel already on that head is shut');
+assert.equal(second.el, null, 'and no replacement is opened in its place');
+
 // ---- and a mousedown inside the trigger does not close it out from under that click
 const held = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
 held.openAt(trigger);
