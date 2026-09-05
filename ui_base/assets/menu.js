@@ -43,8 +43,13 @@ class Menu {
   // ---- building ------------------------------------------------------------------
   _row(item, section) {
     const row = document.createElement('div');
-    row.className = 'toggle menu-item' + (item.on ? ' on' : '')
-      + (item.disabled ? ' disabled' : '');
+    // `state` is an object of flags, each truthy one becoming a class - the SAME convention
+    // renderTree has always used, rather than a second dialect for the same idea. the caller keeps
+    // its own styling and this stays ignorant of what any flag means
+    const flags = Object.entries(item.state || {})
+      .filter(([, on]) => on).map(([name]) => name).join(' ');
+    row.className = ['toggle', 'menu-item', item.on ? 'on' : '', item.disabled ? 'disabled' : '',
+      flags].filter(Boolean).join(' ');
     row.dataset.id = item.id ?? item.label;
     const label = `<span class="name">${item.label}</span>`;
     const stats = item.stats ? `<span class="stats">${item.stats}</span>` : '';
@@ -117,6 +122,21 @@ class Menu {
         }
         const col = document.createElement('div');
         col.className = 'col';
+        // A COLUMN MAY NAME ITSELF. a section label can only say one thing about the whole row of
+        // columns, which is no use when the columns mean different things - "available" beside
+        // "open" is the point of having them side by side at all
+        if (column.label) {
+          const head = document.createElement('div');
+          head.className = 'field-label';
+          head.textContent = column.label;
+          col.appendChild(head);
+        }
+        if (!column.items.length && column.empty) {
+          const empty = document.createElement('span');
+          empty.className = 'none';
+          empty.textContent = column.empty;
+          col.appendChild(empty);
+        }
         column.items.forEach(item => col.appendChild(
           this._row(item, {multi: column.multi ?? true, onPick: column.onPick})));
         cols.appendChild(col);
@@ -204,6 +224,24 @@ class Menu {
       el.appendChild(this._section(section));
     });
     return el;
+  }
+
+  // REBUILD IN PLACE, keeping the panel where it is. A menu whose columns MOVE items between
+  // themselves - available on one side, open on the other - has to redraw when you pick, and the
+  // alternatives are both wrong: close-and-reopen flickers and loses the scroll, while mutating
+  // the two columns by hand puts the layout in the caller and lets it drift from _section.
+  //
+  // The position is kept deliberately. Re-anchoring would let the panel jump as its content grows
+  // or shrinks, which is exactly the moment you are reading it.
+  refresh(sections) {
+    if (!this.el) return;
+    if (sections) this.sections = sections;
+    const {left, top} = this.el.style;
+    const rebuilt = this._build();
+    rebuilt.style.left = left;
+    rebuilt.style.top = top;
+    this.el.replaceWith(rebuilt);
+    this.el = rebuilt;
   }
 
   // a multi-select menu's apply button lives or dies by what is ticked, and only the caller knows

@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -76,6 +77,18 @@ def test_the_scripts_parse(name):
         ["node", "--check", str(ASSETS / name)], capture_output=True, text=True, check=False
     )
     assert result.returncode == 0, f"{name} does not parse:\n{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_menu_builds_the_sections_it_promises():
+    """PARSING IS NOT BEHAVIOUR. `node --check` proves the file loads, which says nothing about
+    whether a column carries its own heading or an item's state reaches the row. This runs the real
+    class against a DOM stub - the two things under test are pure structure, so a full jsdom would
+    be testing the browser as much as the code.
+    """
+    script = Path(__file__).parent / "js" / "menu_sections.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, f"menu sections misbehave:\n{result.stdout}{result.stderr}"
 
 
 def _css() -> str:

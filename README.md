@@ -79,14 +79,29 @@ new Menu({
 
 | section kind | for |
 |---|---|
-| `list` | rows with optional `stats`, `on`, `disabled`, and a trailing `action` control |
-| `columns` | two or more multi-select axes side by side, split by dividers |
+| `list` | rows with optional `stats`, `on`, `disabled`, `state`, and a trailing `action` control |
+| `columns` | two or more axes side by side, split by dividers. Each column takes its own `label`, `items`, `empty`, `multi` and `onPick`, so "available" can sit beside "open" and behave differently |
 | `add` | a "+ new" row: a text field and a button |
 | `field` | a single text input |
 | `buttons` | a footer row of actions |
 | `node` | the escape hatch — content you built yourself, placed and styled by the panel |
 
 `listMenu(title, items, onPick)` is the one-liner for the common case.
+
+An item's `state` is an object of flags, and every truthy one becomes a class on the row — the same
+convention `renderTree` uses. The caller keeps its own styling and the menu stays ignorant of what
+any flag means:
+
+```js
+{id: 'spin', label: 'turn full circle in 20 taps', state: {done: true, current: false}}
+// -> <div class="toggle menu-item done">
+```
+
+`menu.refresh(sections)` rebuilds an open menu in place, keeping its position — for columns that
+move items between themselves as you pick, where closing and reopening would flicker.
+
+Note `multi` defaults to **true** inside a `columns` section and **false** in a `list`. A
+single-select pick closes the whole menu, including the other columns.
 
 The class owns anchoring, viewport clamping, one-menu-at-a-time, dismissal on outside click and
 Escape, and arrow/Enter keyboard navigation. Call sites never repeat any of that.

@@ -33,7 +33,7 @@ target = (YOUR_UI_DIR / name).resolve()
 if YOUR_UI_DIR.resolve() in target.parents and target.is_file():
     data = target.read_bytes()
 else:
-    data = read_asset(name)      # UiBaseError -> 404
+    data = read_asset(name)  # UiBaseError -> 404
 ```
 
 Set `Content-Type` from the extension (`.css` → `text/css`, `.js` → `application/javascript`) and
