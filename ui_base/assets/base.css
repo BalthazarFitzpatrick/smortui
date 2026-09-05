@@ -83,7 +83,6 @@
   --gap: 8px;        /* between rows inside a panel */
   --inset: 12px;     /* a panel's own top and bottom */
   --inset-x: 14px;   /* a panel's sides, and any row's own gutter */
-  --rule-gap: 8px;   /* above and below a horizontal rule */
 }
 
 * { box-sizing: border-box; }
@@ -199,10 +198,11 @@ body {
    consumer that wanted room around a rule added it by naming its own elements in an allowlist. One
    consumer's list named four selectors, so four of its rows had a 34px rhythm and the rest had
    18px, and both were called correct by different people on different tabs. */
-.h-divider {
-  height: 0; border-top: 2px solid var(--grey-border);
-  margin: var(--rule-gap) var(--inset-x);
-}
+/* A RULE COSTS ITS OWN 2px AND NOTHING MORE. This carried `--rule-gap` above and below, which
+   STACKED on the gap its parent already puts between children: a ruled row gap measured 34px
+   (8 gap + 8 margin + 2 border + 8 margin + 8 gap) against 8px for a plain one, so a separator was
+   four times a space. The parent spaces its children; the rule only draws the line. */
+.h-divider { height: 0; border-top: 2px solid var(--grey-border); margin: 0 var(--inset-x); }
 
 /* TEXT IS SELECTABLE. `user-select: none` used to sit on .toggle and .nav-tab to stop drag-select
    while clicking through rows - but it also made every dataset name, script name and readout
@@ -289,6 +289,20 @@ body {
    unchanged, which is where the caption earns its space. */
 .run-controls .slider { height: var(--row-height); min-width: 190px; justify-content: center; gap: 0; }
 .run-controls .slider .slider-label { display: none; }
+
+/* ---- a strip of readouts: equal cells, divided, one row high ----
+   Generalised from a consumer's live-telemetry row. Two things it fixes by existing: cells sized by
+   content bunch to one side and line up with nothing beneath them, and `align-items: baseline` -
+   the obvious choice for a label-and-value pair - pins a short cell's text to the first baseline,
+   so it sat flush against the top of a 31px box with 13px of air under it. */
+.strip { display: flex; gap: 0; border: 2px solid var(--grey-border); }
+.strip > .cell {
+  flex: 1 1 0; min-width: 0;
+  display: flex; align-items: center; gap: var(--gap);
+  padding: 0 12px; height: var(--row-height);
+  border-right: 2px solid var(--grey-border); white-space: nowrap;
+}
+.strip > .cell:last-child { border-right: 0; }
 
 /* ---- nav bar: ONE BAR, not a row of folder tabs ----
    each tab used to be its own box with border-bottom removed, so the strip read as eight open

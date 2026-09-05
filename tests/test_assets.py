@@ -126,20 +126,32 @@ def test_the_spacing_tokens_exist_and_are_used_rather_than_repeated():
     """
     css = _css()
     root = re.search(r":root\s*\{(.*?)\}", css, re.DOTALL).group(1)
-    tokens = set(re.findall(r"(--(?:gap|inset|inset-x|rule-gap))\s*:", root))
-    assert tokens == {"--gap", "--inset", "--inset-x", "--rule-gap"}, sorted(tokens)
+    tokens = set(re.findall(r"(--(?:gap|inset|inset-x))\s*:", root))
+    assert tokens == {"--gap", "--inset", "--inset-x"}, sorted(tokens)
 
     rule = re.search(r"\.h-divider\s*\{(.*?)\}", css, re.DOTALL).group(1)
-    assert "var(--rule-gap)" in rule, "the rule's own breathing room must come from the token"
+    assert "var(--inset-x)" in rule, "the rule's side inset must come from the token"
 
 
-def test_a_horizontal_rule_has_room_above_and_below_it():
-    """it was `margin: 0 15px`, so every consumer that wanted space around a rule added its own -
-    and one of them named only four selectors, giving that tab two different rhythms
+def test_a_rule_does_not_add_to_the_gap_it_sits_in():
+    """MEASURED, and it is why this assertion is the opposite of what it first said. Giving the rule
+    its own vertical margin STACKED it on the gap the parent already puts between children: a ruled
+    row gap came out at 34px (8 gap + 8 margin + 2 border + 8 margin + 8 gap) against 8px for a
+    plain one, so a separator cost four times a space. The parent spaces; the rule only draws.
     """
     rule = re.search(r"\.h-divider\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
     margin = re.search(r"margin:\s*([^;]+);", rule).group(1)
-    assert not margin.strip().startswith("0 "), f"no vertical margin on the rule: {margin}"
+    assert margin.strip().startswith("0 "), f"the rule must add no vertical space: {margin}"
+
+
+def test_a_strip_centres_its_cells_and_shares_the_width():
+    """`align-items: baseline` is the obvious choice for a label-and-value pair and the wrong one:
+    a short cell pinned its text to the first baseline, flush against the top of a 31px box
+    """
+    cell = re.search(r"\.strip > \.cell\s*\{(.*?)\}", _css(), re.DOTALL)
+    assert cell, "a strip must define its cell"
+    assert "align-items: center" in cell.group(1)
+    assert "flex: 1 1 0" in cell.group(1) and "min-width: 0" in cell.group(1)
 
 
 def test_a_column_can_shrink_so_columns_never_overflow_their_panel():

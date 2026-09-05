@@ -38,7 +38,13 @@ class Menu {
     this.adopt = adopt;
     this.el = null;
     this._onDocDown = evt => {
-      if (this.el && !this.el.contains(evt.target) && evt.target !== this._trigger) this.close();
+      // THE TRIGGER'S CLICK IS THE TRIGGER'S BUSINESS. This compared `evt.target !== this._trigger`,
+      // which is already false whenever the click lands on the <span> inside a dropdown head - so
+      // mousedown closed the menu and the head's own click reopened it, and clicking an open head
+      // could never shut it. Ignore anything inside the trigger and let openAt decide.
+      if (!this.el || this.el.contains(evt.target)) return;
+      if (this._trigger && this._trigger.contains(evt.target)) return;
+      this.close();
     };
     this._onKey = evt => {
       if (evt.key === 'Escape') { evt.preventDefault(); this.close(); }
@@ -308,7 +314,9 @@ class Menu {
     // ONE AT A TIME. opening a second menu while another is up used to leave both on screen,
     // because each panel only knew how to hide itself
     if (openMenu && openMenu !== this) openMenu.close();
-    if (this.el) this.close();
+    // ALREADY OPEN MEANS SHUT IT. a head that opens on every click and never closes is a head with
+    // no way back except clicking away from it
+    if (this.el) { this.close(); return this; }
 
     this.el = this._build();
     if (!this.adopt) document.body.appendChild(this.el);
