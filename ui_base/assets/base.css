@@ -243,7 +243,10 @@ body {
   display: flex; align-items: center; height: var(--row-height); flex: 0 0 auto;
   color: var(--text-dim); font-size: 11px;
 }
-.run-controls { display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap; }
+.run-controls {
+  display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap;
+  min-height: var(--row-height);
+}
 .filter-row { display: flex; align-items: baseline; gap: 12px; }
 /* A CONTROL ROW MAY NOT CHANGE HEIGHT, and text is what makes it. `.stat` had no rule at all, so a
    count like "0 positives, 0 implied negatives" was five wrappable words in a nowrap flex row: the
@@ -252,6 +255,30 @@ body {
 /* pushes what follows to the far end. this only worked inside one consumer's toolbar before,
    because that is where its single rule was scoped */
 .spacer { flex: 1 1 auto; }
+
+/* ---- the split: two panes either side of a rule, and SYMMETRIC BY CONSTRUCTION ----
+   Every consumer built this by hand and every one got it slightly wrong. The failure is always the
+   same shape: the outer edges inherit the panel's inset while the inner edges inherit nothing, so
+   the second pane sits flush against the divider while the first has a comfortable gutter - and it
+   reads as the whole right-hand side being shoved sideways.
+   Here the gutter is on the PANE, and only the outermost edges are removed, so the space either
+   side of the rule is the same by arithmetic rather than by someone remembering. */
+.split { display: flex; flex: 1 1 auto; min-height: 0; }
+.split > .pane {
+  flex: 1 1 0; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; gap: var(--gap);
+  padding: 0 var(--inset-x);
+}
+.split > .pane:first-child { padding-left: 0; }
+.split > .pane:last-child { padding-right: 0; }
+
+/* A CONTROL ROW IS ONE ROW HIGH, whatever is in it. A slider stacks a label over its axis, so a
+   row holding one grew to about fifty pixels while the row beside it stayed at thirty-one - and
+   two panes that should mirror each other started their content at different heights. Inside a
+   control row the slider keeps the row's height and drops its caption; standing alone it is
+   unchanged, which is where the caption earns its space. */
+.run-controls .slider { height: var(--row-height); min-width: 190px; justify-content: center; gap: 0; }
+.run-controls .slider .slider-label { display: none; }
 
 /* ---- nav bar: ONE BAR, not a row of folder tabs ----
    each tab used to be its own box with border-bottom removed, so the strip read as eight open

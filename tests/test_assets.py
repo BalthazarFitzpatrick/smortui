@@ -172,6 +172,31 @@ def test_text_in_a_control_row_cannot_wrap_it():
     assert "text-overflow: ellipsis" in block.group(1)
 
 
+def test_a_split_gutters_both_panes_the_same():
+    """THE FAILURE THIS PREVENTS, and every consumer hit it: the outer edges inherit the panel's
+    inset while the inner ones inherit nothing, so the second pane sits flush against the rule and
+    the whole right-hand side reads as shoved sideways.
+    """
+    css = _css()
+    pane = re.search(r"\.split > \.pane\s*\{(.*?)\}", css, re.DOTALL)
+    assert pane, "a split must define its pane"
+    assert "var(--inset-x)" in pane.group(1), "the gutter comes from the token, not a literal"
+    # only the outermost edges are removed, which is what makes the inner ones equal
+    assert re.search(r"\.split > \.pane:first-child\s*\{[^}]*padding-left:\s*0", css)
+    assert re.search(r"\.split > \.pane:last-child\s*\{[^}]*padding-right:\s*0", css)
+
+
+def test_a_control_row_stays_one_row_high_even_holding_a_slider():
+    """a slider stacks a caption over its axis, so a row holding one grew to ~50px while the row
+    beside it stayed at 31 - two panes that mirror each other then start at different heights
+    """
+    css = _css()
+    row = re.search(r"\.run-controls\s*\{[^}]*\}", css)
+    assert row and "min-height: var(--row-height)" in row.group(0)
+    inner = re.search(r"\.run-controls \.slider\s*\{([^}]*)\}", css)
+    assert inner and "height: var(--row-height)" in inner.group(1)
+
+
 def test_the_two_sampled_hues_are_still_the_only_ones():
     """ "two hues, and only two" is the palette's stated rule - the README, the CSS header and the
     demo's colour board all say so, so a third arriving quietly makes all three wrong
