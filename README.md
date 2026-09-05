@@ -141,6 +141,12 @@ Four tokens carry the vertical rhythm, named for what they space rather than how
 | `--inset` | a panel's own top and bottom |
 | `--inset-x` | a panel's sides, and any row's own gutter |
 | `--rule-gap` | above and below an `.h-divider` |
+| `--font-size` | the only size there is |
+
+**One font size, everywhere.** There were nine, between 10px and 13px. Emphasis is carried by
+colour (`--text-dim`, `--text`, `--cream`) and by the row a thing sits in; size was a third channel
+saying the same thing less clearly, and it made a caption and the button beside it look like parts
+of different applications. A test fails the build if a `font-size` is set anywhere but the token.
 
 Use them instead of literals. A consumer that hardcodes `8px` looks identical until the day the
 rhythm changes, and then it is the one tab that did not move.

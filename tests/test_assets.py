@@ -172,6 +172,24 @@ def test_text_in_a_control_row_cannot_wrap_it():
     assert "text-overflow: ellipsis" in block.group(1)
 
 
+def test_there_is_exactly_one_font_size():
+    """THREE CHANNELS SAID THE SAME THING. emphasis is carried by colour here - dim, text, cream -
+    and by the row a thing sits in. Size was a third, set locally nine times between 10px and 13px,
+    each a judgement nobody could see the whole of; a caption and the button beside it ended up
+    looking like parts of different applications.
+    """
+    css = _css()
+    local = [
+        line.strip()
+        for line in css.splitlines()
+        if "font-size" in line and "--font-size" not in line
+    ]
+    # body may reference the token; nothing else may set a size at all
+    local = [line for line in local if "var(--font-size)" not in line]
+    assert not local, f"font-size set locally: {local}"
+    assert re.search(r"--font-size\s*:", css), "the one size must be a token"
+
+
 def test_a_split_gutters_both_panes_the_same():
     """THE FAILURE THIS PREVENTS, and every consumer hit it: the outer edges inherit the panel's
     inset while the inner ones inherit nothing, so the second pane sits flush against the rule and
