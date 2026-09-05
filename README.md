@@ -125,6 +125,26 @@ For last-pixel work: drag the image under a fixed guide, `wasd` for 1px steps, c
 with an optional live preview of the result. It owns the interaction and the clamping and **owns no
 persistence** — the host decides where a corrected rect is saved, which is what makes it reusable.
 
+### Spacing
+
+Four tokens carry the vertical rhythm, named for what they space rather than how big they are:
+
+| token | for |
+|---|---|
+| `--gap` | between rows inside a panel |
+| `--inset` | a panel's own top and bottom |
+| `--inset-x` | a panel's sides, and any row's own gutter |
+| `--rule-gap` | above and below an `.h-divider` |
+
+Use them instead of literals. A consumer that hardcodes `8px` looks identical until the day the
+rhythm changes, and then it is the one tab that did not move.
+
+`.h-divider` already carries `--rule-gap` above and below, so a rule between two rows needs nothing
+added around it. Row primitives — `.field-label`, `.row-label`, `.field-value`, `.run-controls`,
+`.filter-row`, `.stat`, `.spacer` — live here so two consumers cannot disagree about what a row of
+controls looks like. `.row-label` is a caption that occupies a full `--row-height`, so a panel
+opening with a label starts at the same height as one opening with buttons.
+
 ## The visual language
 
 Six rules carry the whole look. They are in `base.css`'s header too, because that is where someone

@@ -69,6 +69,19 @@
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
   --row-height: 31px;
+
+  /* ---- THE VERTICAL RHYTHM, and why it is four tokens rather than forty literals.
+     Every consumer tab used to supply its own spacing, so the first row started at a different
+     height on each and the second row a different distance below that - switching tabs moved the
+     controls under the pointer. Between this file and one consumer's stylesheet there were about
+     nineteen distinct gap values and forty-five distinct paddings, every one a literal, which is
+     what made the drift invisible: nothing looked wrong on its own.
+     These are named for what they space, not how big they are, so a consumer asks for "the gap
+     between rows" and cannot accidentally ask for eight pixels. */
+  --gap: 8px;        /* between rows inside a panel */
+  --inset: 12px;     /* a panel's own top and bottom */
+  --inset-x: 14px;   /* a panel's sides, and any row's own gutter */
+  --rule-gap: 8px;   /* above and below a horizontal rule */
 }
 
 * { box-sizing: border-box; }
@@ -172,7 +185,14 @@ body {
 /* 2px, the same as every .toggle border - a 1px rule beside 2px buttons reads as a
    different weight of line rather than the same system */
 .divider { width: 0; border-left: 2px solid var(--grey-border); margin: 15px 0; }
-.h-divider { height: 0; border-top: 2px solid var(--grey-border); margin: 0 15px; }
+/* THE RULE BREATHES BY DEFAULT. this was `margin: 0 15px` - no vertical space at all - and each
+   consumer that wanted room around a rule added it by naming its own elements in an allowlist. One
+   consumer's list named four selectors, so four of its rows had a 34px rhythm and the rest had
+   18px, and both were called correct by different people on different tabs. */
+.h-divider {
+  height: 0; border-top: 2px solid var(--grey-border);
+  margin: var(--rule-gap) var(--inset-x);
+}
 
 /* TEXT IS SELECTABLE. `user-select: none` used to sit on .toggle and .nav-tab to stop drag-select
    while clicking through rows - but it also made every dataset name, script name and readout
@@ -201,7 +221,37 @@ body {
 /* PADDED ON BOTH AXES. horizontal-only padding left the buttons touching the frame the moment a
    consumer drew a border on .label-columns itself rather than nesting it in a padded panel - a
    primitive has to look right standing on its own */
-.label-columns .col { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
+.label-columns .col {
+  display: flex; flex-direction: column; gap: 6px; padding: var(--inset) var(--inset-x);
+  /* COLUMNS SHARE THE WIDTH RATHER THAN OVERFLOWING IT. without this a .col computes to
+     `flex: 0 1 auto` while the pills inside it are `flex: 0 0 auto`, so the column cannot shrink
+     below its widest pill and a three-column menu simply runs off the panel - which, since a
+     .tab-panel hides its overflow, is clipped rather than scrolled. There is nothing to scroll to
+     and no sign anything is missing. */
+  flex: 1 1 0; min-width: 0;
+}
+
+/* ---- the row primitives ----
+   THESE LIVED IN A CONSUMER'S STYLESHEET, which is why every tab reinvented its spacing: a design
+   system that does not own "a row of controls" or "a caption" cannot make them consistent. */
+.field-label { color: var(--text-dim); font-size: 11px; }
+.field-value { color: var(--cream); font-size: 12px; }
+/* A LABEL IS STILL A ROW. a tab opening with a bare caption started its content higher than one
+   opening with controls, because 11px of text is not 31px of button. This gives the caption the
+   same box so row one is row one wherever you are. */
+.row-label {
+  display: flex; align-items: center; height: var(--row-height); flex: 0 0 auto;
+  color: var(--text-dim); font-size: 11px;
+}
+.run-controls { display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap; }
+.filter-row { display: flex; align-items: baseline; gap: 12px; }
+/* A CONTROL ROW MAY NOT CHANGE HEIGHT, and text is what makes it. `.stat` had no rule at all, so a
+   count like "0 positives, 0 implied negatives" was five wrappable words in a nowrap flex row: the
+   span shrank to its longest word and took three lines with it, dragging everything below down. */
+.stat, .field-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* pushes what follows to the far end. this only worked inside one consumer's toolbar before,
+   because that is where its single rule was scoped */
+.spacer { flex: 1 1 auto; }
 
 /* ---- nav bar: ONE BAR, not a row of folder tabs ----
    each tab used to be its own box with border-bottom removed, so the strip read as eight open

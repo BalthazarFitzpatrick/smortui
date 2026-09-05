@@ -119,6 +119,59 @@ def test_the_light_palette_is_complete_on_bare_root():
     assert not missing, f"defined only under a theme condition: {sorted(missing)}"
 
 
+def test_the_spacing_tokens_exist_and_are_used_rather_than_repeated():
+    """A TOKEN NOBODY USES IS WORSE THAN NO TOKEN - it reads as a standard while the literals it was
+    meant to replace go on drifting. So this asserts both halves: the four exist, and the rules that
+    set the rhythm reference them rather than restating the number.
+    """
+    css = _css()
+    root = re.search(r":root\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    tokens = set(re.findall(r"(--(?:gap|inset|inset-x|rule-gap))\s*:", root))
+    assert tokens == {"--gap", "--inset", "--inset-x", "--rule-gap"}, sorted(tokens)
+
+    rule = re.search(r"\.h-divider\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    assert "var(--rule-gap)" in rule, "the rule's own breathing room must come from the token"
+
+
+def test_a_horizontal_rule_has_room_above_and_below_it():
+    """it was `margin: 0 15px`, so every consumer that wanted space around a rule added its own -
+    and one of them named only four selectors, giving that tab two different rhythms
+    """
+    rule = re.search(r"\.h-divider\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
+    margin = re.search(r"margin:\s*([^;]+);", rule).group(1)
+    assert not margin.strip().startswith("0 "), f"no vertical margin on the rule: {margin}"
+
+
+def test_a_column_can_shrink_so_columns_never_overflow_their_panel():
+    """.col children are flex:0 0 auto, so without this the column cannot go below its widest pill
+    and a multi-column menu runs off the panel - clipped, not scrolled, with nothing to indicate it
+    """
+    col = re.search(r"\.label-columns \.col\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
+    assert "min-width: 0" in col
+    assert "flex: 1 1 0" in col
+
+
+def test_the_row_primitives_are_defined_here_rather_than_downstream():
+    """a design system that does not own "a row of controls" cannot keep two consumers agreeing on
+    what one looks like - these four lived in a consumer's stylesheet, which is exactly why its
+    tabs each grew their own spacing
+    """
+    css = _css()
+    for selector in (".field-label", ".field-value", ".run-controls", ".spacer", ".stat"):
+        assert re.search(rf"^{re.escape(selector)}[\s,{{]", css, re.MULTILINE), selector
+
+
+def test_text_in_a_control_row_cannot_wrap_it():
+    """the failure this prevents: a five-word stat in a nowrap flex row shrank to its longest word
+    and took the row to three lines, moving everything below it down the page
+    """
+    css = _css()
+    block = re.search(r"\.stat, \.field-value\s*\{(.*?)\}", css, re.DOTALL)
+    assert block, ".stat and .field-value must be protected from wrapping"
+    assert "white-space: nowrap" in block.group(1)
+    assert "text-overflow: ellipsis" in block.group(1)
+
+
 def test_the_two_sampled_hues_are_still_the_only_ones():
     """ "two hues, and only two" is the palette's stated rule - the README, the CSS header and the
     demo's colour board all say so, so a third arriving quietly makes all three wrong
