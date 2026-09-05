@@ -410,19 +410,24 @@ body {
 .menu-heading { padding: 6px 0 2px; }
 .col > .menu-heading:first-child { padding-top: 0; }
 .menu-item { display: flex; align-items: center; gap: 12px; width: auto; justify-content: flex-start; }
-/* THE NAME IS WHAT TRUNCATES, NOT THE STATS, and it used to be the other way round. the name was
-   flex:0 0 auto so it never shrank - a long recording name pushed the row past the panel and the
-   stats, being the only shrinkable thing in it, were squeezed to nothing. the stats are the reason
-   you are reading the row at all, so they hold their width and the name gives way. full text of
-   both is on the row's title */
+/* THE NAME TAKES THE ROOM AND THE STATS GIVE WAY. Both orders have now been wrong in turn. First
+   the name was flex:0 0 auto and never shrank, so a long name pushed the row past the panel and
+   squeezed the stats to nothing; that was fixed by making the STATS immovable instead, on the
+   reasoning that they are what you are reading the row for. On find's dataset picker that reversal
+   cost more than it bought - measured at 1600px, "845f · nothing drawn" held 157px of a 303px row
+   while the name got 96px and needed 282, so 14 of the names were cut. Balthazar Fitzpatrick, who
+   picks a dataset BY ITS NAME: "so that I can read the names".
+   The name is the row's identity and the stats are an annotation on it, so the name takes what is
+   free and the stats ellipsis first. Neither is ever lost - the row's title carries both in full. */
 .menu-item .name {
-  flex: 0 1 auto; min-width: 3em; text-align: left;
+  flex: 1 1 auto; min-width: 3em; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* margin-left:auto pins them to the RIGHT EDGE, so the numbers line up down the list instead of
-   starting wherever each name happens to end. the max-width is a backstop for a narrow panel */
+   starting wherever each name happens to end. the max-width is what stops an annotation from
+   taking more of the row than the thing it annotates */
 .menu-item .stats {
-  flex: 0 0 auto; margin-left: auto; max-width: 60%;
+  flex: 0 1 auto; margin-left: auto; max-width: 45%;
   color: var(--text-dim);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
