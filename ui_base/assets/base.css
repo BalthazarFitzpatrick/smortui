@@ -357,6 +357,13 @@ body {
 /* wider than it was: these rows carry a recording name AND its counts side by side, and at 820 the
    name had so little room after the stats that every row ellipsised to a few characters */
 .menu-panel.menu-columns { max-width: min(1040px, 94vw); }
+/* A MENU THAT HOLDS COLUMNS NEEDS THE ROOM ITS COLUMNS ASK FOR. the panel's 560px cap is right for
+   one list of short labels and wrong the moment two columns of file names share it - at 1600px that
+   left each column 251px and truncated 14 of the names on find's dataset picker, which is the one
+   thing that picker exists to show. Balthazar Fitzpatrick: "double the width but no more than 45%
+   of total page width so that I can read the names" - so the columns get their doubling on a wide
+   screen and the viewport share caps it on a narrow one, whichever binds first. */
+.menu-panel:has(.label-columns) { max-width: min(1040px, 45vw); }
 .menu-column-row { display: flex; align-items: stretch; min-height: 0; flex: 1 1 auto; }
 .menu-column-row > .menu-section { flex: 1 1 0; min-width: 320px; max-height: 60vh; overflow-y: auto; }
 

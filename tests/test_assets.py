@@ -253,3 +253,17 @@ def test_the_slider_measures_its_own_text_rather_than_counting_characters():
         assert stale not in menu, f"{stale} is the guess that went stale"
     # the fallback exists for a canvas-less environment and must read the token, not a literal
     assert "getPropertyValue('--font-size')" in menu
+
+
+def test_a_menu_holding_columns_is_allowed_more_width_than_one_holding_a_list():
+    """two columns of file names inside a 560px panel truncate the names they exist to show.
+
+    the cap is a share of the viewport as well as a pixel ceiling, so a wide screen gets the
+    doubling and a narrow one is held to 45% rather than covering the page.
+    """
+    css = (ASSETS / "base.css").read_text()
+    rule = ".menu-panel:has(.label-columns)"
+    assert rule in css, "column menus need their own width cap"
+    line = next(ln for ln in css.splitlines() if ln.startswith(rule))
+    assert "45vw" in line, "the viewport share is the half that protects a narrow window"
+    assert "min(" in line, "a pixel ceiling and a viewport share, whichever binds first"
