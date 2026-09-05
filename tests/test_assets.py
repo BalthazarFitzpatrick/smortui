@@ -239,3 +239,17 @@ def test_the_two_sampled_hues_are_still_the_only_ones():
         if "lichen" in name or "stone" in name
     }
     assert hues == {"--lichen", "--lichen-deep", "--stone-red", "--stone-red-lift"}, sorted(hues)
+
+
+def test_the_slider_measures_its_own_text_rather_than_counting_characters():
+    """the readout and the end labels share a row, so an underestimate makes them touch.
+
+    the counts were pinned to 10.5px and 11.5px, which the one-font-size rule then invalidated -
+    both render at var(--font-size). measuring leaves nothing to go stale.
+    """
+    menu = (ASSETS / "menu.js").read_text()
+    assert "_textRuler.measureText(text).width" in menu, "widths must be measured"
+    for stale in ("10.5 * 0.62", "11.5 * 0.62"):
+        assert stale not in menu, f"{stale} is the guess that went stale"
+    # the fallback exists for a canvas-less environment and must read the token, not a literal
+    assert "getPropertyValue('--font-size')" in menu
