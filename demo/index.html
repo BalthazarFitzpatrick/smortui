@@ -7,6 +7,9 @@
 <script src="/ui/menu.js"></script>
 <script src="/ui/shell.js"></script>
 <script src="/ui/select.js"></script>
+<script src="/ui/buckets.js"></script>
+<script src="/ui/expand.js"></script>
+<script src="/ui/indicate.js"></script>
 <style>
   /* the demo's own layout only - everything that carries the LOOK is in base.css */
   body { display: flex; flex-direction: column; height: 100vh; }
@@ -46,6 +49,7 @@
   <div class="nav-tab active" data-tab="controls" role="tab" tabindex="0">controls</div>
   <div class="nav-tab" data-tab="menus" role="tab" tabindex="-1">menus</div>
   <div class="nav-tab" data-tab="viewport" role="tab" tabindex="-1">viewport</div>
+  <div class="nav-tab" data-tab="primitives" role="tab" tabindex="-1">primitives</div>
   <div class="nav-tab" data-tab="colour" role="tab" tabindex="-1">colour</div>
 </div>
 
@@ -207,6 +211,58 @@
     <span class="stat" id="zoom-value">100%</span>
   </div>
   <div id="viewport-demo"><div class="stage"><div></div></div></div>
+</div>
+
+<div class="tab-panel hidden" data-panel="primitives">
+  <h2>bucket layout, 2D roving focus</h2>
+  <p class="demo-note">
+    Arrow keys move across both axes: left/right between buckets, up/down between rows. Only the
+    focused row sits in the tab order, the same roving-tabindex shell.js already uses for tabs.
+    Moving into a shorter bucket clamps to its last row instead of losing focus; up from the top
+    row of a bucket exits the grid rather than doing nothing.
+  </p>
+  <div id="buckets-demo" style="display: flex; gap: var(--gap); max-width: 700px;"></div>
+  <div class="stat" id="buckets-said" style="margin-top: 8px;">focus a row and use the arrow keys</div>
+
+  <h2>expand: a strip that opens into a panel</h2>
+  <p class="demo-note">
+    A landscape strip grows into a centred portrait panel, reusing <code>.modal-backdrop</code> and
+    <code>.panel-floating</code> so it is not a second visual language for "floating over
+    everything". Dismiss with a click on the backdrop or Escape.
+  </p>
+  <div class="demo-row">
+    <div class="toggle" id="expand-strip" style="width: 240px; aspect-ratio: 3 / 1;">click to expand</div>
+  </div>
+
+  <h2>count badge</h2>
+  <p class="demo-note">
+    Hidden entirely at zero rather than showing "0" - a visible empty badge reads as "something is
+    here" when nothing is. The host's own row height never changes as the count grows.
+  </p>
+  <div class="demo-row">
+    <div class="toggle" id="badge-demo">a row<span id="badge-slot"></span></div>
+    <div class="toggle" id="badge-bump">+1</div>
+  </div>
+
+  <h2>focus marker</h2>
+  <p class="demo-note">
+    A cream highlight that glides between focus targets rather than jumping - tab through the rows
+    below to see it move.
+  </p>
+  <div class="demo-row" id="marker-demo">
+    <div class="toggle" tabindex="0">one</div>
+    <div class="toggle" tabindex="0">two</div>
+    <div class="toggle" tabindex="0">three</div>
+  </div>
+
+  <h2>hazard stripes</h2>
+  <p class="demo-note">
+    A placeholder for content that is not there yet - diagonal stripes read as "nothing here on
+    purpose" rather than "failed to load". Tokens only, so it holds in both themes.
+  </p>
+  <div class="hazard-stripes" style="max-width: 460px; height: 90px;">
+    <span class="hazard-label">not loaded yet</span>
+  </div>
 </div>
 
 <div class="tab-panel hidden" data-panel="colour">
@@ -435,6 +491,45 @@ document.getElementById('open-modal').onclick = () => {
     },
   });
 })();
+
+// ---- buckets: five buckets, three rows each - the shape the contract's own verify cases use
+(() => {
+  const host = document.getElementById('buckets-demo');
+  const said = document.getElementById('buckets-said');
+  for (let b = 0; b < 5; b++) {
+    const bucket = document.createElement('div');
+    bucket.className = 'bucket';
+    bucket.style.cssText = 'flex:1 1 0; display:flex; flex-direction:column; gap:4px;';
+    for (let r = 0; r < (b === 2 ? 2 : 3); r++) {
+      const row = document.createElement('div');
+      row.className = 'toggle row';
+      row.tabIndex = -1;
+      row.textContent = `b${b + 1} r${r + 1}`;
+      bucket.appendChild(row);
+    }
+    host.appendChild(bucket);
+  }
+  makeBuckets(host, {
+    onFocus: (bi, ri) => { said.textContent = `focus: bucket ${bi + 1}, row ${ri + 1}`; },
+    onExitTop: e => { said.textContent = `${e.type} from bucket ${e.bucket + 1}`; },
+  });
+})();
+
+// ---- expand: makeExpander wires its own click on the strip, so the demo only fills the panel
+makeExpander(document.getElementById('expand-strip'), {
+  onOpen: panel => { panel.innerHTML = '<div class="modal-body" style="padding:16px;">expanded panel content</div>'; },
+});
+
+// ---- count badge: hidden at zero, otherwise a small pip beside the row's own label
+(() => {
+  const slot = document.getElementById('badge-slot');
+  let count = 0;
+  indicateBadge(slot, count);
+  document.getElementById('badge-bump').onclick = () => { count = (count + 1) % 4; indicateBadge(slot, count); };
+})();
+
+// ---- focus marker: glides between whichever row last took focus
+document.getElementById('marker-demo').addEventListener('focusin', evt => indicateFocus(evt.target));
 </script>
 </body>
 </html>

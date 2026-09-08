@@ -18,7 +18,16 @@ from ui_base import ASSETS, UiBaseError, asset_names, read_asset
 
 # what a consumer's page links. named explicitly rather than globbed: a test that reads the
 # directory it is checking passes just as happily when the directory is empty
-EXPECTED = {"base.css", "menu.js", "shell.js", "align.js", "select.js"}
+EXPECTED = {
+    "base.css",
+    "menu.js",
+    "shell.js",
+    "align.js",
+    "select.js",
+    "buckets.js",
+    "expand.js",
+    "indicate.js",
+}
 
 
 def test_every_expected_asset_is_present_and_not_empty():
@@ -89,6 +98,27 @@ def test_the_menu_builds_the_sections_it_promises():
     script = Path(__file__).parent / "js" / "menu_sections.mjs"
     result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
     assert result.returncode == 0, f"menu sections misbehave:\n{result.stdout}{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_buckets_navigate_in_two_axes():
+    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this runs makeBuckets
+    against a dom stub to prove the roving focus actually moves across both axes and clamps or
+    exits where the contract says it should.
+    """
+    script = Path(__file__).parent / "js" / "buckets_navigation.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, f"bucket navigation misbehaves:\n{result.stdout}{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_expander_dismisses_exactly_once():
+    """the risk with an animated open/close is a double-fire - escape and an outside click both
+    reachable in one dismissal - so this proves onClose runs once per dismissal, not per trigger.
+    """
+    script = Path(__file__).parent / "js" / "expander.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, f"expander misbehaves:\n{result.stdout}{result.stderr}"
 
 
 def _css() -> str:
