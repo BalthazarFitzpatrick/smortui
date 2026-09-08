@@ -542,3 +542,46 @@ body {
 .sweep-row { display: flex; align-items: center; gap: 10px; }
 .sweep-row .grow { flex: 1 1 auto; min-width: 0; justify-content: space-between; }
 .sweep-row .grow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+/* ---- expand.js: a strip that grows into a centred panel ----
+   rides the existing .modal-backdrop / .panel-floating so an expanding strip is not a second
+   visual language for "floating over everything" - only the animation is new here */
+.expand-backdrop { z-index: 70; }
+.expand-panel { overflow: auto; }
+
+
+/* ---- indicate.js: count badge ----
+   a small filled pip, never a text sibling that pushes its row's width - the row must not change
+   size as the count changes from 1 to 100 */
+.count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px;
+  background: var(--lichen-deep); color: var(--cream);
+  font-size: var(--font-size); line-height: 1; flex: 0 0 auto;
+}
+
+/* ---- indicate.js: focus marker ----
+   NOT .rubber-band - that class already means the net a shift+drag draws over a grid, a
+   completely different gesture. this is a single element moved between focus targets, and the
+   transition is what makes it glide rather than teleport. */
+.focus-marker {
+  position: fixed; z-index: 50; pointer-events: none;
+  border: 2px solid var(--cream);
+  transition: left 120ms, top 120ms, width 120ms, height 120ms;
+}
+
+
+/* ---- hazard stripes: a placeholder for content that is not there yet ----
+   diagonal stripes rather than a blank fill, so an empty area reads as "nothing here on purpose"
+   instead of "failed to load". tokens only, so it matches whichever theme is live. */
+.hazard-stripes {
+  display: flex; align-items: center; justify-content: center;
+  min-height: var(--row-height); color: var(--text-dim);
+  background: repeating-linear-gradient(
+    45deg, var(--panel-row) 0 10px, var(--grey-border) 10px 20px
+  );
+}
+.hazard-stripes .hazard-label {
+  background: var(--bg); padding: 2px 8px; border: 2px solid var(--grey-border);
+}

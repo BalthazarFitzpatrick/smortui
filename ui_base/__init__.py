@@ -24,8 +24,11 @@ shell.js before the script that calls initShell:
     <link rel="stylesheet" href="/ui/base.css">
     <script src="/ui/menu.js"></script>
     <script src="/ui/shell.js"></script>
-    <script src="/ui/align.js"></script>   <!-- only if you need crop alignment -->
-    <script src="/ui/select.js"></script>  <!-- only if you need grid/list selection -->
+    <script src="/ui/align.js"></script>     <!-- only if you need crop alignment -->
+    <script src="/ui/select.js"></script>    <!-- only if you need grid/list selection -->
+    <script src="/ui/buckets.js"></script>   <!-- only if you need a bucket layout with 2D focus -->
+    <script src="/ui/expand.js"></script>    <!-- only if you need a strip that expands to a panel -->
+    <script src="/ui/indicate.js"></script>  <!-- only if you need the count badge or focus marker -->
 """
 
 from __future__ import annotations
