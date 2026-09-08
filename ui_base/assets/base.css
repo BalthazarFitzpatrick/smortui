@@ -144,10 +144,6 @@ body {
 .toggle.on .stats,
 .toggle.on .field-label,
 .toggle.on .stat { color: var(--text-on-accent-dim); }
-.toggle:disabled, .toggle.disabled { opacity: 0.4; cursor: not-allowed; }
-.toggle:disabled:hover, .toggle.disabled:hover {
-  border-color: var(--grey-border); color: var(--text);
-}
 
 .help-tip {
   position: fixed; z-index: 60; max-width: 380px; line-height: 1.5;
@@ -159,15 +155,6 @@ body {
    "this is the thing you chose" */
 .toggle.help.on { border-color: var(--cream); color: var(--cream); }
 .help-tip.pinned { border-color: var(--cream); }
-.toggle.on { background: var(--accent-on); color: var(--accent-on-text); }
-/* SELECTED CELLS SWAP TO GREY TEXT. the .on background is near-white, so any child that carries its
-   own light colour (a .name is cream, a .stats is a light grey) vanishes into it. children must
-   therefore re-state a dark colour rather than inherit their unselected one - primary text near
-   black, secondary a mid grey that still reads as secondary against cream. */
-.toggle.on .name { color: var(--accent-on-text); }
-.toggle.on .stats,
-.toggle.on .field-label,
-.toggle.on .stat { color: #6a655c; }
 
 
 /* ---- what a button DOES, in colour ---- */
