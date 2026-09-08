@@ -384,6 +384,21 @@ body {
 .dropdown-head.open::after { color: var(--cream); }
 /* a percentage is two or three characters - a 190px head for "20%" reads as a broken layout */
 .dropdown-head.narrow { min-width: 74px; max-width: 74px; }
+/* MULTI-VALUE HEAD: the plain .dropdown-head is a fixed single row, which is right for a name but
+   wrong the moment the head is holding several - the box stays --row-height tall while its content
+   grows past it, so the extra values sit outside their own border. .stacked lays the values down
+   the box instead of across it, and grows to fit them - the same fix a consumer once had to make
+   for one element id, generalised so the next multi-value head does not need its own copy. */
+.dropdown-head.stacked {
+  flex-direction: column; align-items: flex-start; gap: 2px;
+  white-space: normal; overflow: visible;
+  height: auto; min-height: var(--row-height);
+  padding-top: 4px; padding-bottom: 4px; position: relative;
+}
+.dropdown-head.stacked > span:first-child { overflow: visible; text-overflow: clip; }
+/* the caret is furniture for the whole control, not one of its rows - in column flow it would
+   otherwise land under the last value and read as a third entry */
+.dropdown-head.stacked::after { position: absolute; top: 6px; right: 12px; }
 .menu-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; }
 .menu-section .field-label { padding: 0; }
 /* a section heading inside a column - the first needs no space above it, the rest do */

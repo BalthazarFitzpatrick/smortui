@@ -18,7 +18,7 @@ from ui_base import ASSETS, UiBaseError, asset_names, read_asset
 
 # what a consumer's page links. named explicitly rather than globbed: a test that reads the
 # directory it is checking passes just as happily when the directory is empty
-EXPECTED = {"base.css", "menu.js", "shell.js", "align.js"}
+EXPECTED = {"base.css", "menu.js", "shell.js", "align.js", "select.js"}
 
 
 def test_every_expected_asset_is_present_and_not_empty():
