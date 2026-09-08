@@ -57,6 +57,17 @@
      the 4.5 a highlight needs when it carries text. Value lifted to 0.68 with the stone's own hue
      (10deg) and saturation (0.36) held, so it is the same stone with the light on it. */
   --stone-red-lift: #ad796f;  /* 4.89 on --bg */
+  /* A THIRD HUE, ADDED DELIBERATELY AND ONLY FOR ATTENTION. The two-hue rule above still holds for
+     everything else; this one exists because attention had nowhere honest to sit. It was pointed at
+     the stone, which reads as a fault rather than as "you are needed", and cream failed for a
+     subtler reason worth recording: cream is 13.25 on --bg and the lichen 13.37, so at a 2px stroke
+     the two outlines have the same lightness and read as the same line however far apart their hues
+     are. LIGHTNESS, NOT HUE, is what separates a thin stroke.
+     DERIVED, not sampled - there is no photograph of this one. Built in the family's own terms:
+     the lichen's saturation (0.60) held, hue taken to 42 for a warm gold rather than a green one,
+     value 0.87. That lands it at 9.31 on the ground, between the lichen's 13.37 and the lifted
+     stone's 4.89, so it is unmistakable against either at any stroke width. */
+  --gold: #deb659;            /* hue 42, sat 0.60, val 0.87. contrast 9.31 on --bg */
 
   /* the semantic layer points at them, so a consumer repalettes by moving the pointer without
      losing the record of where the colour came from */
@@ -64,7 +75,7 @@
   --status-warn: var(--stone-red);
   /* the "this really needs attention" slot. NOTHING USES IT BY DEFAULT - an attention colour that
      is always on stops being one */
-  --attention: var(--stone-red-lift);
+  --attention: var(--gold);
   /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
@@ -549,6 +560,16 @@ body {
    visual language for "floating over everything" - only the animation is new here */
 .expand-backdrop { z-index: 70; }
 .expand-panel { overflow: auto; }
+
+
+/* ---- drawer.js: parked at one edge showing only a sliver, opens into the centre of its half ----
+   rides .panel-floating for the same reason expand.js does - a floating surface here has one
+   border and one shadow, not a second set invented per component */
+.drawer {
+  z-index: 55; display: flex; flex-direction: column; overflow: hidden;
+}
+.drawer:not(.open) { cursor: pointer; }
+.drawer-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
 
 
 /* ---- indicate.js: count badge ----

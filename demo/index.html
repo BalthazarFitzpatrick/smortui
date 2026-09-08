@@ -10,6 +10,7 @@
 <script src="/ui/buckets.js"></script>
 <script src="/ui/expand.js"></script>
 <script src="/ui/indicate.js"></script>
+<script src="/ui/drawer.js"></script>
 <style>
   /* the demo's own layout only - everything that carries the LOOK is in base.css */
   body { display: flex; flex-direction: column; height: 100vh; }
@@ -233,6 +234,13 @@
   <div class="demo-row">
     <div class="toggle" id="expand-strip" style="width: 240px; aspect-ratio: 3 / 1;">click to expand</div>
   </div>
+
+  <h2>drawer: a sliver that opens into its half of the screen</h2>
+  <p class="demo-note">
+    Parked almost entirely off-screen at one edge, showing only a sliver. Click the sliver to open
+    it into the centre of its half; click its border (not its content) to park it again.
+  </p>
+  <div class="demo-row" id="drawer-said">closed</div>
 
   <h2>count badge</h2>
   <p class="demo-note">
@@ -519,6 +527,18 @@ document.getElementById('open-modal').onclick = () => {
 makeExpander(document.getElementById('expand-strip'), {
   onOpen: panel => { panel.innerHTML = '<div class="modal-body" style="padding:16px;">expanded panel content</div>'; },
 });
+
+// ---- drawer: parks off-screen at the right edge, opens into the centre of the right half
+(() => {
+  const said = document.getElementById('drawer-said');
+  const drawer = makeDrawer({
+    edge: 'right',
+    onOpen: () => { said.textContent = 'open'; },
+    onClose: () => { said.textContent = 'closed'; },
+  });
+  drawer.body.innerHTML = '<div class="modal-body" style="padding:16px;">drawer content</div>';
+  document.body.appendChild(drawer.el);
+})();
 
 // ---- count badge: hidden at zero, otherwise a small pip beside the row's own label
 (() => {

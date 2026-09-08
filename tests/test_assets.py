@@ -27,6 +27,7 @@ EXPECTED = {
     "buckets.js",
     "expand.js",
     "indicate.js",
+    "drawer.js",
 }
 
 
@@ -119,6 +120,16 @@ def test_the_expander_dismisses_exactly_once():
     script = Path(__file__).parent / "js" / "expander.mjs"
     result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
     assert result.returncode == 0, f"expander misbehaves:\n{result.stdout}{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_drawer_parks_opens_and_closes():
+    """proves the parked sliver, the move into the viewport on open, close returning to the
+    parked position, toggle alternating, and onOpen/onClose each firing once per transition.
+    """
+    script = Path(__file__).parent / "js" / "drawer.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, f"drawer misbehaves:\n{result.stdout}{result.stderr}"
 
 
 def _css() -> str:
