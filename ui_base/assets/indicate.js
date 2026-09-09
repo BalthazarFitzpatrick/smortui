@@ -37,15 +37,27 @@ function _marker() {
 function indicateFocus(target) {
   const marker = _marker();
 
+  // WHERE THE TARGET WILL COME TO REST, not where it is this instant. getBoundingClientRect
+  // includes any transform in flight, so a target sliding into place reports its OLD position and
+  // the marker animates all the way there before correcting - a visible lurch down and back.
+  // subtracting the element's own translation gives the resting box straight away, so the marker
+  // travels once, to the right place.
   const place = () => {
     const r = target.getBoundingClientRect();
+    const t = getComputedStyle(target).transform;
+    let dx = 0, dy = 0;
+    if (t && t !== 'none') {
+      const m = new DOMMatrixReadOnly(t);
+      dx = m.m41;
+      dy = m.m42;
+    }
     Object.assign(marker.style, {
-      left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
+      left: `${r.left - dx}px`, top: `${r.top - dy}px`,
+      width: `${r.width}px`, height: `${r.height}px`,
     });
   };
 
   place();
-  requestAnimationFrame(place);
 
   // whatever the target is mid-transition, the marker ends where the target ends
   const settle = () => {
