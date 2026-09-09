@@ -79,6 +79,10 @@ function makeExpander(strip, {
     backdrop = null;
     panel = null;
     dying.remove();
+    // FOCUS GOES BACK WHERE IT CAME FROM. removing the panel leaves focus on <body>, and a
+    // keyboard-driven page with focus on body is a dead page - every arrow key goes nowhere until
+    // the user clicks something. the strip opened it, so the strip takes it back
+    if (strip.isConnected) strip.focus();
     onClose();
   }
 
