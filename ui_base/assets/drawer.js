@@ -16,8 +16,13 @@ function makeDrawer({
   edge,
   sliverRatio = 0.125,
   heightRatio = 0.625,
+  // BOTTOM WINS OVER heightRatio WHEN GIVEN. a ratio centres a band of fixed proportion, which
+  // drifts as the window resizes; equal insets pin the drawer the same distance from the row above
+  // and the floor below at every size, which is what reads as deliberate
   top = 0,
+  bottom = null,
   width = null,
+  widthRatio = 0.85,          // of its own half of the screen, not of the whole viewport
   onOpen = null,
   onClose = null,
 } = {}) {
@@ -38,10 +43,12 @@ function makeDrawer({
 
   function metrics() {
     const vw = window.innerWidth, vh = window.innerHeight;
-    const w = width || Math.min(360, vw * 0.4);
+    const w = width || (vw / 2) * widthRatio;
+    if (bottom !== null) {
+      return {vw, w, bandHeight: Math.max(0, vh - top - bottom), elTop: top};
+    }
     const bandHeight = (vh - top) * heightRatio;
-    const elTop = top + (vh - top - bandHeight) / 2;
-    return {vw, w, bandHeight, elTop};
+    return {vw, w, bandHeight, elTop: top + (vh - top - bandHeight) / 2};
   }
 
   // PARKED SHOWS THE SLIVER NEAREST THE VIEWPORT: a right-edge drawer's LEFT edge sits just

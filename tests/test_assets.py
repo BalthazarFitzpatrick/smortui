@@ -268,18 +268,54 @@ def test_a_control_row_stays_one_row_high_even_holding_a_slider():
     assert inner and "height: var(--row-height)" in inner.group(1)
 
 
-def test_the_two_sampled_hues_are_still_the_only_ones():
-    """ "two hues, and only two" is the palette's stated rule - the README, the CSS header and the
-    demo's colour board all say so, so a third arriving quietly makes all three wrong
+# every token in :root that is a literal colour rather than a pointer. neutrals and decision
+# colours are greys and creams; anything else here is a HUE and has to be accounted for by name
+_NEUTRALS = {
+    "--bg",
+    "--panel-row",
+    "--grey-border",
+    "--text",
+    "--text-dim",
+    "--cream",
+    "--accent-on",
+    "--accent-on-text",
+    "--muted-on",
+    "--text-on-accent-dim",
+    "--text-on-fill-dim",
+}
+_HUES = {
+    # sampled from photographs: two families, one of which has a deep and a milky member
+    "--lichen",
+    "--lichen-deep",
+    "--stone-red",
+    "--stone-red-lift",
+    # derived, belonging to no photograph. the vanilla because attention had nowhere honest to sit,
+    # the kingfisher because green against red collapses under red-green colour blindness and the
+    # working plate had to stop being green, and the burnt orange as the loud one held in reserve
+    "--vanilla",
+    "--kingfisher",
+    "--kingfisher-milk",
+    "--burnt-orange",
+    "--burnt-orange-milk",
+}
+
+
+def test_every_hue_in_the_palette_is_accounted_for_by_name():
+    """the palette's rule is not "two hues" any more, it is "no hue arrives unnamed".
+
+    the previous version of this guard matched only tokens containing "lichen" or "stone", so
+    --vanilla - the actual third hue - walked straight past it. a guard that cannot see the thing
+    it exists to catch is worse than none, because it reads as coverage.
     """
     css = _css()
     root = re.search(r":root\s*\{(.*?)\}", css, re.DOTALL).group(1)
-    hues = {
-        name
-        for name in re.findall(r"(--[\w-]+)\s*:\s*#", root)
-        if "lichen" in name or "stone" in name
-    }
-    assert hues == {"--lichen", "--lichen-deep", "--stone-red", "--stone-red-lift"}, sorted(hues)
+    literals = set(re.findall(r"(--[\w-]+)\s*:\s*#", root))
+    unaccounted = literals - _NEUTRALS - _HUES
+    assert not unaccounted, (
+        f"a colour arrived without being named in this test: {sorted(unaccounted)}"
+    )
+    missing = _HUES - literals
+    assert not missing, f"a hue this test guards no longer exists: {sorted(missing)}"
 
 
 def test_the_slider_measures_its_own_text_rather_than_counting_characters():

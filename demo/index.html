@@ -375,14 +375,26 @@ const PALETTE = [
     ['--muted-on', 'a rejected thing. dull on purpose: rejecting is a decision, not an achievement'],
     ['--text-on-accent-dim', 'secondary text on the accent ground, where --text-dim would vanish'],
   ]],
-  ['hues — the only two in the system', [
+  ['hues — two sampled, one derived', [
     ['--lichen', 'CORRECTED, not sampled: the median of 82k px of the photo was #bcbf88, faithful to the photo and not to the lichen. hue nudged 62 to 76 and saturation raised to 0.60 on Balthazar Fitzpatrick\'s eye against the real thing'],
     ['--lichen-deep', 'the same lichen dark enough to be a fill. NOT a bed for cream text - cream on it is 3.00. 4.93 is against the ground'],
     ['--stone-red', 'the red stone itself. median of 39k sampled pixels'],
     ['--stone-red-lift', 'DERIVED, not sampled: the stone lifted in value, hue and saturation held, so a highlight can carry text'],
-    ['--status-good', 'points at --lichen. the semantic name, so a consumer can repoint it'],
+    ['--kingfisher', 'DERIVED, and the only cold colour here. it exists because green against red is the one pairing that collapses under red-green colour blindness, which is most colour blindness there is - blue against red survives it. that is why the working plate is this and not the lichen'],
+    ['--kingfisher-milk', 'the kingfisher at fill strength. this is what --fill-good points at'],
+    ['--burnt-orange', 'the loudest thing the palette owns, for the day something has to be unmissable. NOTHING USES IT - it is here so the next person reaches for a colour that belongs rather than inventing one'],
+    ['--burnt-orange-milk', 'the same at fill strength'],
+    ['--vanilla', 'DERIVED, and the third hue: attention had nowhere honest to sit. chosen by maximising the SMALLER of its separations from cream and from the lichen, since drifting toward either is what makes it stop meaning anything. dE 31.7 from cream, 33.6 from the lichen'],
+  ]],
+  ['semantic pointers — repalette by moving these, not the hues', [
+    ['--status-good', 'points at --lichen. bright, for a stroke or a pip'],
     ['--status-warn', 'points at --stone-red'],
-    ['--attention', 'points at --stone-red-lift. nothing uses it by default - an attention colour that is always on stops being one'],
+    ['--attention', 'points at --vanilla. nothing uses it by default - an attention colour that is always on stops being one'],
+    ['--fill-good', 'points at --kingfisher-milk. a plate colour: what a surface is painted with'],
+    ['--fill-warn', 'points at --stone-red-lift'],
+    ['--fill-attention', 'points at --vanilla. the three plates are 47.6, 49.5 and 63.2 apart - the set they replaced had a closest pair of 19.6'],
+    ['--text-on-fill', 'text on any of the three plates. near-black is 10.17 on the milk, 12.46 on the vanilla and 4.89 on the lifted stone - all three clear the 4.5 body-text bar'],
+    ['--text-on-fill-dim', 'secondary text on a fill, where --text-dim would vanish'],
   ]],
 ];
 
