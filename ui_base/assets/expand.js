@@ -13,6 +13,11 @@ const EXPAND_DURATION_MS = 220;
 function makeExpander(strip, {
   collapsedRatio = {w: 3, h: 1},
   expandedRatio = {w: 1, h: 3},
+  // WHERE THE GROW STARTS. 'center' opens from the middle of the screen; 'rect' morphs out of the
+  // strip's own box. rect is the more literal animation and the worse one to sit in front of: a
+  // strip in the far column travels the width of the screen on its way open, and the eye tracks
+  // that sideways sweep instead of reading the panel that arrives
+  origin = 'center',
   onOpen = () => {},
   onClose = () => {},
 } = {}) {
@@ -26,9 +31,15 @@ function makeExpander(strip, {
     backdrop.className = 'modal-backdrop expand-backdrop';
     panel = document.createElement('div');
     panel.className = 'panel-floating expand-panel';
-    // start at the strip's own box so the grow reads as the strip itself opening, not a new
-    // element appearing over it
-    const from = strip.getBoundingClientRect();
+    const rect = strip.getBoundingClientRect();
+    // a centred start keeps the panel still and only grows it; the rect start also travels
+    const from = origin === 'rect'
+      ? rect
+      : {
+        left: (window.innerWidth - rect.width) / 2,
+        top: (window.innerHeight - rect.height) / 2,
+        width: rect.width, height: rect.height,
+      };
     Object.assign(panel.style, {
       position: 'fixed', left: `${from.left}px`, top: `${from.top}px`,
       width: `${from.width}px`, height: `${from.height}px`,

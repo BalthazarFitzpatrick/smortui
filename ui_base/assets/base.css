@@ -57,14 +57,51 @@
      the 4.5 a highlight needs when it carries text. Value lifted to 0.68 with the stone's own hue
      (10deg) and saturation (0.36) held, so it is the same stone with the light on it. */
   --stone-red-lift: #ad796f;  /* 4.89 on --bg */
+  /* THE COLD ONE, and the only one in the system. It exists because green against red is the single
+     pairing that collapses under red-green colour blindness, which is most colour blindness there
+     is - a board that says "running" in lichen and "rejected" in stone is a board some people
+     cannot read. Blue against red survives it. That is why the working plate is this and not the
+     lichen, and it is worth more than the family resemblance it costs.
+     DERIVED, not sampled - no photograph of this either. */
+  --kingfisher: #52bed9;      /* hue 192, sat 0.62, val 0.85. 8.28 on --bg */
+  --kingfisher-milk: #77b7c7; /* the same, at fill strength: sat 0.40, val 0.78. 7.99 on --bg */
+  /* the loudest thing the palette owns, for the day something has to be unmissable. NOTHING USES IT
+     - it is here so the next person reaches for a colour that belongs rather than inventing one */
+  --burnt-orange: #e06f2d;    /* hue 22, sat 0.80, val 0.88. 5.52 on --bg */
+  --burnt-orange-milk: #cc8962; /* the same at fill strength: sat 0.52, val 0.80. 6.23 on --bg */
+  /* A THIRD HUE, ADDED DELIBERATELY AND ONLY FOR ATTENTION. The two-hue rule above still holds for
+     everything else; this one exists because attention had nowhere honest to sit. It was pointed at
+     the stone, which reads as a fault rather than as "you are needed", and cream failed for a
+     subtler reason worth recording: cream is 13.25 on --bg and the lichen 13.37, so at a 2px stroke
+     the two outlines have the same lightness and read as the same line however far apart their hues
+     are. LIGHTNESS, NOT HUE, is what separates a thin stroke.
+     DERIVED, not sampled - there is no photograph of this one. Chosen by maximising the SMALLER of
+     its two separations, from cream and from the lichen, since drifting toward either is what makes
+     it stop meaning anything: dE 31.7 from cream and 33.6 from the lichen, the most balanced pair
+     available in this family. A vanilla sits closer to cream than a deeper gold would - #deb659 was
+     40.0 away - so it is drawn as a 3px band rather than a hairline, which is what keeps the
+     distance legible. */
+  --vanilla: #edd780;         /* hue 48, sat 0.46, val 0.93. contrast 12.46 on --bg */
 
   /* the semantic layer points at them, so a consumer repalettes by moving the pointer without
      losing the record of where the colour came from */
   --status-good: var(--lichen);
   --status-warn: var(--stone-red);
+  /* THE THREE PLATE COLOURS. --status-* are the bright signalling colours, right for a stroke or a
+     pip and wrong for a body: the lichen at val 0.93 as a fill is a headlight. these three are what
+     a surface is painted with, and they all take dark text - near-black is 10.17 on the milk, 12.46
+     on the vanilla and 4.89 on the lifted stone, so all three clear the 4.5 body-text bar.
+     Their separations, for whoever repalettes next: the closest pair is the kingfisher milk against
+     the lifted stone at dE 47.6, then the stone against the vanilla at 49.5, then the milk against
+     the vanilla at 63.2. The set this replaced had a closest pair of 19.6. */
+  --fill-good: var(--kingfisher-milk);
+  --fill-warn: var(--stone-red-lift);
+  --fill-attention: var(--vanilla);
+  --text-on-fill: var(--accent-on-text);
+  --text-on-fill-dim: #3a3a40;
   /* the "this really needs attention" slot. NOTHING USES IT BY DEFAULT - an attention colour that
      is always on stops being one */
-  --attention: var(--stone-red-lift);
+  --attention: var(--vanilla);
   /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
@@ -549,6 +586,16 @@ body {
    visual language for "floating over everything" - only the animation is new here */
 .expand-backdrop { z-index: 70; }
 .expand-panel { overflow: auto; }
+
+
+/* ---- drawer.js: parked at one edge showing only a sliver, opens into the centre of its half ----
+   rides .panel-floating for the same reason expand.js does - a floating surface here has one
+   border and one shadow, not a second set invented per component */
+.drawer {
+  z-index: 55; display: flex; flex-direction: column; overflow: hidden;
+}
+.drawer:not(.open) { cursor: pointer; }
+.drawer-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
 
 
 /* ---- indicate.js: count badge ----

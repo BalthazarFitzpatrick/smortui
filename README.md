@@ -182,12 +182,14 @@ Override by redefining the tokens, not by fighting the rules.
 
 ### The palette
 
-Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. **Two hues, and
-only two**, because a colour that appears everywhere stops meaning anything.
+Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. **Two sampled
+hues and three derived ones** — kept few on purpose, because a colour that appears everywhere stops
+meaning anything.
 
-Both were sampled from photographs of lichen and stone. Each started
+The two families were sampled from photographs of lichen and stone. Each started
 as the median of its photo filtered to that hue band above 22% saturation, so it is the lichen and
-the stone themselves rather than their blend with grey.
+the stone themselves rather than their blend with grey. The third, `--vanilla`, belongs to no
+photograph: attention needed a colour of its own and neither family could give it one.
 
 | token | hex | what it is | contrast on the ground |
 |---|---|---|---|
@@ -195,6 +197,20 @@ the stone themselves rather than their blend with grey.
 | `--lichen-deep` | `#788f39` | the same lichen dark enough to be a fill | 4.93 — a fill, **not a bed for cream** |
 | `--stone-red` | `#996b62` | median of 39k stone pixels | 3.94 — a pip or a fill, **not text** |
 | `--stone-red-lift` | `#ad796f` | **derived**: the stone lifted in value, hue and saturation held | 4.89 |
+| `--kingfisher` | `#52bed9` | **derived**: the only cold colour in the system | 8.28 |
+| `--kingfisher-milk` | `#77b7c7` | the same at fill strength — what `--fill-good` points at | 7.99 |
+| `--burnt-orange` | `#e06f2d` | **derived**: the loudest thing here, deliberately unused | 5.52 |
+| `--burnt-orange-milk` | `#cc8962` | the same at fill strength | 6.23 |
+| `--vanilla` | `#edd780` | **derived**, and the third hue: attention had nowhere honest to sit | 9.31 — a ring, not a fill |
+
+`--vanilla` was chosen by maximising the *smaller* of its two separations, from cream and from the
+lichen: dE 31.7 and 33.6.
+
+**The working plate is cold on purpose.** Green against red is the one pairing that collapses under
+red-green colour blindness, which is most colour blindness there is — a board saying "running" in
+lichen and "rejected" in stone is a board some people cannot read. Blue against red survives it, so
+`--fill-good` points at the kingfisher. The three plates now sit 47.6, 49.5 and 63.2 apart; the
+green set they replaced had a closest pair of 19.6.
 
 The stone is genuinely dull, which is the point of it — so `--stone-red-lift` exists for the one case
 that needs a highlight to carry text, and the CSS marks it as derived rather than sampled.
