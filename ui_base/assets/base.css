@@ -328,6 +328,79 @@ body {
 }
 .strip > .cell:last-child { border-right: 0; }
 
+/* ---- card: a bounded surface with a head, a body and a foot, ruled between ------------------
+   NOT AN APPLICATION'S CARD. this knows nothing about what is written on it - it is the shape:
+   a reserved title band, a rule, a body that takes the slack, a rule, and secondary facts on the
+   floor. the host fills it.
+   TALLER THAN IT IS WIDE so a title has room above the rule instead of sharing a line with
+   everything else. the ratio lives here and nowhere else, because makeExpander reads the element's
+   own rect as its animation's starting box. */
+.card {
+  aspect-ratio: 1 / 1.2;
+  border: 2px solid var(--grey-border);
+  background: var(--panel-row);
+  padding: 8px 12px;
+  display: flex; flex-direction: column; justify-content: flex-start; gap: 0;
+  cursor: pointer;
+}
+.card-head { flex: 0 0 auto; padding-bottom: 8px; }
+/* ALWAYS TWO ROWS, whether the title needs them or not. a title block that grows with its text puts
+   every rule and every foot at a different height, and a wall of cards stops reading as a grid.
+   line-height is stated because the reserved height is computed from it */
+.card-title {
+  color: var(--cream);
+  line-height: 1.35; min-height: calc(2 * 1.35em);
+  overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+/* the rule stops short of the border. run edge to edge it collides with the frame and reads as a
+   break in the card rather than a division inside it - the same reason dividers never touch a
+   container's edge anywhere else in this file */
+.card > .h-divider { flex: 0 0 auto; margin: 0 -4px; }
+.card-body {
+  flex: 1 1 auto; min-height: 0; overflow: hidden;
+  padding-top: 8px; color: var(--text-dim);
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+}
+.card-foot {
+  flex: 0 0 auto; display: flex; justify-content: space-between; gap: var(--gap);
+  color: var(--text-dim); padding-top: 8px;
+}
+.card-foot .stat { color: var(--text); flex: 0 0 auto; }
+
+/* ---- fan: a stack that overlaps, and opens around whatever has focus ------------------------
+   The focused item stays exactly where it is and the ones after it slide down. That is the whole
+   point: the thing you are reading is never the thing that moved. Pure CSS off :focus, so whatever
+   already moves focus - arrow keys, tab, a click - drives it, and nothing tracks a selection.
+   Only the siblings AFTER the focused item move. The ones before it are already fully visible,
+   since each item overlaps the one before it rather than the one after.
+
+   THE OVERLAP IS A PROPORTION, NOT A PIXEL COUNT. Held at a fixed pixel value the visible strip
+   shrinks with the column - measured at 106px of card showing in a wide window and 43px in a narrow
+   one - and narrow enough, the items hide completely. A percentage margin resolves against the
+   container's WIDTH, and the card is width x 1.2, so -80% hides two thirds of its height at any
+   size.
+
+   THE SEAM AND THE CAST TOGETHER. Collapsed, a stack reads as one ruled list: consecutive title
+   bands with nothing between them look like rows rather than like separate objects. A band of the
+   page's own ground cuts each item off from the one beneath, and the cast behind it does what a
+   real pile does. Either alone only hints at it.
+   THE SPREAD IS POSITIVE AND THAT IS THE POINT: a negative spread pulls the shadow in before it
+   blurs, so it rises off the top edge and never turns the corner. Spread buys the wrap around the
+   corners; blur buys the fade. Both offsets are negative because an item is pulled UP over the one
+   before it, so the edge doing the overlapping is its top. */
+.fan-item {
+  margin-top: -80%;
+  transition: transform 140ms;
+  box-shadow:
+    0 -8px 0 0 var(--bg),
+    0 -8px 20px 3px rgba(0, 0, 0, 0.72);
+}
+.fan-item:first-child { margin-top: 0; }
+.fan-item:focus { position: relative; z-index: 2; }
+/* the slide matches the hidden fraction, so a focused item is revealed exactly */
+.fan-item:focus ~ .fan-item { transform: translateY(80%); }
+
 /* ---- nav bar: ONE BAR, not a row of folder tabs ----
    each tab used to be its own box with border-bottom removed, so the strip read as eight open
    containers competing with the panels below it. one bordered bar with the active tab underlined

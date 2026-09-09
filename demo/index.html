@@ -225,6 +225,21 @@
   <div id="buckets-demo" style="display: flex; gap: var(--gap); max-width: 700px;"></div>
   <div class="stat" id="buckets-said" style="margin-top: 8px;">focus a row and use the arrow keys</div>
 
+  <h2>card, and the fan</h2>
+  <p class="demo-note">
+    A card is a shape, not a subject: a title band reserved at two rows whether the title needs
+    them or not, a rule, a body that takes the slack, a rule, and secondary facts on the floor.
+    The two-row reserve is what keeps a wall of them reading as a grid rather than as a ragged pile.
+  </p>
+  <p class="demo-note">
+    The fan stacks them. <b>Tab or click into one</b> and it stays exactly where it is while the
+    ones after it slide down &mdash; the item you are reading is never the item that moved. The
+    overlap is a proportion rather than a pixel count, so the visible strip survives a narrow
+    window. Collapsed, an 8px band of the page's own ground plus a cast that wraps the top corners
+    is what stops the stack reading as one ruled list.
+  </p>
+  <div id="fan-demo" style="display: flex; gap: var(--gap); max-width: 560px;"></div>
+
   <h2>expand: a strip that opens into a panel</h2>
   <p class="demo-note">
     A landscape strip grows into a centred portrait panel, reusing <code>.modal-backdrop</code> and
@@ -558,6 +573,33 @@ makeExpander(document.getElementById('expand-strip'), {
   let count = 0;
   indicateBadge(slot, count);
   document.getElementById('badge-bump').onclick = () => { count = (count + 1) % 4; indicateBadge(slot, count); };
+})();
+
+// ---- card and fan: two columns of stacked cards, opening around whatever takes focus
+(function buildFan() {
+  const host = document.getElementById('fan-demo');
+  if (!host) return;
+  const columns = [
+    ['cut the worktree', 'enforce the lease', 'stream the events'],
+    ['run the gates', 'surface the merge', 'brief the resume'],
+  ];
+  const body = 'A body long enough to be clamped, so the foot stays where the other cards put it.';
+  columns.forEach(titles => {
+    const col = document.createElement('div');
+    col.style.cssText = 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;';
+    titles.forEach((title, i) => {
+      const card = document.createElement('div');
+      card.className = 'card fan-item';
+      card.tabIndex = 0;
+      card.innerHTML = `<div class="card-head"><div class="card-title">${title}</div></div>
+        <div class="h-divider"></div>
+        <div class="card-body">${body}</div>
+        <div class="h-divider"></div>
+        <div class="card-foot"><span>a workstream</span><span class="stat">${i + 1}</span></div>`;
+      col.appendChild(card);
+    });
+    host.appendChild(col);
+  });
 })();
 
 // ---- focus marker: glides between whichever row last took focus
