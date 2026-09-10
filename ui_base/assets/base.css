@@ -120,6 +120,15 @@
   --gap: 8px;        /* between rows inside a panel */
   --inset: 12px;     /* a panel's own top and bottom */
   --inset-x: 14px;   /* a panel's sides, and any row's own gutter */
+
+  /* THE ONE TIMING EVERY ANIMATED THING IN THIS KIT READS. expand.js reads these at run time via
+     getComputedStyle rather than hardcoding its own 220ms, so a host that retunes motion here
+     retunes the expander too without touching its script.
+     the ease is a shallow ease-out: motion starts near full speed and settles rather than
+     decelerating hard at the end, which reads as gentler than the browser default `ease` on a
+     box this large without feeling like it drifts to a stop */
+  --motion-duration: 220ms;
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 * { box-sizing: border-box; }
