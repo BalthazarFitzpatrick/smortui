@@ -70,4 +70,32 @@ const panel2 = document.body.children[document.body.children.length - 1].childre
 document.body.children[document.body.children.length - 1]._listeners.mousedown[0]({target: panel2});
 assert.equal(closes, 2, 'a click that lands on the panel, not the backdrop, must not dismiss it');
 
+// ---- the stub has no getComputedStyle: motion must fall back cleanly, at the 220ms default
+assert.ok(panel2.style.transition.includes('220ms'), 'missing getComputedStyle should fall back to 220ms');
+
+// ---- open sets FINAL geometry synchronously (a transform does the visual growing, not width/height,
+// so text lays out once rather than reflowing every animation frame)
+assert.ok(Math.abs(parseFloat(panel2.style.width) - 800 / 3) < 0.01, 'panel width is set to its final size immediately on open');
+// this stub runs requestAnimationFrame synchronously, so by the time open() returns the two rAFs
+// have already landed the panel at its rest transform - real browsers paint the scaled start first
+
+// ---- close marks expand-closing and calls onClose synchronously, before the collapse animation lands
+let closes2 = 0;
+const expander2 = makeExpander(strip, {onOpen: () => {}, onClose: () => { closes2++; }});
+strip._listeners.click[strip._listeners.click.length - 1]();
+const openBackdrop = document.body.children[document.body.children.length - 1];
+expander2.close();
+assert.equal(closes2, 1, 'onClose fires synchronously inside close()');
+assert.ok(openBackdrop.className.includes('expand-closing'), 'expand-closing is added synchronously on close');
+assert.equal(openBackdrop.style.pointerEvents, 'none', 'a closing backdrop stops taking clicks immediately');
+assert.equal(openBackdrop.removed, undefined, 'the backdrop is not removed synchronously - it collapses first');
+
+// ---- a new open() while the old backdrop is still collapsing must not be blocked by it
+strip._listeners.click[0]();
+assert.equal(document.body.children[document.body.children.length - 1].removed, undefined, 'a fresh expander opened normally');
+
+// ---- the dying backdrop is removed after the fallback timeout (no transitionend in this stub)
+await new Promise(resolve => setTimeout(resolve, 280));
+assert.ok(openBackdrop.removed, 'the closing backdrop is removed once the fallback timer fires');
+
 console.log('ok');
