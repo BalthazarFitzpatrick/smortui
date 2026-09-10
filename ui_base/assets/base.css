@@ -657,6 +657,18 @@ body {
 .slider-bin { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
 .slider-bin span { display: block; width: 4px; background: var(--cream); opacity: 0.75; }
 
+/* ---- fill bar: how far along something is, moved here from consumer-app's review tool ----------
+   the bar full width with any status UNDER it, so bars in one panel line up whatever their text */
+.progress-row { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+/* NO BORDER. a track drawn round the fill reads as a second element at a different line weight;
+   the unfilled part is just the page ground showing through the panel */
+.bar { flex: 1 1 auto; height: 8px; background: var(--bg); }
+.bar-fill { height: 100%; width: 0; background: var(--cream); }
+/* a tone colours the fill by state, from the same fills the rest of the palette uses */
+.bar-fill.good { background: var(--fill-good); }
+.bar-fill.warn { background: var(--fill-warn); }
+.bar-fill.attention { background: var(--fill-attention); }
+
 /* ---- the sweep row: the recording name takes the slack, the rest sits right ---- */
 .sweep-row { display: flex; align-items: center; gap: 10px; }
 .sweep-row .grow { flex: 1 1 auto; min-width: 0; justify-content: space-between; }
