@@ -580,6 +580,13 @@ body {
   border: 2px solid var(--grey-border); padding: 0 10px;
   font: inherit; min-width: 0;
 }
+/* A TEXTAREA DOES NOT CENTRE ITS LINE the way an input does - with no vertical padding its first
+   line sat flush against the top border, visibly higher than the text in the input beside it. the
+   padding puts one line where an input would put it, and further lines grow downward from there */
+textarea.text-field {
+  height: auto; min-height: var(--row-height);
+  padding-block: calc((var(--row-height) - 4px - 1lh) / 2);
+}
 .text-field:focus { outline: none; border-color: var(--cream); color: var(--cream); }
 .text-field::placeholder { color: var(--text-dim); opacity: 1; }
 .menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
