@@ -77,6 +77,10 @@ two verbs get a colour**: one that adds and one that takes away. Everything else
 a palette where every button is coloured has stopped saying anything. The colour sits on the border
 at rest and only fills on hover.
 
+`.text-field` is an input or a textarea at the same row height and border as a toggle. A textarea
+puts its first line where an input would and grows downward from there. Guidance that would wrap a
+row as prose becomes a round `?` (`helpTip`): hover to peek, click to pin.
+
 ### Menus
 
 ![A menu with every section kind open: an add row, two columns, a node, fields and a button](docs/images/menu.png)
@@ -121,7 +125,9 @@ in place, keeping its position and any class you added after opening. `multi` de
   rect as the start of the animation. It owns no persistence.
 - **Drawer** (`makeDrawer`): a sliver parked at a screen edge that opens into the middle of its half.
 - **Badge and focus marker** (`indicate.js`): a count badge hidden at zero, and one marker element
-  that glides between focus targets rather than a ring drawn by each.
+  that glides between focus targets rather than a ring drawn by each. It lands where a moving target
+  comes to rest, only the element focused last may move it, and it follows a list that scrolls
+  under it.
 - **Hazard stripes**: a placeholder for content that is not there yet, so empty reads as "nothing
   here on purpose" rather than "failed to load".
 
@@ -199,6 +205,8 @@ Every behaviour here was paid for by a real failure in a tool first:
   click until it was added
 - `reset view` set the scale back and left the pan alone - so reset centres too
 - with shift held, a browser sends the wheel as `deltaX`, so shift+scroll only ever zoomed out
+- the focus marker left a timer and a listener behind on every element it visited, and a fast run of
+  arrow keys through a fan came due late and dragged it back to cards focus had already left
 
 Copying the files copies the code and loses the reasons. The reasons are most of the value, so they
 live in the comments and travel with it. Used by
