@@ -34,10 +34,11 @@ calls `initShell`.
 ```python
 from ui_base import read_asset, UiBaseError
 
+# a path like /ui/menu.js -> "menu.js"; refuses anything outside the assets
 try:
-    body = read_asset(name)   # a path like /ui/menu.js -> "menu.js"; refuses anything outside the assets
+    body = read_asset(name)
 except UiBaseError:
-    ...                       # 404
+    ...  # 404
 ```
 
 ```html
