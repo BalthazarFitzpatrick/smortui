@@ -1,72 +1,87 @@
-# ui_base
+# smortui
 
-The shared web interface for these tools. One stylesheet and three scripts — menus, dropdowns, a tab
-shell, sliders, pan/zoom and crop alignment — that a local Python tool serves to get an interface
-that looks and behaves like one product.
+**The shared web interface for a family of local tools.** One stylesheet and a handful of plain
+scripts - menus, a tab shell, a keyboard-first board layout, cards, drawers, selection, pan and
+zoom - that a small Python server hands out so every tool looks and behaves like one product.
 
-**No build step, no framework, no npm.** A `<link>` and three `<script>` tags.
+**No build step, no framework, no npm.** A `<link>` and a few `<script>` tags.
+
+![smortboard, a kanban board for coding agents, built entirely from smortui's pieces](docs/images/smortboard.png)
+
+<sub>[smortboard](https://github.com/BalthazarFitzpatrick/smortboard) is built from these pieces:
+buckets, cards and the fan, drawers, expanders, menus, the focus marker, the palette.</sub>
+
+---
+
+## Start
 
 ```bash
+git clone https://github.com/BalthazarFitzpatrick/smortui && cd smortui
 uv sync
-uv run python demo/serve.py --port 8770     # every component, on one page
+uv run python demo/serve.py --port 8770     # every component on one page
 ```
 
-## Why this exists as a project rather than a copy
+In a tool, pin it by commit (the repo is `smortui`; the Python package inside is `ui_base`):
 
-These grew inside one tool, and every behaviour here was paid for by a real failure there:
+```toml
+dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@<commit sha>"]
+```
 
-- a popup with no dismiss handler left a stale selection alive, which the *next* right-click swept
-  up and applied — so `Menu` always fires `onDismiss`, even when cancelled
-- a shared dismiss handler hardcoded its trigger ids in one selector string, so every new menu had
-  to be added to it or it closed on its own opening click
-- `reset view` set the scale back to 1 and left the pan alone, which reads as a button that half
-  works — so reset centres too
-- with shift held, a browser sends the wheel as `deltaX`; reading `deltaY` alone made every
-  shift+scroll take the zoom-out branch, so the image only ever shrank
-
-Copying the files into the next project copies the code and loses the reasons. The reasons are most
-of the value, so they live in the comments here and travel with it.
-
-## Using it
+Serve its assets from your request handler, then load them in the page. **Order matters**:
+`base.css` first so your own stylesheet can override it, and `shell.js` before the script that
+calls `initShell`.
 
 ```python
-from ui_base import ASSETS, read_asset, UiBaseError
+from ui_base import read_asset, UiBaseError
 
-# in a request handler, for a path like /ui/menu.js
+# a path like /ui/menu.js -> "menu.js"; refuses anything outside the assets
 try:
-    body = read_asset(name)  # refuses anything outside ASSETS
+    body = read_asset(name)
 except UiBaseError:
     ...  # 404
 ```
-
-Then in the page. **Order matters**: `base.css` first so your own stylesheet can override it, and
-`shell.js` before the script that calls `initShell`.
 
 ```html
 <link rel="stylesheet" href="/ui/base.css">
 <link rel="stylesheet" href="/ui/your-layout.css">
 <script src="/ui/menu.js"></script>
 <script src="/ui/shell.js"></script>
-<script src="/ui/align.js"></script>   <!-- only if you need crop alignment -->
 ```
 
-`read_asset` resolves the path and checks it is still inside `ASSETS`, rather than string-matching
-on `..` — the only reliable test, and the classic hole in a route that concatenates a
-caller-supplied name onto a directory.
+`read_asset` resolves the path and checks it is still inside the asset folder rather than
+string-matching on `..` - the only reliable test, and the classic hole in a route that concatenates
+a caller's name onto a directory. `demo/serve.py` is exactly that wiring, so if the demo works, the
+instructions above are right.
 
 ## What is in it
 
 | file | gives you |
 |---|---|
-| `base.css` | the tokens and the primitives: `.toggle`, dividers, columns, panels, the row height |
+| `base.css` | the tokens and every primitive: `.toggle`, dividers, columns, panels, rows, cards, the fan, badges, hazard stripes |
 | `menu.js` | `Menu`, `listMenu`, `renderTree`, `makeSlider`, `makePanZoom` |
-| `shell.js` | `initShell`, `activateTab` — tabs, keyboard nav, and remembering where you were |
-| `align.js` | `makeAligner` — drag a crop under a fixed guide, `wasd` nudging, live preview |
+| `shell.js` | `initShell`, `activateTab` - tabs, keyboard nav, remembering where you were |
+| `buckets.js` | `makeBuckets` - side-by-side lists with 2D roving focus |
+| `expand.js` | `makeExpander` - a strip that grows into a centred panel and back |
+| `drawer.js` | `makeDrawer` - a sliver at a screen edge that opens into its half |
+| `indicate.js` | `indicateBadge`, `indicateFocus` - a count badge and a gliding focus marker |
+| `select.js` | `makeSelection` - click, cmd+click, shift+drag, right-click over a grid |
+| `align.js` | `makeAligner` - drag a crop under a fixed guide, `wasd` nudging, live preview |
 
-### `Menu`
+### Controls
 
-One class for every popup: dropdowns, right-click menus, pickers. Generic sections, so a new menu is
-a data structure rather than new code.
+![Toggles, the two coloured verbs, columns with a divider](docs/images/controls.png)
+
+**One clickable class**, `.toggle`, for buttons, list rows, filter pills and dropdown heads. **Only
+two verbs get a colour**: one that adds and one that takes away. Everything else stays grey, because
+a palette where every button is coloured has stopped saying anything. The colour sits on the border
+at rest and only fills on hover.
+
+### Menus
+
+![A menu with every section kind open: an add row, two columns, a node, fields and a button](docs/images/menu.png)
+
+One class for every popup - dropdowns, right-click menus, pickers - built from generic sections, so
+a new menu is a data structure rather than new code.
 
 ```js
 new Menu({
@@ -79,170 +94,123 @@ new Menu({
 
 | section kind | for |
 |---|---|
-| `list` | rows with optional `stats`, `on`, `disabled`, `state`, and a trailing `action` control |
-| `columns` | two or more axes side by side, split by dividers. Each column takes its own `label`, `items`, `empty`, `multi` and `onPick`, so "available" can sit beside "open" and behave differently |
+| `list` | rows with optional `stats`, `on`, `disabled`, `state`, and a trailing `action` |
+| `columns` | two or more axes side by side, each with its own `label`, `items`, `empty`, `multi`, `onPick` |
 | `add` | a "+ new" row: a text field and a button |
 | `field` | a single text input |
 | `buttons` | a footer row of actions |
-| `node` | the escape hatch — content you built yourself, placed and styled by the panel |
+| `node` | content you built yourself, placed and styled by the panel |
 
-`listMenu(title, items, onPick)` is the one-liner for the common case.
+The class owns anchoring, viewport clamping, one menu at a time, dismissal on outside click and
+Escape, and arrow/Enter navigation. An item's `state` flags become classes on its row. `persistent:
+true` is for a menu you work in rather than pick from. `menu.refresh(sections)` rebuilds an open menu
+in place, keeping its position and any class you added after opening. `multi` defaults to true in
+`columns` and false in a `list`.
 
-An item's `state` is an object of flags, and every truthy one becomes a class on the row — the same
-convention `renderTree` uses. The caller keeps its own styling and the menu stays ignorant of what
-any flag means:
+### Board primitives
 
-```js
-{id: 'spin', label: 'turn full circle in 20 taps', state: {done: true, current: false}}
-// -> <div class="toggle menu-item done">
-```
+![Buckets with 2D roving focus, and a fan of cards](docs/images/board-primitives.png)
 
-`persistent: true` is for a menu you *work in* rather than pick from — opening three datasets
-should not mean reopening the menu three times. Picking never dismisses it; clicking away, Escape
-or its own `close` button does, and it grows that close button itself so there is always a visible
-way out. An item with a `heading` instead of a `label` divides a column into sections, the same
-shape `renderTree` takes.
+- **Buckets** (`makeBuckets`): arrow keys move across both axes. Only the focused row sits in the tab
+  order. Moving into a shorter bucket clamps to its last row; up from the top exits the grid.
+- **Card and fan**: a card is a shape, not a subject - a title band reserved at two rows, a rule, a
+  body, a rule, a foot. The fan stacks them; the one you focus stays put and the ones after it slide
+  down, so the item you are reading is never the one that moved.
+- **Expander** (`makeExpander`): a strip grows into a centred panel and shrinks back, reading its own
+  rect as the start of the animation. It owns no persistence.
+- **Drawer** (`makeDrawer`): a sliver parked at a screen edge that opens into the middle of its half.
+- **Badge and focus marker** (`indicate.js`): a count badge hidden at zero, and one marker element
+  that glides between focus targets rather than a ring drawn by each.
+- **Hazard stripes**: a placeholder for content that is not there yet, so empty reads as "nothing
+  here on purpose" rather than "failed to load".
 
-`menu.refresh(sections)` rebuilds an open menu in place, keeping its position — for columns that
-move items between themselves as you pick, where closing and reopening would flicker.
+### Selection
 
-Note `multi` defaults to **true** inside a `columns` section and **false** in a `list`. A
-single-select pick closes the whole menu, including the other columns.
+`makeSelection` is click, cmd/ctrl+click, shift+drag and right-click over a grid. Plain click picks
+rather than toggling a destructive flag; shift+drag draws a net on screen rather than a range through
+the rendered order, because the mismatches you can see sit together on screen.
 
-The class owns anchoring, viewport clamping, one-menu-at-a-time, dismissal on outside click and
-Escape, and arrow/Enter keyboard navigation. Call sites never repeat any of that.
+### Pan, zoom, slider, aligner
 
-### `makeSlider`
-
-An axis with ticks rather than a number field, because a threshold is a position in a range. Takes
-an optional `distribution` drawn over the axis — the point being that *"no results"* and *"no
-results because your cut sits above every value in the data"* look identical until something shows
-the shape.
-
-### `makePanZoom`
-
-Wheel zoom anchored on the pointer, drag to pan, `reset(width, height)` to fit and centre. Zooming
-about a corner walks whatever you are aiming at off screen, which is the thing zoom exists to
-prevent.
-
-### `makeAligner`
-
-For last-pixel work: drag the image under a fixed guide, `wasd` for 1px steps, clamped to the crop,
-with an optional live preview of the result. It owns the interaction and the clamping and **owns no
-persistence** — the host decides where a corrected rect is saved, which is what makes it reusable.
-
-### Spacing
-
-Four tokens carry the vertical rhythm, named for what they space rather than how big they are:
-
-| token | for |
-|---|---|
-| `--gap` | between rows inside a panel |
-| `--inset` | a panel's own top and bottom |
-| `--inset-x` | a panel's sides, and any row's own gutter |
-| `--font-size` | the only size there is |
-
-**One font size, everywhere.** There were nine, between 10px and 13px. Emphasis is carried by
-colour (`--text-dim`, `--text`, `--cream`) and by the row a thing sits in; size was a third channel
-saying the same thing less clearly, and it made a caption and the button beside it look like parts
-of different applications. A test fails the build if a `font-size` is set anywhere but the token.
-
-Use them instead of literals. A consumer that hardcodes `8px` looks identical until the day the
-rhythm changes, and then it is the one tab that did not move.
-
-`.h-divider` adds **no** vertical space of its own — the parent's `gap` spaces it like any other
-child, so a rule costs its 2px and nothing more. Giving it a margin as well stacked the two and made
-a ruled gap four times a plain one.
-
-`.strip` is a row of equal `.cell`s, divided and vertically centred — a telemetry or status row.
-Cells share the width rather than being sized by content, so they line up with whatever sits below
-them. Row primitives — `.field-label`, `.row-label`, `.field-value`, `.run-controls`,
-`.filter-row`, `.stat`, `.spacer` — live here so two consumers cannot disagree about what a row of
-controls looks like. `.row-label` is a caption that occupies a full `--row-height`, so a panel
-opening with a label starts at the same height as one opening with buttons.
+`makePanZoom` zooms about the pointer and `reset` fits and centres. `makeSlider` is an axis with ticks
+and an optional distribution drawn over it, so "no results" and "your cut sits above every value"
+stop looking identical. `makeAligner` is for last-pixel crop work and owns no persistence.
 
 ## The visual language
 
-Six rules carry the whole look. They are in `base.css`'s header too, because that is where someone
-about to override something will be looking.
+Six rules carry the whole look. They are in `base.css`'s header too, where someone about to
+override something will be looking.
 
-1. **One row height, app-wide** (`--row-height`). Every row and button is that tall, so nothing
-   reads as a different size class.
-2. **One clickable class**, `.toggle` — buttons, list rows, filter pills, dropdown heads.
-3. **Dividers never touch the container edge.** 15px inset, 2px thick — the same weight as a button
+1. **One row height, app-wide** (`--row-height`). Every row and button is that tall.
+2. **One clickable class**, `.toggle`.
+3. **Dividers never touch the container edge.** 15px inset, 2px thick - the weight of a button
    border, because a 1px rule beside 2px buttons reads as a different system.
-4. **Selection is bright, rejection is muted.** Rejecting something is a decision, not an
-   achievement; giving it the accent makes a wall of rejections look like a wall of wins.
-5. **Text stays selectable.** `user-select: none` on controls also makes every name and readout
-   uncopyable, which costs more than the stray drag-select it prevents.
-6. **Monospace throughout**, because these tools show filenames, counts and coordinates, and those
-   line up or they are not readable.
+4. **Selection is bright, rejection is muted.** Rejecting is a decision, not an achievement.
+5. **Text stays selectable.** `user-select: none` also makes every name and readout uncopyable.
+6. **Monospace throughout**, because these tools show filenames, counts and coordinates.
+
+**One font size, everywhere** (`--font-size`); emphasis is carried by colour and by the row a thing
+sits in. A test fails the build if a `font-size` is set anywhere but the token. Four more tokens
+carry the vertical rhythm: `--gap` between rows in a panel, `--inset` a panel's top and bottom,
+`--inset-x` its sides, and `--row-height`. `.h-divider` adds no space of its own - the parent's
+`gap` spaces it like any other child.
 
 Override by redefining the tokens, not by fighting the rules.
 
-### The palette
+## The palette
 
-Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. **Two sampled
-hues and three derived ones** — kept few on purpose, because a colour that appears everywhere stops
-meaning anything.
+![The palette: lichen, lichen milk and lichen deep; stone red and its lift; kingfisher, kingfisher milk and vanilla; burnt orange held in reserve - each with its hex and contrast on the ground](docs/images/palette.png)
 
-The two families were sampled from photographs of lichen and stone. Each started
-as the median of its photo filtered to that hue band above 22% saturation, so it is the lichen and
-the stone themselves rather than their blend with grey. The third, `--vanilla`, belongs to no
-photograph: attention needed a colour of its own and neither family could give it one.
-
-| token | hex | what it is | contrast on the ground |
-|---|---|---|---|
-| `--lichen` | `#c7ed5f` | **corrected** from the measured median — see below | **13.37** — carries text |
-| `--lichen-deep` | `#788f39` | the same lichen dark enough to be a fill | 4.93 — a fill, **not a bed for cream** |
-| `--stone-red` | `#996b62` | median of 39k stone pixels | 3.94 — a pip or a fill, **not text** |
-| `--stone-red-lift` | `#ad796f` | **derived**: the stone lifted in value, hue and saturation held | 4.89 |
-| `--kingfisher` | `#52bed9` | **derived**: the only cold colour in the system | 8.28 |
-| `--kingfisher-milk` | `#77b7c7` | the same at fill strength — what `--fill-good` points at | 7.99 |
-| `--burnt-orange` | `#e06f2d` | **derived**: the loudest thing here, deliberately unused | 5.52 |
-| `--burnt-orange-milk` | `#cc8962` | the same at fill strength | 6.23 |
-| `--vanilla` | `#edd780` | **derived**, and the third hue: attention had nowhere honest to sit | 9.31 — a ring, not a fill |
-
-`--vanilla` was chosen by maximising the *smaller* of its two separations, from cream and from the
-lichen: dE 31.7 and 33.6.
-
-**The working plate is cold on purpose.** Green against red is the one pairing that collapses under
-red-green colour blindness, which is most colour blindness there is — a board saying "running" in
-lichen and "rejected" in stone is a board some people cannot read. Blue against red survives it, so
-`--fill-good` points at the kingfisher. The three plates now sit 47.6, 49.5 and 63.2 apart; the
-green set they replaced had a closest pair of 19.6.
-
-The stone is genuinely dull, which is the point of it — so `--stone-red-lift` exists for the one case
-that needs a highlight to carry text, and the CSS marks it as derived rather than sampled.
+Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. The hues are kept
+few on purpose, because a colour that appears everywhere stops meaning anything. Two families were
+sampled from photographs of lichen and stone - each the median of its photo filtered to that hue
+band above 22% saturation, so it is the lichen and the stone themselves rather than their blend with
+grey. The rest are derived.
 
 **The lichen is the interesting one, because sampling got it wrong.** The photo's median is
-`#bcbf88`, and that value is faithful to the *photograph* rather than to the lichen. Overcast light
-and phone processing flattened it: the most saturated pixel in the image is dark (`#6c6e3b`, value
-0.43) and the brightest is washed out (`#fcfebb`, saturation 0.26), so no pixel is both vibrant and
-pale. Balthazar Fitzpatrick, who was standing there: *"much more vibrant, like a pale lime, the photos dont do it
-justice."* Saturation is therefore raised to 0.60 and the hue nudged 62° → 76°, judged by eye
-against the real thing. **Measurement fixed the family; only the person who saw it could fix the
-rest** — which is worth recording, because a palette that says "sampled" invites the next person to
-trust the number over the witness.
+`#bcbf88`, faithful to the *photograph* rather than to the lichen: overcast light and phone
+processing left no pixel both vibrant and pale. Balthazar Fitzpatrick, who was standing there:
+*"much more vibrant, like a pale lime, the photos dont do it justice."* Saturation was raised to 0.60
+and the hue nudged 62° → 76° by eye against the real thing. **Measurement fixed the family; only the
+person who saw it could fix the rest.**
 
-`--lichen-deep` carries a correction of its own: its comment used to claim it was "a fill that
-carries cream text". Cream on it is **3.00**, well under the 4.5 text needs. The 4.88 in that
-comment was its contrast against the *ground*, mislabelled. It takes dark text, or none.
+**Lichen milk** is the same lichen at the strength kingfisher milk already has: pale enough to mark a
+finished step, a verdict or a menu accent without shouting over the words. Full lichen stays for
+frames and button accents.
 
-`--status-good`, `--status-warn` and `--attention` point at these. Repalette by moving the pointer;
-the record of where the colour came from stays. **Nothing uses `--attention` by default** — an
-attention colour that is always on stops being one.
+**The working plate is cold on purpose.** Green against red is the pairing that collapses under
+red-green colour blindness, which is most colour blindness there is, so `--fill-good` points at the
+kingfisher milk. `--vanilla` belongs to no photograph: attention needed a colour of its own, and it
+was chosen by maximising the smaller of its two separations, from cream and from the lichen.
 
-Two more colours were sampled and deliberately left out: the deepest lichen (`#60622f`, 2.80) and the
-deepest stone (`#96594d`, 3.26). Both are lovely and both are illegible on this ground. The demo's
-colour tab shows contrast per swatch for exactly this reason — without the number, the next person
-reaches for them.
+`--status-good`, `--status-warn`, `--fill-*` and `--attention` point at these, so a repalette moves a
+pointer and the record of where each colour came from stays. **Nothing uses `--attention` by
+default** - an attention colour that is always on stops being one. The demo's colour tab shows every
+token with its contrast, and a test fails if a hue arrives without being named in it.
 
-## Status
+## Why it is a project rather than a copy
 
-Extracted from a review tool where all of this is in daily use, and consumed back by it as a package
-rather than kept as a copy — which is what proved the seam was real rather than assumed. Every
-behaviour here has been through a working application first.
+Every behaviour here was paid for by a real failure in a tool first:
+
+- a popup with no dismiss handler left a stale selection alive, which the next right-click swept up
+  and applied - so `Menu` always fires `onDismiss`
+- a shared dismiss handler hardcoded its trigger ids, so every new menu closed on its own opening
+  click until it was added
+- `reset view` set the scale back and left the pan alone - so reset centres too
+- with shift held, a browser sends the wheel as `deltaX`, so shift+scroll only ever zoomed out
+
+Copying the files copies the code and loses the reasons. The reasons are most of the value, so they
+live in the comments and travel with it. Used by
+[smortboard](https://github.com/BalthazarFitzpatrick/smortboard) and a screenshot review tool, both
+consuming it as a package.
+
+## Development
+
+```bash
+uv run pytest                                # asset serving, the palette guard, the font-size rule
+for f in tests/js/*.mjs; do node "$f"; done  # the scripts, against a stub DOM
+uv run ruff check .
+```
 
 ## Licence
 
