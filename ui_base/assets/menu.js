@@ -273,6 +273,8 @@ class Menu {
     const rebuilt = this._build();
     rebuilt.style.left = left;
     rebuilt.style.top = top;
+    // classes a caller added after opening (a width, a centred placement) survive the rebuild
+    rebuilt.className = this.el.className;
     this.el.replaceWith(rebuilt);
     this.el = rebuilt;
   }
