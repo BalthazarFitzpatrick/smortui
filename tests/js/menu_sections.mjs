@@ -228,4 +228,12 @@ assert.ok(held.el, 'a click on the head\u2019s own child is the head\u2019s to h
 held._onDocDown({target: element('div')});
 assert.equal(held.el, null, 'a click anywhere else still closes it');
 
+// ---- a class added after opening survives refresh, which swaps in a freshly built panel
+const placed = new Menu({title: 'placed', sections: [{kind: 'list', items: []}]});
+placed.openAt({x: 10, y: 10});
+placed.el.classList.add('menu-centered');
+placed.refresh([{kind: 'list', items: [{id: 'a', label: 'a'}]}]);
+assert.ok(placed.el.classList.contains('menu-centered'), 'a refresh dropped a caller-added class');
+placed.close();
+
 console.log('ok');
