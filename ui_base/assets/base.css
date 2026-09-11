@@ -194,6 +194,10 @@ body {
 .toggle.on .field-label,
 .toggle.on .stat { color: var(--text-on-accent-dim); }
 
+/* the round ?, for guidance that would otherwise sit in a row as prose and wrap it. same border,
+   font and height as every other control - only the radius and a square footprint differ */
+.toggle.help { width: var(--row-height); padding: 0; border-radius: 50%; font-weight: 600; }
+/* THE TIP, NEVER THE TRIGGER: fixed so it can sit over anything, placed by help.js beside its ? */
 .help-tip {
   position: fixed; z-index: 60; max-width: 380px; line-height: 1.5;
   background: var(--panel-row); border: 2px solid var(--grey-border);
