@@ -287,6 +287,7 @@ _HUES = {
     # sampled from photographs: two families, one of which has a deep and a milky member
     "--lichen",
     "--lichen-deep",
+    "--lichen-milk",
     "--stone-red",
     "--stone-red-lift",
     # derived, belonging to no photograph. the vanilla because attention had nowhere honest to sit,

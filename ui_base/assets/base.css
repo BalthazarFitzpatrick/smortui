@@ -52,6 +52,9 @@
      under the 4.5 text needs; 4.93 is its contrast against the GROUND, which an earlier comment
      mislabelled. Put dark text on it, or use it as a bare fill. */
   --lichen-deep: #788f39;     /* hue 76 held, val 0.56. 4.93 on --bg */
+  /* the lichen at the strength kingfisher milk already has: pale enough to mark a step, a verdict or
+     a menu accent without shouting over the words. full lichen stays for frames and button accents */
+  --lichen-milk: #b6cc7a;     /* hue 76 held, sat 0.40, val 0.80. 10.14 on --bg */
   --stone-red: #996b62;       /* 39k px sampled. contrast 3.94 - a pip or a fill, NOT text */
   /* DERIVED, not sampled: the stone is genuinely dull, which is the point of it, but 3.94 is under
      the 4.5 a highlight needs when it carries text. Value lifted to 0.68 with the stone's own hue
