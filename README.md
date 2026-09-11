@@ -64,6 +64,7 @@ instructions above are right.
 | `expand.js` | `makeExpander` - a strip that grows into a centred panel and back |
 | `drawer.js` | `makeDrawer` - a sliver at a screen edge that opens into its half |
 | `indicate.js` | `indicateBadge`, `indicateFocus` - a count badge and a gliding focus marker |
+| `help.js` | `helpTip` - a round `?` that shows its tip on hover and pins it on click |
 | `select.js` | `makeSelection` - click, cmd+click, shift+drag, right-click over a grid |
 | `align.js` | `makeAligner` - drag a crop under a fixed guide, `wasd` nudging, live preview |
 

@@ -28,6 +28,7 @@ EXPECTED = {
     "expand.js",
     "indicate.js",
     "drawer.js",
+    "help.js",
 }
 
 

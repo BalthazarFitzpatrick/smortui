@@ -11,6 +11,7 @@
 <script src="/ui/expand.js"></script>
 <script src="/ui/indicate.js"></script>
 <script src="/ui/drawer.js"></script>
+<script src="/ui/help.js"></script>
 <style>
   /* the demo's own layout only - everything that carries the LOOK is in base.css */
   body { display: flex; flex-direction: column; height: 100vh; }
@@ -95,7 +96,7 @@
     <div class="toggle removes">not a class</div>
     <div class="toggle adds disabled">adds, disabled</div>
     <div class="toggle removes disabled">removes, disabled</div>
-    <span class="help-tip" id="tip-demo" title="hover me, click to pin">?</span>
+    <div class="toggle help" id="tip-demo">?</div>
   </div>
 
   <h2>columns and dividers</h2>
@@ -473,8 +474,10 @@ document.getElementById('zoom-reset').onclick = () => view.reset(600, 340);
 
 // ---- help tip: hover shows, click pins. a tip that vanishes while you are reading it is worse
 // than no tip, which is why pinning exists at all
-const tip = document.getElementById('tip-demo');
-tip.onclick = () => tip.classList.toggle('pinned');
+helpTip(document.getElementById('tip-demo'), [
+  'hover shows this, moving away hides it',
+  'click pins it; click anywhere else, or scroll, to let go',
+]);
 
 // ---- the modal. ESCAPE PICKS THE HARMLESS ONE, always - a dialogue you can only leave by
 // choosing is a dialogue that gets answered wrongly under time pressure
