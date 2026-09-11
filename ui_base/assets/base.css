@@ -481,7 +481,10 @@ body {
   /* FIXED, or it lands at the bottom of the page. .panel-floating carries only the border and
      background - every popup this replaced declared its own position, and dropping those rules
      left the panel in normal document flow at the end of <body> */
-  position: fixed; z-index: 40;
+  position: fixed;
+  /* ABOVE THE FOCUS MARKER (50) AND THE DRAWERS (55), below a modal backdrop (60): at 40 the gliding
+     marker drew its cream frame straight through any menu opened over the focused card */
+  z-index: 58;
   display: flex; flex-direction: column; gap: 0;
   min-width: 180px; max-width: min(560px, 92vw);
   /* THE PANEL IS BOUNDED, THE BODY IS WHAT SCROLLS. this used to be overflow-y:auto on the panel
