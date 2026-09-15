@@ -29,6 +29,7 @@ EXPECTED = {
     "indicate.js",
     "drawer.js",
     "help.js",
+    "entrytext.js",
 }
 
 
@@ -100,6 +101,18 @@ def test_the_menu_builds_the_sections_it_promises():
     script = Path(__file__).parent / "js" / "menu_sections.mjs"
     result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
     assert result.returncode == 0, f"menu sections misbehave:\n{result.stdout}{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_entry_text_primitives_derive_headers_and_split_paragraphs():
+    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this exercises
+    deriveEntryHeader and splitEntryParagraphs directly against real strings, no DOM needed.
+    """
+    script = Path(__file__).parent / "js" / "entrytext.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, (
+        f"entry text primitives misbehave:\n{result.stdout}{result.stderr}"
+    )
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
