@@ -67,6 +67,7 @@ instructions above are right.
 | `help.js` | `helpTip` - a round `?` that shows its tip on hover and pins it on click |
 | `select.js` | `makeSelection` - click, cmd+click, shift+drag, right-click over a grid |
 | `align.js` | `makeAligner` - drag a crop under a fixed guide, `wasd` nudging, live preview |
+| `entrytext.js` | `deriveEntryHeader`, `splitEntryParagraphs` - header derivation and small-paragraph splitting for a log-like feed entry |
 
 ### Controls
 
