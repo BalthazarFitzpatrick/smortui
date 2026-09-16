@@ -132,6 +132,33 @@
      box this large without feeling like it drifts to a stop */
   --motion-duration: 220ms;
   --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* ---- THE PILE/FAN SPACING MODEL, two numbers plus a pile's own clearance.
+     ONE CARD HEIGHT FOR EVERY COLUMN TYPE, AND IT IS NEVER SHRUNK: --card-gap is the space between
+     two rows that do not overlap, --stack-peek the band a covered card still shows of itself once
+     the card after it is drawn over it. pile.js measures which of the two a column gets and reads
+     these four off :root - declared on body they resolve to its own fallbacks instead, which moves
+     the drawn layout without moving the maths that sizes it. */
+  --card-gap: 10px;
+  --stack-peek: 60px;
+  --pile-gap-above: 5px;  /* a pile's extra space past the shared row gap, above */
+  --pile-gap-below: 5px;  /* and below - 15px in total */
+  /* the flat lift under a pile's layers. a card may carry a richer shadow of its own; a layer is an
+     edge, and an edge only needs to sit off the one beneath it */
+  --shadow-lift: 0 2px 5px rgba(0, 0, 0, 0.35);
+  /* a pile's edge colour. the default; a host restates it on a pile to carry that pile's state */
+  --pile-edge: var(--grey-border);
+
+  /* ---- THE FOCUS HIGHLIGHT, four parts, each tunable on its own - see .focus-glow below */
+  --focus-lift: 1.03;                 /* how much larger the focused thing draws */
+  --focus-ring-width: 3px;            /* its own ring, inset so it rides the lift */
+  --focus-ring-color: var(--cream);
+  --focus-inner-glow-blur: 8px;       /* the ring bleeding inward, at half its first width */
+  --focus-inner-glow-spread: 1.5px;
+  --focus-inner-glow-color: color-mix(in srgb, var(--cream) 65%, transparent);
+  --focus-light-saturate: 1.7;        /* the coloured light cast over the whole face */
+  --focus-light-brightness: 1.4;
+  --focus-glow-ms: 140ms;
 }
 
 * { box-sizing: border-box; }
@@ -265,6 +292,44 @@ body {
   outline: none;
   box-shadow: 0 0 0 2px var(--cream);
 }
+
+/* ---- .focus-glow: the loud focus treatment, for a surface rather than a control ---------------
+   THE WHOLE THING LIGHTS UP, NOT JUST ITS EDGE. Balthazar Fitzpatrick, on seeing it on a board:
+   "it is not only the border that glows but the entire card gets that coloured light glow".
+   That is four separate things, and they are only good together - shipped as one class so every
+   consumer gets the same look from one name, with each part on its own custom property:
+
+     1. THE LIFT (--focus-lift). A touch larger, so the focused thing is nearer than its neighbours.
+     2. ITS OWN RING (--focus-ring-*). INSET, not an outline: an inset ring scales with the lift and
+        is covered by exactly what covers the element, which is what a fan or a pile needs. An
+        outline sits outside the box, unscaled, and draws over the neighbour lying on top of it.
+     3. THE INNER GLOW (--focus-inner-glow-*), the ring bleeding inward. HALF the blur and spread it
+        first shipped at - at full width it fought the drop shadow under the card.
+     4. THE COLOURED LIGHT over the whole face (--focus-light-*), which is the part that reads as a
+        light being shone on it rather than a frame being drawn around it. A filter, so it lifts
+        whatever colours the element already has instead of tinting everything one hue.
+
+   ON :focus, NOT :focus-visible: a click on a card is exactly as much "this is the one" as an arrow
+   key is, and the treatment is the only thing saying which card an action will land on.
+   TRANSFORM IS LEFT FREE for the host to animate - the lift is the one thing here that uses it, so
+   a host playing its own transform on the same element must state the scale itself. */
+.focus-glow { transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms); }
+/* the element draws its own ring, so the browser's outline would be a second one */
+.focus-glow:focus-visible { outline: none; }
+.focus-glow:focus {
+  transform: scale(var(--focus-lift));
+  filter: saturate(var(--focus-light-saturate)) brightness(var(--focus-light-brightness));
+  box-shadow:
+    inset 0 0 0 var(--focus-ring-width) var(--focus-ring-color),
+    inset 0 0 var(--focus-inner-glow-blur) var(--focus-inner-glow-spread) var(--focus-inner-glow-color);
+  /* above whatever overlaps it: it is drawn open with nothing over it, and its own scale would
+     otherwise grow under the element after it */
+  z-index: 2;
+}
+/* indicate.js's shared marker is a fixed overlay above everything: over a glowing element it framed
+   the unscaled box on top of that element's own ring and drew over its neighbours. it stays hidden
+   while anything wearing this has focus, and shows again for whatever takes focus next */
+body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
 
 /* ---- column grouping primitive: label-columns + col + divider, used beyond the popup now ---- */
 .label-columns { display: flex; flex-direction: row; align-items: stretch; }
@@ -416,6 +481,78 @@ body {
 .fan-item:focus { position: relative; z-index: 2; }
 /* the slide matches the hidden fraction, so a focused item is revealed exactly */
 .fan-item:focus ~ .fan-item { transform: translateY(80%); }
+
+/* ---- pile: what a column does with the cards even a fan cannot hold ---------------------------
+   A DESK PILE OF REAL CARDS, not a placeholder box. Each layer is nudged and turned from its own
+   card's id (pile.js's pileLayerJitter) and wears that card's own state edge, so what protrudes
+   tells you what is inside. The jitter is clamped to +-10px, the row gap a layer may protrude into,
+   so a layer never reaches a neighbour.
+   The height lands inline from the host (pile.js's PILE, a fixed 100px that never shrinks or
+   grows); the 100px here is only the fallback before that runs. */
+.card-pile {
+  position: relative;
+  height: 100px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  cursor: pointer;
+  /* the same two knobs pile.js's fit maths adds, so a pile's drawn gap and its sized gap cannot
+     drift apart */
+  margin-top: var(--pile-gap-above);
+  margin-bottom: var(--pile-gap-below);
+}
+.card-pile-layer {
+  position: absolute;
+  inset: 11px 0 11px 0;
+  border: 2px solid var(--pile-edge);
+  border-radius: 0;
+  background: var(--panel-row);
+  box-shadow: var(--shadow-lift);
+}
+/* THE TOP OF A PILE IS A REAL CARD, not a flat face standing in for one: the card that went on
+   last, jittered and turned like every layer under it, carrying its own title. The count used to be
+   a perfectly level card-sized rectangle over the lot, which read as a lid rather than a pile. */
+.card-pile-layer.card-pile-top { padding: 8px 12px; box-sizing: border-box; overflow: hidden; }
+.card-pile-top .card-title { color: var(--cream); }
+/* THE COUNT STAYS LEVEL whatever the card under it is doing - it is a badge over the whole pile, a
+   sibling of the layers rather than a child of one, so no rotation reaches it */
+.card-pile-count {
+  position: absolute;
+  inset: 11px 0 11px 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+/* whatever the host puts in it - a bare number or its own counts node - wears the pile's edge.
+   NO SIZE HERE: one font size is a rule of this file (see the body note), and a host that wants
+   its count to read larger than the titles under it states that in its own stylesheet */
+.card-pile-count > * {
+  background: var(--panel-row);
+  border: 2px solid var(--pile-edge);
+  padding: 0 8px;
+  font-weight: 700;
+}
+/* a pile is a focus target for the keyboard, and it has no lift or ring of its own to draw */
+.card-pile:focus-visible { outline: none; }
+
+/* ---- the fold, and the draw-in it replaced ---------------------------------------------------
+   A CARD GOING ONTO A PILE IS EATEN AT THE PILE'S OWN EDGE: it never slides through the pile and
+   out the far side. The motion itself is keyframes from pile.js (foldFrames), played by the host on
+   a copy of the row it lifts out of the flow - this only says what such a copy is. It sits among
+   the live rows for its paint order, so it must not take clicks.
+   The insert fade is for a row that is genuinely new in its role, not for every redraw: short on
+   purpose, since this is a stack of cards settling into place, not a page transition. */
+.row-ghost { pointer-events: none; }
+@keyframes row-enter-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.row-enter { animation: row-enter-in 140ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .row-enter { animation: none; }
+}
 
 /* ---- nav bar: ONE BAR, not a row of folder tabs ----
    each tab used to be its own box with border-bottom removed, so the strip read as eight open

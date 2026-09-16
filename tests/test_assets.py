@@ -30,6 +30,7 @@ EXPECTED = {
     "drawer.js",
     "help.js",
     "entrytext.js",
+    "pile.js",
 }
 
 
@@ -116,6 +117,18 @@ def test_the_entry_text_primitives_derive_headers_and_split_paragraphs():
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_pile_layout_picks_its_regime_by_measurement():
+    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above. What this guards is the one
+    rule the pile/fan model exists for - A CARD IS NEVER SHRUNK, what gives is how the cards meet -
+    plus the group stepping one card at a time and the fold shutting a card at its pile's own edge
+    without moving it. All pure, so no DOM stub is needed at all.
+    """
+    script = Path(__file__).parent / "js" / "pile_layout.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, f"pile layout misbehaves:\n{result.stdout}{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 def test_the_buckets_navigate_in_two_axes():
     """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this runs makeBuckets
     against a dom stub to prove the roving focus actually moves across both axes and clamps or
@@ -186,6 +199,29 @@ def test_the_spacing_tokens_exist_and_are_used_rather_than_repeated():
 
     rule = re.search(r"\.h-divider\s*\{(.*?)\}", css, re.DOTALL).group(1)
     assert "var(--inset-x)" in rule, "the rule's side inset must come from the token"
+
+
+def test_the_focus_highlight_keeps_its_four_parts_separately_tunable():
+    """ONE TREATMENT, FOUR KNOBS. The look is only right with all four together - the lift, the
+    element's own ring, the inner glow and the coloured light over the whole face - which is exactly
+    why it ships as one class. But a host retuning one of them must not have to restate the other
+    three, so every part reads its own token and none of them is a literal in the rule.
+    """
+    css = _css()
+    rule = re.search(r"\.focus-glow:focus\s*\{(.*?)\}", css, re.DOTALL)
+    assert rule, "the treatment must exist as one named class"
+    body = rule.group(1)
+    for part in (
+        "var(--focus-lift)",  # the lift
+        "var(--focus-ring-width)",  # its own ring, inset
+        "var(--focus-inner-glow-blur)",  # the ring bleeding inward
+        "var(--focus-light-saturate)",  # the coloured light over the face
+    ):
+        assert part in body, f"{part} must stay tunable on its own"
+    assert "inset 0 0 0 var(--focus-ring-width)" in body, (
+        "THE RING IS INSET, not an outline: an outline sits outside the box unscaled, so it does "
+        "not ride the lift and it draws over whatever is lying on top of the element"
+    )
 
 
 def test_a_rule_does_not_add_to_the_gap_it_sits_in():
