@@ -4,8 +4,6 @@
 scripts - menus, a tab shell, a keyboard-first board layout, cards, drawers, selection, pan and
 zoom - that a small Python server hands out so every tool looks and behaves like one product.
 
-**No build step, no framework, no npm.** A `<link>` and a few `<script>` tags.
-
 ![smortboard, a kanban board for coding agents, built entirely from smortui's pieces](docs/images/smortboard.png)
 
 <sub>[smortboard](https://github.com/BalthazarFitzpatrick/smortboard) is built from these pieces:
@@ -13,13 +11,10 @@ buckets, cards and the fan, drawers, expanders, menus, the focus marker, the pal
 
 ---
 
-## Start
+## Install
 
-```bash
-git clone https://github.com/BalthazarFitzpatrick/smortui && cd smortui
-uv sync
-uv run python demo/serve.py --port 8770     # every component on one page
-```
+Requirements: **Python 3.11+** and **uv**. Nothing else - no node, no npm, no build step. A
+`<link>` and a few `<script>` tags is the whole integration.
 
 In a tool, pin it by commit (the repo is `smortui`; the Python package inside is `ui_base`):
 
@@ -48,12 +43,71 @@ except UiBaseError:
 <script src="/ui/shell.js"></script>
 ```
 
-`read_asset` resolves the path and checks it is still inside the asset folder rather than
-string-matching on `..` - the only reliable test, and the classic hole in a route that concatenates
-a caller's name onto a directory. `demo/serve.py` is exactly that wiring, so if the demo works, the
-instructions above are right.
+`demo/serve.py` is exactly that wiring, so if the demo works, this integration is right.
 
-## What is in it
+## Quick start
+
+```bash
+git clone https://github.com/BalthazarFitzpatrick/smortui && cd smortui
+uv sync
+uv run python demo/serve.py --port 8770     # every component on one page
+```
+
+## Concepts
+
+### The visual language
+
+Six rules carry the whole look. They are in `base.css`'s header too, where someone about to
+override something will be looking.
+
+1. **One row height, app-wide** (`--row-height`). Every row and button is that tall.
+2. **One clickable class**, `.toggle`.
+3. **Dividers never touch the container edge.** 15px inset, 2px thick - the weight of a button
+   border, because a 1px rule beside 2px buttons reads as a different system.
+4. **Selection is bright, rejection is muted.** Rejecting is a decision, not an achievement.
+5. **Text stays selectable.** `user-select: none` also makes every name and readout uncopyable.
+6. **Monospace throughout**, because these tools show filenames, counts and coordinates.
+
+**One font size, everywhere** (`--font-size`); emphasis is carried by colour and by the row a thing
+sits in. A test fails the build if a `font-size` is set anywhere but the token. Four more tokens
+carry the vertical rhythm: `--gap` between rows in a panel, `--inset` a panel's top and bottom,
+`--inset-x` its sides, and `--row-height`. `.h-divider` adds no space of its own - the parent's
+`gap` spaces it like any other child.
+
+Override by redefining the tokens, not by fighting the rules.
+
+### The palette
+
+![The palette: lichen, lichen milk and lichen deep; stone red and its lift; kingfisher, kingfisher milk and vanilla; burnt orange held in reserve - each with its hex and contrast on the ground](docs/images/palette.png)
+
+Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. The hues are kept
+few on purpose, because a colour that appears everywhere stops meaning anything. Two families were
+sampled from photographs of lichen and stone - each the median of its photo filtered to that hue
+band above 22% saturation, so it is the lichen and the stone themselves rather than their blend with
+grey. The rest are derived.
+
+**The lichen is the interesting one, because sampling got it wrong.** The photo's median is
+`#bcbf88`, faithful to the *photograph* rather than to the lichen: overcast light and phone
+processing left no pixel both vibrant and pale. Balthazar Fitzpatrick, who was standing there:
+*"much more vibrant, like a pale lime, the photos dont do it justice."* Saturation was raised to 0.60
+and the hue nudged 62° → 76° by eye against the real thing. **Measurement fixed the family; only the
+person who saw it could fix the rest.**
+
+**Lichen milk** is the same lichen at the strength kingfisher milk already has: pale enough to mark a
+finished step, a verdict or a menu accent without shouting over the words. Full lichen stays for
+frames and button accents.
+
+**The working plate is cold on purpose.** Green against red is the pairing that collapses under
+red-green colour blindness, which is most colour blindness there is, so `--fill-good` points at the
+kingfisher milk. `--vanilla` belongs to no photograph: attention needed a colour of its own, and it
+was chosen by maximising the smaller of its two separations, from cream and from the lichen.
+
+`--status-good`, `--status-warn`, `--fill-*` and `--attention` point at these, so a repalette moves a
+pointer and the record of where each colour came from stays. **Nothing uses `--attention` by
+default** - an attention colour that is always on stops being one. The demo's colour tab shows every
+token with its contrast, and a test fails if a hue arrives without being named in it.
+
+## Components
 
 | file | gives you |
 |---|---|
@@ -116,7 +170,7 @@ in place, keeping its position and any class you added after opening. `multi` de
 
 ### Board primitives
 
-![Buckets with 2D roving focus, and a fan of cards](docs/images/board-primitives.png)
+![Buckets with 2D roving focus, a fan of cards, a pile, and one card wearing the focus glow](docs/images/board-primitives.png)
 
 - **Buckets** (`makeBuckets`): arrow keys move across both axes. Only the focused row sits in the tab
   order. Moving into a shorter bucket clamps to its last row; up from the top exits the grid.
@@ -186,59 +240,38 @@ the rendered order, because the mismatches you can see sit together on screen.
 and an optional distribution drawn over it, so "no results" and "your cut sits above every value"
 stop looking identical. `makeAligner` is for last-pixel crop work and owns no persistence.
 
-## The visual language
+## Security
 
-Six rules carry the whole look. They are in `base.css`'s header too, where someone about to
-override something will be looking.
+`read_asset` resolves the requested path and checks it is still inside the asset folder, rather than
+string-matching on `..` - the only reliable test, and the classic hole in a route that concatenates a
+caller's name onto a directory. `demo/serve.py` is exactly that wiring, so if the demo works, the
+containment check is doing its job.
 
-1. **One row height, app-wide** (`--row-height`). Every row and button is that tall.
-2. **One clickable class**, `.toggle`.
-3. **Dividers never touch the container edge.** 15px inset, 2px thick - the weight of a button
-   border, because a 1px rule beside 2px buttons reads as a different system.
-4. **Selection is bright, rejection is muted.** Rejecting is a decision, not an achievement.
-5. **Text stays selectable.** `user-select: none` also makes every name and readout uncopyable.
-6. **Monospace throughout**, because these tools show filenames, counts and coordinates.
+A menu row's name, stats and badges - and every other piece of tool-supplied text drawn by
+`menu.js` - are set with `textContent`, never `innerHTML`, so data from a tool cannot inject markup
+through a label. The scripts write no `style="..."` attributes and call neither `eval` nor `new
+Function`, so a host can run a strict Content-Security-Policy with `script-src 'self'` and
+`style-src 'self'`.
 
-**One font size, everywhere** (`--font-size`); emphasis is carried by colour and by the row a thing
-sits in. A test fails the build if a `font-size` is set anywhere but the token. Four more tokens
-carry the vertical rhythm: `--gap` between rows in a panel, `--inset` a panel's top and bottom,
-`--inset-x` its sides, and `--row-height`. `.h-divider` adds no space of its own - the parent's
-`gap` spaces it like any other child.
+## Implementation
 
-Override by redefining the tokens, not by fighting the rules.
+The repo is one Python package (`ui_base`) plus its assets:
 
-## The palette
+```
+ui_base/
+  __init__.py     # ASSETS, read_asset, UiBaseError
+  assets/         # base.css and the scripts, served as-is
+```
 
-![The palette: lichen, lichen milk and lichen deep; stone red and its lift; kingfisher, kingfisher milk and vanilla; burnt orange held in reserve - each with its hex and contrast on the ground](docs/images/palette.png)
+No build step: the assets are the files a browser loads, unminified and unbundled. A host serves
+its own files first and falls back to `read_asset` for anything it does not override, so one tool
+can replace a single file by name without editing the package the others read.
 
-Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. The hues are kept
-few on purpose, because a colour that appears everywhere stops meaning anything. Two families were
-sampled from photographs of lichen and stone - each the median of its photo filtered to that hue
-band above 22% saturation, so it is the lichen and the stone themselves rather than their blend with
-grey. The rest are derived.
+A tool consumes it by pinning a commit sha in its `pyproject.toml` (see Install above), the same way
+it would pin any other dependency - `uv sync` fetches that exact revision, so an update to smortui
+never moves a tool's build without that tool's own commit changing.
 
-**The lichen is the interesting one, because sampling got it wrong.** The photo's median is
-`#bcbf88`, faithful to the *photograph* rather than to the lichen: overcast light and phone
-processing left no pixel both vibrant and pale. Balthazar Fitzpatrick, who was standing there:
-*"much more vibrant, like a pale lime, the photos dont do it justice."* Saturation was raised to 0.60
-and the hue nudged 62° → 76° by eye against the real thing. **Measurement fixed the family; only the
-person who saw it could fix the rest.**
-
-**Lichen milk** is the same lichen at the strength kingfisher milk already has: pale enough to mark a
-finished step, a verdict or a menu accent without shouting over the words. Full lichen stays for
-frames and button accents.
-
-**The working plate is cold on purpose.** Green against red is the pairing that collapses under
-red-green colour blindness, which is most colour blindness there is, so `--fill-good` points at the
-kingfisher milk. `--vanilla` belongs to no photograph: attention needed a colour of its own, and it
-was chosen by maximising the smaller of its two separations, from cream and from the lichen.
-
-`--status-good`, `--status-warn`, `--fill-*` and `--attention` point at these, so a repalette moves a
-pointer and the record of where each colour came from stays. **Nothing uses `--attention` by
-default** - an attention colour that is always on stops being one. The demo's colour tab shows every
-token with its contrast, and a test fails if a hue arrives without being named in it.
-
-## Why it is a project rather than a copy
+### Why it is a project rather than a copy
 
 Every behaviour here was paid for by a real failure in a tool first:
 

@@ -12,6 +12,7 @@
 <script src="/ui/indicate.js"></script>
 <script src="/ui/drawer.js"></script>
 <script src="/ui/help.js"></script>
+<script src="/ui/pile.js"></script>
 <style>
   /* the demo's own layout only - everything that carries the LOOK is in base.css */
   body { display: flex; flex-direction: column; height: 100vh; }
@@ -239,7 +240,40 @@
     window. Collapsed, an 8px band of the page's own ground plus a cast that wraps the top corners
     is what stops the stack reading as one ruled list.
   </p>
-  <div id="fan-demo" style="display: flex; gap: var(--gap); max-width: 560px;"></div>
+  <!-- a focused card's covered siblings translate below the column's own (unexpanded) box, so the
+       fan needs its worst-case slide reserved below it or it bleeds into whatever comes next -->
+  <div id="fan-demo" style="display: flex; gap: var(--gap); max-width: 560px; margin-bottom: 300px;"></div>
+
+  <h2>the pile: what even a fan cannot hold</h2>
+  <p class="demo-note">
+    Past a fan's own limit, the same whole cards fold onto a pile instead of shrinking. The top layer
+    is a real card, jittered and turned like the ones under it, carrying its own title; the count sits
+    level over the lot as a sibling of the layers, so no layer's rotation reaches it.
+  </p>
+  <div class="card-pile" tabindex="0" style="max-width: 240px;">
+    <div class="card-pile-layer" style="transform: rotate(-4deg) translate(-6px, 3px);"></div>
+    <div class="card-pile-layer" style="transform: rotate(3deg) translate(5px, -2px);"></div>
+    <div class="card-pile-layer card-pile-top" style="transform: rotate(-1deg);">
+      <div class="card-title">brief the resume</div>
+    </div>
+    <div class="card-pile-count"><span>7</span></div>
+  </div>
+
+  <h2>the focus glow: a surface, not a control</h2>
+  <p class="demo-note">
+    <code>.focus-glow</code> is for a card, tile or panel rather than a button - it lifts, gains its
+    own inset ring, an inner glow and a coloured light over the whole face. Tab to the card below (or
+    click it) to see all four at once; the fan's cards above wear it too.
+  </p>
+  <div class="demo-row">
+    <div class="card focus-glow" tabindex="0" style="max-width: 200px;">
+      <div class="card-head"><div class="card-title">tab here</div></div>
+      <div class="h-divider"></div>
+      <div class="card-body">focused, this whole face lifts and glows.</div>
+      <div class="h-divider"></div>
+      <div class="card-foot"><span>a workstream</span><span class="stat">1</span></div>
+    </div>
+  </div>
 
   <h2>expand: a strip that opens into a panel</h2>
   <p class="demo-note">
@@ -593,7 +627,7 @@ makeExpander(document.getElementById('expand-strip'), {
     col.style.cssText = 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;';
     titles.forEach((title, i) => {
       const card = document.createElement('div');
-      card.className = 'card fan-item';
+      card.className = 'card fan-item focus-glow';
       card.tabIndex = 0;
       card.innerHTML = `<div class="card-head"><div class="card-title">${title}</div></div>
         <div class="h-divider"></div>
