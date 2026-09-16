@@ -811,7 +811,7 @@ textarea.text-field {
 .slider-bin { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
 .slider-bin span { display: block; width: 4px; background: var(--cream); opacity: 0.75; }
 
-/* ---- fill bar: how far along something is, moved here from wowtomate's review tool ----------
+/* ---- fill bar: how far along something is, moved here from an earlier review tool ------------
    the bar full width with any status UNDER it, so bars in one panel line up whatever their text */
 .progress-row { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
 /* NO BORDER. a track drawn round the fill reads as a second element at a different line weight;
