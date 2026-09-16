@@ -557,7 +557,9 @@ function makeSlider(container, {
       const cell = document.createElement('div');
       cell.className = 'slider-bin';
       const h = Math.round((Math.log10(n + 1) / top) * 100);
-      cell.innerHTML = `<span style="height:${n ? Math.max(h, 3) : 0}%"></span>`;
+      // set through the cssom, since a strict csp refuses style attributes written as markup
+      const bar = cell.appendChild(document.createElement('span'));
+      bar.style.height = `${n ? Math.max(h, 3) : 0}%`;
       chart.appendChild(cell);
     });
   };
