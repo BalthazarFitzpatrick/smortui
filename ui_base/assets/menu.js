@@ -17,6 +17,14 @@ const MENU_EDGE = 4;     // closest the panel may sit to the viewport edge
 
 let openMenu = null;
 
+// labels and stats are data, often agent-written, so they go in as text and never as markup
+function textSpan(className, text) {
+  const span = document.createElement('span');
+  if (className) span.className = className;
+  span.textContent = String(text);
+  return span;
+}
+
 class Menu {
   // `adopt` takes an element that ALREADY EXISTS in the page and manages it instead of building
   // one. the right-click label menu is laid out in markup - three aligned columns whose widths are
@@ -74,9 +82,8 @@ class Menu {
     row.className = ['toggle', 'menu-item', item.on ? 'on' : '', item.disabled ? 'disabled' : '',
       flags].filter(Boolean).join(' ');
     row.dataset.id = item.id ?? item.label;
-    const label = `<span class="name">${item.label}</span>`;
-    const stats = item.stats ? `<span class="stats">${item.stats}</span>` : '';
-    row.innerHTML = label + stats;
+    row.appendChild(textSpan('name', item.label));
+    if (item.stats) row.appendChild(textSpan('stats', item.stats));
     if (item.stats) row.title = `${item.label} - ${item.stats}`;
     if (item.action) {
       // a trailing control, which is how "sources" gets its per-row close without a bespoke panel
@@ -422,9 +429,9 @@ function renderTree(container, items, {itemClass = ''} = {}) {
       .filter(([, on]) => on).map(([name]) => name).join(' ');
     row.className = ['toggle', 'tree-item', itemClass, flags].filter(Boolean).join(' ');
     row.dataset.id = item.id ?? item.label;
-    row.innerHTML = (item.dot === false ? '' : '<span class="dot"></span>')
-      + `<span class="name">${item.label}</span>`
-      + (item.badges || []).map(b => `<span class="coords">${b}</span>`).join('');
+    if (item.dot !== false) row.appendChild(textSpan('dot', ''));
+    row.appendChild(textSpan('name', item.label));
+    (item.badges || []).forEach(badge => row.appendChild(textSpan('coords', badge)));
     if (item.title) row.title = item.title;
     if (item.onPick) row.onclick = () => item.onPick(item, row);
     container.appendChild(row);
