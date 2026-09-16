@@ -57,7 +57,7 @@ instructions above are right.
 
 | file | gives you |
 |---|---|
-| `base.css` | the tokens and every primitive: `.toggle`, dividers, columns, panels, rows, cards, the fan, badges, hazard stripes |
+| `base.css` | the tokens and every primitive: `.toggle`, dividers, columns, panels, rows, cards, the fan, the pile, the focus glow, badges, hazard stripes |
 | `menu.js` | `Menu`, `listMenu`, `renderTree`, `makeSlider`, `makePanZoom` |
 | `shell.js` | `initShell`, `activateTab` - tabs, keyboard nav, remembering where you were |
 | `buckets.js` | `makeBuckets` - side-by-side lists with 2D roving focus |
@@ -68,6 +68,7 @@ instructions above are right.
 | `select.js` | `makeSelection` - click, cmd+click, shift+drag, right-click over a grid |
 | `align.js` | `makeAligner` - drag a crop under a fixed guide, `wasd` nudging, live preview |
 | `entrytext.js` | `deriveEntryHeader`, `splitEntryParagraphs` - header derivation and small-paragraph splitting for a log-like feed entry |
+| `pile.js` | `computeColumnFit`, `computeColumnLayout`, `placeGroup`, `foldFrames`, `pileLayerJitter` - the spread/fan/pile geometry and the fold, all pure |
 
 ### Controls
 
@@ -131,6 +132,47 @@ in place, keeping its position and any class you added after opening. `multi` de
   under it.
 - **Hazard stripes**: a placeholder for content that is not there yet, so empty reads as "nothing
   here on purpose" rather than "failed to load".
+
+### The focus glow
+
+One class, `.focus-glow`, for a focused *surface* - a card, a tile, a panel - as opposed to a control,
+which keeps the plain 2px `:focus-visible` ring. Balthazar Fitzpatrick, seeing it on a board: *"it is
+not only the border that glows but the entire card gets that coloured light glow."* That is four
+things, and they are only good together, so they ship as one name:
+
+| part | token | what it does |
+|---|---|---|
+| the lift | `--focus-lift` | draws a touch larger, so it reads as nearer |
+| its own ring | `--focus-ring-width`, `--focus-ring-color` | **inset**, so it scales with the lift and is covered by exactly what covers the element |
+| the inner glow | `--focus-inner-glow-blur`, `--focus-inner-glow-spread`, `--focus-inner-glow-color` | the ring bleeding inward, at half the width it first shipped at |
+| the coloured light | `--focus-light-saturate`, `--focus-light-brightness` | a filter over the whole face, so it lifts the colours already there rather than tinting one hue |
+
+Retune any one of them without restating the others; `--focus-glow-ms` is the transition. The ring is
+inset rather than an outline on purpose: an outline sits outside the box, unscaled, and draws over
+the neighbour lying on top of it - which is exactly wrong in a fan or a pile. While anything wearing
+this has focus, `indicate.js`'s shared marker hides, so the two never draw at once.
+
+### The pile and the fan
+
+`pile.js` is the geometry a column uses once its cards stop fitting, and **the rule it exists for is
+that a card is never shrunk** - what gives is how the cards meet. One measured choice per column
+(`computeColumnFit`), three regimes:
+
+1. **spread** - they all fit whole, exactly `--card-gap` apart, nothing covering anything
+2. **fan** - they do not, so the same whole cards overlap and each covered one shows `--stack-peek` of itself
+3. **piled** - not even that fits: the very same fan, of the largest group the room allows, with a pile above and a pile below holding the rest
+
+`computeColumnLayout` turns that into rows - which cards are drawn, which are in which pile, how each
+one joins the row before it - and `placeGroup` moves the group one card per step, flipping the anchor
+only at the two ends. `foldFrames` is the motion onto and off a pile: **the card never travels.** The
+edge facing the pile holds where it was drawn and the far one climbs to meet it, the content cut
+rather than squashed, so a card is eaten at the pile's own edge instead of sliding through and out
+the far side. `pileLayerJitter` hashes an id into one layer's offset and rotation, so the same cards
+always draw the same pile.
+
+All of it is pure - no DOM, no knowledge of what a card holds. The host builds the elements, applies
+the numbers and plays the keyframes; `base.css` draws the pile (`.card-pile`, its layers, the level
+count badge that no layer's rotation reaches) and the `.row-enter` fade.
 
 ### Selection
 

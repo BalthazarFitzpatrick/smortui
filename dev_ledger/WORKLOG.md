@@ -101,3 +101,17 @@ over everything that scrolled past (#23); textareas centre their first line the 
 and the focus marker no longer jumps back to elements focus had left - every call used to leave a
 400 ms timer and a transitionend listener on its own target (#25, samples off the focused card
 measured 11/11/14 before and none after). Main is protected by a ruleset.
+
+## 2026-09-16 — the focus glow and the pile/fan layout came back from smortboard
+
+Two things smortboard had built and tuned for itself, moved here so the next consumer gets them for
+free. `.focus-glow` is the whole focus treatment as one class - the lift, the element's own inset
+ring, the inner glow at half its first width, and the coloured light cast over the whole face - with
+each of the four on its own token, because the operator's judgement was that they are only good
+together but a host still has to be able to retune one. `pile.js` is the spread/fan/pile geometry
+and the fold, all pure: no DOM, and it does not know what a card holds.
+
+What did NOT come across: the per-status colours and letters, the card shadow canvas, and every DOM
+builder and animation player - those are the host's. One rule of this file caught the move: the count
+badge's `font-size: 1.15em` is not allowed here (one font size, app-wide), so it stays in the
+consumer's own stylesheet.
