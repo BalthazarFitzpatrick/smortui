@@ -240,7 +240,9 @@
     window. Collapsed, an 8px band of the page's own ground plus a cast that wraps the top corners
     is what stops the stack reading as one ruled list.
   </p>
-  <div id="fan-demo" style="display: flex; gap: var(--gap); max-width: 560px;"></div>
+  <!-- a focused card's covered siblings translate below the column's own (unexpanded) box, so the
+       fan needs its worst-case slide reserved below it or it bleeds into whatever comes next -->
+  <div id="fan-demo" style="display: flex; gap: var(--gap); max-width: 560px; margin-bottom: 300px;"></div>
 
   <h2>the pile: what even a fan cannot hold</h2>
   <p class="demo-note">

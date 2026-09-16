@@ -26,7 +26,8 @@ def settle(page: Page, ms: int = 400) -> None:
 
 
 def shoot(page: Page, name: str) -> None:
-    page.screenshot(path=str(OUT / name))
+    # full_page rather than the bare viewport, so a resize by an earlier shot never changes this
+    page.screenshot(path=str(OUT / name), full_page=True)
     print("wrote", OUT / name)
 
 
@@ -72,8 +73,11 @@ def shoot_board_primitives(page: Page) -> None:
         ".tab-panel[data-panel='primitives']",
         "el => { const panel = el.getBoundingClientRect(); "
         "const pile = document.querySelector('.card-pile').getBoundingClientRect(); "
-        "return {x: panel.x, y: panel.y, width: 1200, height: pile.bottom - panel.y + 30}; }",
+        "return {x: panel.x, y: panel.y, width: 1200, height: pile.bottom - panel.y + 16}; }",
     )
+    # the clip can run past the viewport used to focus the card - grow the viewport to fit it
+    # before shooting, or the capture silently truncates at the old viewport's bottom edge
+    page.set_viewport_size({"width": WIDTH, "height": int(box["y"] + box["height"] + 50)})
     page.screenshot(path=str(OUT / "board-primitives.png"), clip=box)
     print("wrote", OUT / "board-primitives.png")
 
@@ -81,6 +85,10 @@ def shoot_board_primitives(page: Page) -> None:
 def shoot_palette(page: Page) -> None:
     open_tab(page, "colour")
     settle(page, 300)
+    # the tab panel scrolls inside a 100vh body, so a full_page shot still needs a viewport tall
+    # enough to hold the whole board, or the part below the fold is simply never rendered
+    bottom = page.eval_on_selector("#colour-board", "el => el.getBoundingClientRect().bottom")
+    page.set_viewport_size({"width": WIDTH, "height": int(bottom) + 30})
     shoot(page, "palette.png")
 
 
