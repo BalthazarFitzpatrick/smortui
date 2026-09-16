@@ -9,3 +9,8 @@ build/
 .DS_Store
 
 demo_shots/
+
+# ledgers live in the private dev_ledgers repo; these are local symlinks into it
+TASKS.jsonl
+WORKLOG.md
+dev_ledger/
