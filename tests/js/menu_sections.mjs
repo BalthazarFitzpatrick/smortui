@@ -54,6 +54,7 @@ globalThis.removeEventListener = () => {};
 const target = process.argv[2] || new URL('../../ui_base/assets/menu.js', import.meta.url);
 const src = readFileSync(target, 'utf8');
 const Menu = new Function(`${src}; return Menu;`)();
+const renderTree = globalThis.window.renderTree;
 
 const walk = (node, out = []) => {
   out.push(node);
@@ -135,8 +136,7 @@ assert.ok(replacedWith, 'refresh should replace the panel element');
 assert.equal(live.el, replacedWith, 'and adopt the rebuilt one');
 assert.equal(live.el.style.left, '120px', 'a refresh must not move the panel');
 assert.equal(live.el.style.top, '40px');
-const names = walk(live.el).filter(n => n.className.includes('menu-item'))
-  .map(n => n.innerHTML.match(/>([^<]*)</)[1]);
+const names = walk(live.el).filter(n => n.className === 'name').map(n => n.textContent);
 assert.deepEqual(names, ['b'], 'refresh should render the sections it was given');
 
 // ---- refresh on a menu that was never opened is a no-op rather than a crash
@@ -235,5 +235,21 @@ placed.el.classList.add('menu-centered');
 placed.refresh([{kind: 'list', items: [{id: 'a', label: 'a'}]}]);
 assert.ok(placed.el.classList.contains('menu-centered'), 'a refresh dropped a caller-added class');
 placed.close();
+
+// ---- label and stats are text, never markup: an agent's bash command can land in either
+const payload = '<img src=x onerror=globalThis.pwned=1>';
+const hostile = menu._section({kind: 'list', items: [{id: 'h', label: payload, stats: payload}]});
+const hostileNodes = walk(hostile);
+assert.ok(!hostileNodes.some(n => n.innerHTML.includes('<img')), 'a label must not become markup');
+assert.equal(hostileNodes.find(n => n.className === 'name').textContent, payload);
+assert.equal(hostileNodes.find(n => n.className === 'stats').textContent, payload);
+
+// ---- and the same holds for a tree row's label and badges
+const tree = element('div');
+renderTree(tree, [{id: 't', label: payload, badges: [payload]}]);
+const treeNodes = walk(tree);
+assert.ok(!treeNodes.some(n => n.innerHTML.includes('<img')), 'a tree row must not become markup');
+assert.equal(treeNodes.find(n => n.className === 'name').textContent, payload);
+assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload);
 
 console.log('ok');
