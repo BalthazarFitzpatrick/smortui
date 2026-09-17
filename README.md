@@ -206,6 +206,24 @@ inset rather than an outline on purpose: an outline sits outside the box, unscal
 the neighbour lying on top of it - which is exactly wrong in a fan or a pile. While anything wearing
 this has focus, `indicate.js`'s shared marker hides, so the two never draw at once.
 
+**The soft variant.** A surface inside another surface - a section of an open card, a tab in a bar -
+is a smaller thing than a card on a board, and the loud treatment on one reads as the whole card
+jumping. `.focus-glow.focus-glow-soft` is the quieter version: a modifier that restates those same
+six tokens at a lower strength, so the rule above still does the drawing and the two can never drift
+into being different treatments.
+
+| part | loud | soft | why |
+|---|---|---|---|
+| the lift | `1.03` | `1.01` | a third of the distance from neutral - a section inside a panel must not jump |
+| the ring | `3px` | `2px` | half, and the same weight as every other border in the system |
+| the inner glow | `8px` / `1.5px` | `4px` / `0.75px` | half the blur and spread |
+| the coloured light | `1.7` / `1.4` | `1.23` / `1.13` | a third of the distance from neutral, the same rule as the lift |
+
+Two strengths, not six numbers: the lift and the light drop to a **third** of their distance from
+neutral, the ring and its glow to a **half** - an edge thinned to a third stops reading as an edge.
+Colour and `--focus-glow-ms` are unchanged, which is what keeps it recognisably the same treatment.
+A host retunes the soft one exactly as it retunes the loud one, by restating one token.
+
 ### The pile and the fan
 
 `pile.js` is the geometry a column uses once its cards stop fitting, and **the rule it exists for is
