@@ -326,6 +326,25 @@ body {
      otherwise grow under the element after it */
   z-index: 2;
 }
+/* ---- .focus-glow-soft: the same treatment, quieter, for a surface INSIDE another surface --------
+   A section inside an open card, or a tab in a bar, is a smaller thing than a card on a board, and
+   the loud treatment on one reads as the whole card jumping. This is a MODIFIER, not a second look:
+   it restates the same tokens at a lower strength and the rule above still does the drawing, so the
+   two can never drift into being different treatments.
+
+   THE STRENGTHS ARE ONE DECISION, not six. The lift and the coloured light drop to a THIRD, measured
+   as distance from neutral (1.03 -> 1.01, saturate 1.7 -> 1.23, brightness 1.4 -> 1.13); the ring
+   and its inner glow drop to a HALF (3px -> 2px, 8px/1.5px -> 4px/0.75px), because an edge thinned
+   to a third stops reading as an edge at all. Same cream, same --focus-glow-ms. */
+.focus-glow.focus-glow-soft {
+  --focus-lift: 1.01;
+  --focus-ring-width: 2px;
+  --focus-inner-glow-blur: 4px;
+  --focus-inner-glow-spread: 0.75px;
+  --focus-light-saturate: 1.23;
+  --focus-light-brightness: 1.13;
+}
+
 /* indicate.js's shared marker is a fixed overlay above everything: over a glowing element it framed
    the unscaled box on top of that element's own ring and drew over its neighbours. it stays hidden
    while anything wearing this has focus, and shows again for whatever takes focus next */

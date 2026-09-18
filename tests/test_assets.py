@@ -224,6 +224,44 @@ def test_the_focus_highlight_keeps_its_four_parts_separately_tunable():
     )
 
 
+def test_the_soft_variant_only_retunes_the_loud_one_rather_than_redrawing_it():
+    """ONE TREATMENT AT TWO STRENGTHS. The soft variant exists for a surface inside another surface -
+    a card's section, a tab in a bar - and the way it must NOT be built is as a second rule that
+    draws its own lift, ring, glow and light: two rules restating the same four parts drift the
+    moment either is retuned, and then the board has two focus looks nobody chose. So this asserts
+    the shape, not the numbers: the modifier sets tokens only, every part it sets is one the loud
+    rule already reads, and it draws nothing itself.
+    """
+    css = _css()
+    rule = re.search(r"\.focus-glow\.focus-glow-soft\s*\{(.*?)\}", css, re.DOTALL)
+    assert rule, "the soft variant must exist as a modifier on the loud class"
+    body = rule.group(1)
+
+    declarations = [d.strip() for d in body.split(";") if d.strip()]
+    assert declarations, "the modifier must restate something"
+    assert all(d.startswith("--focus-") for d in declarations), (
+        f"the modifier may only restate the treatment's own tokens, never redraw it: {declarations}"
+    )
+
+    # every part the loud rule reads, quieter - and quieter is checked, not assumed
+    root = re.search(r":root\s*\{(.*?)\}", css, re.DOTALL).group(1)
+
+    def _value(block: str, token: str) -> str:
+        return re.search(rf"{token}\s*:\s*([^;]+);", block).group(1).strip()
+
+    for token in ("--focus-lift", "--focus-light-saturate", "--focus-light-brightness"):
+        loud, soft = float(_value(root, token)), float(_value(body, token))
+        assert 1.0 <= soft < loud, f"{token}: {soft} must sit between neutral and the loud {loud}"
+    for token in ("--focus-ring-width", "--focus-inner-glow-blur", "--focus-inner-glow-spread"):
+        loud = float(_value(root, token).removesuffix("px"))
+        soft = float(_value(body, token).removesuffix("px"))
+        assert 0 < soft < loud, f"{token}: {soft}px must be thinner than the loud {loud}px"
+
+    # the colour and the timing are what keep it the SAME treatment rather than another one
+    for shared in ("--focus-ring-color", "--focus-inner-glow-color", "--focus-glow-ms"):
+        assert shared not in body, f"{shared} is what makes the two one treatment - leave it alone"
+
+
 def test_a_rule_does_not_add_to_the_gap_it_sits_in():
     """MEASURED, and it is why this assertion is the opposite of what it first said. Giving the rule
     its own vertical margin STACKED it on the gap the parent already puts between children: a ruled
