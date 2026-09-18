@@ -7,6 +7,12 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+.env
+*.env
+.env.*
+credentials*.yaml
+*.key
+*.pem
 
 demo_shots/
 

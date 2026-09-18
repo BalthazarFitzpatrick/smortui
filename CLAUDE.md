@@ -188,6 +188,11 @@ Six rules carry the look. Override by redefining tokens, never by fighting the r
 
 ### Theming
 
+`.edge-pulse` adds a breathing ring and a drifting inner glow. It reserves `::before` and
+`::after`, leaves focus transforms and filters alone, and ignores pointer input. Override
+`--ambient-pulse-*` tokens to tune the colour, periods, opacity, width, blur, spread and reach.
+Reduced motion keeps a static ring and glow. Pair the effect with a text label in the host.
+
 Three states, not two. An explicit choice stamps `data-theme="dark"`/`"light"` on the root; the
 default "system" setting stamps **nothing**, so only `prefers-color-scheme` separates light from dark.
 

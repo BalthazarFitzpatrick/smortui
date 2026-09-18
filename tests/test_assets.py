@@ -433,3 +433,17 @@ def test_a_menu_holding_columns_is_allowed_more_width_than_one_holding_a_list():
     line = next(ln for ln in css.splitlines() if ln.startswith(rule))
     assert "45vw" in line, "the viewport share is the half that protects a narrow window"
     assert "min(" in line, "a pixel ceiling and a viewport share, whichever binds first"
+
+
+def test_edge_pulse_keeps_focus_and_reduced_motion_visible():
+    css = _css()
+    pulse = css[css.index(".edge-pulse {") : css.index("/* ---- column grouping")]
+    assert "transform:" not in pulse
+    assert "filter:" not in pulse
+    assert "pointer-events: none" in pulse
+    assert "@keyframes edge-pulse-breathe" in pulse
+    assert "@keyframes edge-pulse-drift" in pulse
+    reduced = pulse.split("@media (prefers-reduced-motion: reduce)")[1]
+    assert "animation: none" in reduced
+    assert "box-shadow: inset" in reduced
+    assert "var(--ambient-pulse-min) + var(--ambient-pulse-max)" in reduced
