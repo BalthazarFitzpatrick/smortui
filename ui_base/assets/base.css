@@ -159,6 +159,15 @@
   --focus-light-saturate: 1.7;        /* the coloured light cast over the whole face */
   --focus-light-brightness: 1.4;
   --focus-glow-ms: 140ms;
+  --ambient-pulse-color: var(--burnt-orange);
+  --ambient-pulse-ms: 4800ms;
+  --ambient-pulse-drift-ms: 5500ms;
+  --ambient-pulse-min: 0.5;
+  --ambient-pulse-max: 0.84;
+  --ambient-pulse-width: 2px;
+  --ambient-pulse-blur: 16px;
+  --ambient-pulse-spread: 3px;
+  --ambient-pulse-reach: 4px;
 }
 
 * { box-sizing: border-box; }
@@ -349,6 +358,45 @@ body {
    the unscaled box on top of that element's own ring and drew over its neighbours. it stays hidden
    while anything wearing this has focus, and shows again for whatever takes focus next */
 body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
+
+/* separate layers preserve the host's focus shadow, transform and filter
+   reserves both pseudo-elements; the host only adds the class and retunes tokens */
+.edge-pulse { position: relative; }
+.edge-pulse::before, .edge-pulse::after {
+  content: '';
+  position: absolute;
+  inset: var(--ambient-pulse-reach);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+}
+.edge-pulse::before {
+  box-shadow: inset 0 0 0 var(--ambient-pulse-width) var(--ambient-pulse-color);
+  animation: edge-pulse-breathe var(--ambient-pulse-ms) ease-in-out infinite;
+}
+.edge-pulse::after {
+  opacity: calc((var(--ambient-pulse-min) + var(--ambient-pulse-max)) / 2);
+  animation: edge-pulse-drift var(--ambient-pulse-drift-ms) ease-in-out infinite;
+}
+@keyframes edge-pulse-breathe {
+  0%, 100% { opacity: var(--ambient-pulse-min); }
+  50% { opacity: var(--ambient-pulse-max); }
+}
+@keyframes edge-pulse-drift {
+  0%, 100% { box-shadow: inset var(--ambient-pulse-reach) 0 var(--ambient-pulse-blur) var(--ambient-pulse-spread) var(--ambient-pulse-color); }
+  25% { box-shadow: inset 0 var(--ambient-pulse-reach) var(--ambient-pulse-blur) var(--ambient-pulse-spread) var(--ambient-pulse-color); }
+  50% { box-shadow: inset calc(-1 * var(--ambient-pulse-reach)) 0 var(--ambient-pulse-blur) var(--ambient-pulse-spread) var(--ambient-pulse-color); }
+  75% { box-shadow: inset 0 calc(-1 * var(--ambient-pulse-reach)) var(--ambient-pulse-blur) var(--ambient-pulse-spread) var(--ambient-pulse-color); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edge-pulse::before, .edge-pulse::after {
+    animation: none;
+    opacity: calc((var(--ambient-pulse-min) + var(--ambient-pulse-max)) / 2);
+  }
+  .edge-pulse::after {
+    box-shadow: inset 0 0 var(--ambient-pulse-blur) var(--ambient-pulse-spread) var(--ambient-pulse-color);
+  }
+}
 
 /* ---- column grouping primitive: label-columns + col + divider, used beyond the popup now ---- */
 .label-columns { display: flex; flex-direction: row; align-items: stretch; }
