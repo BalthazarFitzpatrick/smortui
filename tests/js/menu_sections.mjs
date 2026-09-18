@@ -236,6 +236,38 @@ placed.refresh([{kind: 'list', items: [{id: 'a', label: 'a'}]}]);
 assert.ok(placed.el.classList.contains('menu-centered'), 'a refresh dropped a caller-added class');
 placed.close();
 
+// ---- an anchored menu opens below its trigger while the panel fits there
+const belowPanel = element('div');
+belowPanel.getBoundingClientRect = () => ({width: 180, height: 120});
+const belowTrigger = element('div');
+belowTrigger.getBoundingClientRect = () => ({left: 200, top: 100, bottom: 130, right: 260});
+const belowMenu = new Menu({adopt: belowPanel});
+belowMenu.openAt(belowTrigger);
+assert.equal(belowMenu.el.style.top, '136px', 'a menu with room below should drop down');
+assert.equal(belowMenu.el.style.left, '200px');
+belowMenu.close();
+
+// ---- a low trigger opens the panel above when below would clip and above has more room
+const abovePanel = element('div');
+abovePanel.getBoundingClientRect = () => ({width: 180, height: 160});
+const aboveTrigger = element('div');
+aboveTrigger.getBoundingClientRect = () => ({left: 200, top: 700, bottom: 730, right: 260});
+const aboveMenu = new Menu({adopt: abovePanel});
+aboveMenu.openAt(aboveTrigger);
+assert.equal(aboveMenu.el.style.top, '534px', 'a menu near the bottom should drop up');
+aboveMenu.close();
+
+// ---- a panel larger than its available side still stays within the top and right edges
+const edgePanel = element('div');
+edgePanel.getBoundingClientRect = () => ({width: 200, height: 900});
+const edgeTrigger = element('div');
+edgeTrigger.getBoundingClientRect = () => ({left: 1190, top: 760, bottom: 790, right: 1200});
+const edgeMenu = new Menu({adopt: edgePanel});
+edgeMenu.openAt(edgeTrigger);
+assert.equal(edgeMenu.el.style.top, '4px', 'a tall drop-up should clamp to the viewport top');
+assert.equal(edgeMenu.el.style.left, '996px', 'an edge menu should clamp inside the viewport right');
+edgeMenu.close();
+
 // ---- label and stats are text, never markup: an agent's bash command can land in either
 const payload = '<img src=x onerror=globalThis.pwned=1>';
 const hostile = menu._section({kind: 'list', items: [{id: 'h', label: payload, stats: payload}]});

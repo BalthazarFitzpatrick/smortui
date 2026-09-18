@@ -342,7 +342,14 @@ class Menu {
     if (this._trigger) {
       const box = this._trigger.getBoundingClientRect();
       left = box.left;
-      top = box.bottom + MENU_MARGIN;
+      const below = box.bottom + MENU_MARGIN;
+      const above = box.top - rect.height - MENU_MARGIN;
+      const roomBelow = window.innerHeight - box.bottom - MENU_MARGIN;
+      const roomAbove = box.top - MENU_MARGIN;
+      // a low trigger should not make its menu lose the rows nearest the bottom edge. open above
+      // when below cannot hold the panel and above gives it more room; clamping still handles a
+      // panel too tall for either side
+      top = rect.height > roomBelow && roomAbove > roomBelow ? above : below;
     } else {
       left = where.x;
       top = where.y;
