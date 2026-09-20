@@ -409,8 +409,35 @@ function listMenu(title, items, onPick, extra = {}) {
   });
 }
 
+// a directory browser: one list section rebuilt on every navigation. the host supplies
+// fetchDir(path) -> {path, parent, dirs, files}, so this knows nothing about where paths live
+function dirMenu(title, fetchDir, onPick, {start = '', onDismiss = null} = {}) {
+  // persistent, because a click on a folder is a step and must not dismiss the panel
+  const menu = new Menu({title, persistent: true, sections: [], onDismiss});
+  const join = (dir, name) => `${dir.replace(/\/$/, '')}/${name}`;
+  const show = async path => {
+    const listing = await fetchDir(path);
+    if (!menu.isOpen) return;
+    const items = [{heading: listing.path}];
+    if (listing.parent != null) items.push({id: '..', label: '..', dir: listing.parent});
+    listing.dirs.forEach(name => items.push({id: `d:${name}`, label: `${name}/`, dir: join(listing.path, name)}));
+    listing.files.forEach(name => items.push({id: `f:${name}`, label: name, file: join(listing.path, name)}));
+    menu.refresh([{
+      kind: 'list', items, empty: 'empty folder',
+      onPick: item => {
+        if (item.file != null) { onPick(item.file); menu.close(); }
+        else show(item.dir);
+      },
+    }]);
+  };
+  const open = menu.openAt.bind(menu);
+  menu.openAt = where => { open(where); if (menu.isOpen) show(start); return menu; };
+  return menu;
+}
+
 window.Menu = Menu;
 window.listMenu = listMenu;
+window.dirMenu = dirMenu;
 
 // ---- tree: a grouped list of items, with headings and per-row badges -------------------
 // SHARED WITH AN INLINE LIST, not just menus. the interface tab renders the same shape directly

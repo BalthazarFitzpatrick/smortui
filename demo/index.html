@@ -163,6 +163,16 @@
   </div>
   <div class="stat" id="menu-said">nothing picked yet</div>
 
+  <h2>a directory browser</h2>
+  <p class="demo-note">
+    <code>dirMenu(title, fetchDir, onPick)</code>: folders drill in, '..' goes up, a file calls
+    onPick. The fake tree below is in memory; a real host answers fetchDir from its server.
+  </p>
+  <div class="demo-row">
+    <div class="toggle dropdown-head" id="open-dirs"><span>browse</span></div>
+  </div>
+  <div class="stat" id="dirs-said">nothing picked yet</div>
+
   <h2>a preset list that fills fields</h2>
   <p class="demo-note">
     Recipe, not a new primitive - see <a href="../docs/recipes/preset-fills-fields.md">docs/recipes</a>.
@@ -479,6 +489,23 @@ document.getElementById('open-presets').onclick = evt => {
   presetMenu = new Menu({title: 'settings', persistent: true, sections: presetSections()});
   presetMenu.openAt(evt.currentTarget);
 };
+
+// fake in-memory tree for the directory browser
+const FAKE_TREE = {
+  '/': {dirs: ['docs', 'data'], files: ['readme.txt']},
+  '/docs': {dirs: [], files: ['a.md', 'b.md']},
+  '/data': {dirs: ['raw'], files: ['table.csv']},
+  '/data/raw': {dirs: [], files: ['one.csv', 'two.csv']},
+};
+const fetchFakeDir = async path => {
+  const at = path || '/';
+  const parent = at === '/' ? null : at.slice(0, at.lastIndexOf('/')) || '/';
+  return {path: at, parent, ...FAKE_TREE[at]};
+};
+document.getElementById('open-dirs').onclick = evt =>
+  dirMenu('pick a file', fetchFakeDir, file => {
+    document.getElementById('dirs-said').textContent = `picked ${file}`;
+  }).openAt(evt.currentTarget);
 
 // ---- the colour board -------------------------------------------------------------------
 // grouped by ROLE and in reading order, because "which one is which" is the question a bare

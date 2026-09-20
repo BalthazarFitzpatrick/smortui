@@ -3,10 +3,42 @@
     "id": "preset-fills-fields",
     "title": "a preset list that fills sibling fields",
     "summary": "a list section whose rows are shortcuts: picking one fills the field sections beside it, one of which reveals a further field conditionally, and each row can show a value computed live rather than written into the page",
-    "primitives": ["menu.js:Menu"],
-    "tags": ["menu", "list", "field", "preset", "conditional-field", "live-value"],
+    "primitives": [
+      "menu.js:Menu"
+    ],
+    "tags": [
+      "menu",
+      "list",
+      "field",
+      "preset",
+      "conditional-field",
+      "live-value"
+    ],
     "file": "docs/recipes/preset-fills-fields.md",
-    "demo": {"panel": "menus", "selector": "#open-presets"},
+    "demo": {
+      "panel": "menus",
+      "selector": "#open-presets"
+    },
+    "added": "2026-09-20"
+  },
+  {
+    "id": "directory-browser",
+    "title": "a directory browser menu",
+    "summary": "a menu that drills through folders and picks a file, fed by a host-supplied async fetchDir so the package stays server-agnostic",
+    "primitives": [
+      "menu.js:dirMenu"
+    ],
+    "tags": [
+      "menu",
+      "directory",
+      "file-picker",
+      "navigation"
+    ],
+    "file": "docs/recipes/directory-browser.md",
+    "demo": {
+      "panel": "menus",
+      "selector": "#open-dirs"
+    },
     "added": "2026-09-20"
   }
 ]

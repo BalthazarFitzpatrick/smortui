@@ -112,7 +112,7 @@ token with its contrast, and a test fails if a hue arrives without being named i
 | file | gives you |
 |---|---|
 | `base.css` | the tokens and every primitive: `.toggle`, dividers, columns, panels, rows, cards, the fan, the pile, the focus glow, badges, hazard stripes |
-| `menu.js` | `Menu`, `listMenu`, `renderTree`, `makeSlider`, `makePanZoom` |
+| `menu.js` | `Menu`, `listMenu`, `dirMenu`, `renderTree`, `makeSlider`, `makePanZoom` |
 | `shell.js` | `initShell`, `activateTab` - tabs, keyboard nav, remembering where you were |
 | `buckets.js` | `makeBuckets` - side-by-side lists with 2D roving focus |
 | `expand.js` | `makeExpander` - a strip that grows into a centred panel and back |
