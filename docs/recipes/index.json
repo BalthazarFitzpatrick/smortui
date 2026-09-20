@@ -1,0 +1,12 @@
+[
+  {
+    "id": "preset-fills-fields",
+    "title": "a preset list that fills sibling fields",
+    "summary": "a list section whose rows are shortcuts: picking one fills the field sections beside it, one of which reveals a further field conditionally, and each row can show a value computed live rather than written into the page",
+    "primitives": ["menu.js:Menu"],
+    "tags": ["menu", "list", "field", "preset", "conditional-field", "live-value"],
+    "file": "docs/recipes/preset-fills-fields.md",
+    "demo": {"panel": "menus", "selector": "#open-presets"},
+    "added": "2026-09-20"
+  }
+]
