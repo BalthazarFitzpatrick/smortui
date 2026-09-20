@@ -40,5 +40,67 @@
       "selector": "#open-dirs"
     },
     "added": "2026-09-20"
+  },
+  {
+    "id": "button-grid-2x2",
+    "title": "a two-by-two button grid",
+    "summary": "four equal-size buttons in a two-by-two grid, with handlers bound by id so they do not depend on the layout",
+    "primitives": [
+      "base.css:toggle"
+    ],
+    "tags": [
+      "layout",
+      "grid",
+      "button"
+    ],
+    "file": "docs/recipes/button-grid-2x2.md",
+    "demo": {
+      "panel": "menus",
+      "selector": "#grid-2x2"
+    },
+    "added": "2026-09-20"
+  },
+  {
+    "id": "stepper-rows",
+    "title": "stepper rows",
+    "summary": "a stack of labelled plus/minus controls, one per row, label left and value with buttons right-aligned",
+    "primitives": [
+      "base.css:stepper",
+      "base.css:run-controls",
+      "base.css:toggle",
+      "base.css:spacer"
+    ],
+    "tags": [
+      "layout",
+      "stepper",
+      "row"
+    ],
+    "file": "docs/recipes/stepper-rows.md",
+    "demo": {
+      "panel": "menus",
+      "selector": "#stepper-rows"
+    },
+    "added": "2026-09-20"
+  },
+  {
+    "id": "split-toolbar-row",
+    "title": "a split toolbar row",
+    "summary": "one toolbar row with ordered controls on the left, a flexible spacer, and one or two primary actions alone on the right",
+    "primitives": [
+      "base.css:run-controls",
+      "base.css:spacer",
+      "base.css:toggle"
+    ],
+    "tags": [
+      "layout",
+      "toolbar",
+      "row"
+    ],
+    "file": "docs/recipes/split-toolbar-row.md",
+    "demo": {
+      "panel": "menus",
+      "selector": "#split-toolbar"
+    },
+    "added": "2026-09-20"
   }
 ]

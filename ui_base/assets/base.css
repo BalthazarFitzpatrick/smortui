@@ -966,3 +966,8 @@ textarea.text-field {
 .hazard-stripes .hazard-label {
   background: var(--bg); padding: 2px 8px; border: 2px solid var(--grey-border);
 }
+
+/* a labelled +/- row: label, spacer, right-aligned value, then the two buttons. wrap in .run-controls */
+.stepper { gap: 8px; }
+.stepper .toggle { padding: 0 10px; }
+.stepper .field-value { min-width: 46px; text-align: right; }
