@@ -208,13 +208,13 @@
 
   <h2>stepper rows</h2>
   <p class="demo-note">
-    Recipe - see <a href="../docs/recipes/stepper-rows.md">docs/recipes</a>. No stepper class exists,
-    so each row is <code>.run-controls</code> with a label, a spacer, a value and two toggles.
+    Recipe - see <a href="../docs/recipes/stepper-rows.md">docs/recipes</a>. Each row is <code>.run-controls.stepper</code>
+    with a label, a spacer, a value and two toggles.
   </p>
   <div id="stepper-rows" style="display: flex; flex-direction: column; gap: var(--gap); max-width: 320px;">
-    <div class="run-controls" data-stepper="alpha"><span class="field-label">alpha</span><span class="spacer"></span><span class="field-value">3</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
-    <div class="run-controls" data-stepper="beta"><span class="field-label">beta</span><span class="spacer"></span><span class="field-value">0</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
-    <div class="run-controls" data-stepper="gamma"><span class="field-label">gamma</span><span class="spacer"></span><span class="field-value">7</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+    <div class="run-controls stepper" data-stepper="alpha"><span class="field-label">alpha</span><span class="spacer"></span><span class="field-value">3</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+    <div class="run-controls stepper" data-stepper="beta"><span class="field-label">beta</span><span class="spacer"></span><span class="field-value">0</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+    <div class="run-controls stepper" data-stepper="gamma"><span class="field-label">gamma</span><span class="spacer"></span><span class="field-value">7</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
   </div>
 
   <h2>a split toolbar row</h2>

@@ -65,6 +65,7 @@
     "title": "stepper rows",
     "summary": "a stack of labelled plus/minus controls, one per row, label left and value with buttons right-aligned",
     "primitives": [
+      "base.css:stepper",
       "base.css:run-controls",
       "base.css:toggle",
       "base.css:spacer"
