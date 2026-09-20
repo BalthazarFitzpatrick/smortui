@@ -858,6 +858,25 @@ textarea.text-field {
 }
 .slider-axis input[type="range"]:focus { outline: none; }
 .slider-axis input[type="range"]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
+/* the same look on a bare <input type=range>: opt in with the class, no makeSlider needed */
+.range-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 22px; margin: 0; cursor: pointer; background:
+    repeating-linear-gradient(to right,
+      var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
+    linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
+}
+.range-slider::-webkit-slider-runnable-track { background: transparent; height: 22px; }
+.range-slider::-moz-range-track { background: transparent; height: 22px; }
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 5px; height: 18px; background: var(--cream); border: none; cursor: ew-resize;
+}
+.range-slider::-moz-range-thumb {
+  width: 5px; height: 18px; background: var(--cream); border: none; cursor: ew-resize;
+}
+.range-slider:focus { outline: none; }
+.range-slider:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
 .slider-ends {
   position: relative; display: flex; justify-content: space-between;
   color: var(--text-dim); font-variant-numeric: tabular-nums;
