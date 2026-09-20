@@ -214,6 +214,36 @@ needs.
 
 ---
 
+## Recipes
+
+`docs/recipes/index.json` is a manifest of reusable *patterns* - compositions of the primitives
+above, as opposed to `README.md`'s `## Components` table, which documents single files. Read the
+manifest alone to know what exists before reading anything else; it is small on purpose.
+
+```json
+[
+  {
+    "id": "kebab-case, stable - other files may link to it",
+    "title": "a short human title",
+    "summary": "one sentence, generic - no application vocabulary, same rule as every component",
+    "primitives": ["menu.js:Menu"],
+    "tags": ["menu", "list", "field"],
+    "file": "docs/recipes/<id>.md",
+    "demo": {"panel": "menus", "selector": "#open-x"},
+    "added": "YYYY-MM-DD"
+  }
+]
+```
+
+`demo.selector` must exist in `demo/index.html`, or `null` if the recipe has no live demo yet.
+`file` must exist under `docs/recipes/`. `tests/test_assets.py` guards both against drift.
+
+**Adding a recipe**: write `docs/recipes/<id>.md` in the README's own voice (why, one runnable
+snippet, a note on when the shape is wrong), add one block to an existing `demo/index.html` panel
+that exercises it live, and append one entry to `index.json`. A recipe never introduces a new
+`menu.js` section kind - if the pattern needs one, it belongs in `menu.js` itself and in
+`## Components`, not here.
+
 ## Rules for extending this package
 
 - **A component that could save something must not.** Interaction and rendering only.

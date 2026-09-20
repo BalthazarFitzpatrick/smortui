@@ -258,6 +258,27 @@ the rendered order, because the mismatches you can see sit together on screen.
 and an optional distribution drawn over it, so "no results" and "your cut sits above every value"
 stop looking identical. `makeAligner` is for last-pixel crop work and owns no persistence.
 
+## Gallery & recipes
+
+`demo/index.html` is the gallery - every primitive above, live, tabbed, and driven the same way a
+real page would drive it (`demo/serve.py` proxies `/ui/*` to this package exactly as a consumer's
+own server should). Run it with:
+
+```bash
+uv run python demo/serve.py --port 8770
+```
+
+A **recipe** is a reusable *pattern* built from those primitives - not a new file to add to the
+table above, but a documented shape for composing what already exists.
+
+| recipe | what it shows |
+|---|---|
+| [a preset list that fills sibling fields](docs/recipes/preset-fills-fields.md) | a `list` row that fills the `field` sections beside it, one revealed only for one choice, each row's own number computed live |
+
+Each recipe has a live block in the gallery (find it by title in the matching tab) and a doc under
+`docs/recipes/`. The set is also indexed at `docs/recipes/index.json` - a small, stable manifest an
+agent can read before loading this file or the gallery at all; its schema is in `CLAUDE.md`.
+
 ## Security
 
 `read_asset` resolves the requested path and checks it is still inside the asset folder, rather than

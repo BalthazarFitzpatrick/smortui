@@ -163,6 +163,19 @@
   </div>
   <div class="stat" id="menu-said">nothing picked yet</div>
 
+  <h2>a preset list that fills fields</h2>
+  <p class="demo-note">
+    Recipe, not a new primitive - see <a href="../docs/recipes/preset-fills-fields.md">docs/recipes</a>.
+    A `list` row is a shortcut into the same state the `field` sections below it read from;
+    <code>menu.refresh(sections)</code> redraws with the new values already filled in. Picking
+    "custom" size adds a field that plain sizes do not have, and each size's number is computed
+    live rather than written into the page.
+  </p>
+  <div class="demo-row">
+    <div class="toggle dropdown-head" id="open-presets"><span>settings</span></div>
+  </div>
+  <div class="stat" id="presets-said">nothing applied yet</div>
+
   <h2>rows that carry numbers</h2>
   <p class="demo-note">
     A menu row is a <code>.toggle</code> with a name and a <code>.stats</code> badge. <strong>The
@@ -404,6 +417,67 @@ document.getElementById('open-context').oncontextmenu = evt => {
   listMenu('at the pointer', [
     {id: 'r', label: 'rename'}, {id: 'd', label: 'delete'},
   ], item => said(`context: ${item.label}`)).openAt({x: evt.clientX, y: evt.clientY});
+};
+
+// ---- recipe: a preset list that fills sibling fields (docs/recipes/preset-fills-fields.md) ----
+let presetState = {a: 0.5, b: 10, size: 'medium'};
+let presetMenu = null;
+
+const PRESETS = [
+  {id: 'fast', label: 'fast', why: 'fewer, quicker passes', a: 0.8, b: 4},
+  {id: 'balanced', label: 'balanced', why: 'a sensible default', a: 0.5, b: 10},
+  {id: 'careful', label: 'careful', why: 'slow, avoids overshooting', a: 0.2, b: 30},
+];
+
+// a live number per row, computed from state rather than written into the page - what makes
+// "large" trustworthy is that it is measured, not a guess left to go stale beside the code that
+// would actually produce it
+function presetCostFor(size) {
+  return {small: 10, medium: 40, large: 90}[size] ?? null;
+}
+
+function presetSections() {
+  const sizeItems = ['small', 'medium', 'large', 'custom'].map(name => ({
+    id: name,
+    label: presetCostFor(name) == null ? name : `${name} (~${presetCostFor(name)} units)`,
+    on: presetState.size === name,
+  }));
+  return [
+    {
+      kind: 'list', label: 'presets',
+      items: PRESETS.map(p => ({id: p.id, label: p.label, stats: p.why})),
+      onPick: item => {
+        Object.assign(presetState, PRESETS.find(p => p.id === item.id));
+        renderPresetMenu();
+      },
+    },
+    {kind: 'field', label: 'a', value: String(presetState.a),
+     onInput: v => { presetState.a = v; }},
+    {kind: 'field', label: 'b', value: String(presetState.b),
+     onInput: v => { presetState.b = v; }},
+    {
+      kind: 'list', label: 'size', items: sizeItems,
+      onPick: item => { presetState.size = item.id; renderPresetMenu(); },
+    },
+    // a conditional field: it exists in the array only for one choice, so there is nothing to
+    // un-draw for the others
+    ...(presetState.size === 'custom'
+      ? [{kind: 'field', label: 'custom value', onInput: v => { presetState.custom = v; }}]
+      : []),
+    {kind: 'buttons', buttons: [{label: 'apply', onClick: () =>
+      said2(`applied a=${presetState.a} b=${presetState.b} size=${presetState.size}`)}]},
+  ];
+}
+
+function renderPresetMenu() {
+  if (presetMenu) presetMenu.refresh(presetSections());
+}
+
+const said2 = text => { document.getElementById('presets-said').textContent = text; };
+
+document.getElementById('open-presets').onclick = evt => {
+  presetMenu = new Menu({title: 'settings', persistent: true, sections: presetSections()});
+  presetMenu.openAt(evt.currentTarget);
 };
 
 // ---- the colour board -------------------------------------------------------------------
