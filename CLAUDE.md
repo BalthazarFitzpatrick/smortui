@@ -281,8 +281,11 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
   comment saying only what the code does invites someone to "simplify" the fix away.
 - **A component that listens on `window` returns `destroy()`.** See Teardown above; `tests/js/
   listeners.mjs` proves each one lets go of everything it registered.
-- **Tests live in `tests/`** and cover three things: serving what it should not, failing to serve
-  what a consumer links, and shipping broken CSS or JS. `uv run pytest` runs the python tests and
-  every `tests/js/*.mjs` runner under node (discovered by glob, so a new runner is picked up by
-  existing); `RUNNER_FOR` in `tests/test_assets.py` names which runner proves which script, and a
-  new script must be added there or excused.
+- **Tests live in `tests/`**, one module per failure class: `test_serving.py` (serving what it
+  should not, failing to serve what a consumer links), `test_scripts.py` (every script parses and
+  every `tests/js/*.mjs` runner passes under node, discovered by glob; `RUNNER_FOR` there names
+  which runner proves which script, and a new script must be added or excused) and
+  `test_stylesheet.py` (every rule `base.css`'s header promises). `tests/expected.py` is the named
+  asset list. `uv run pytest` runs all of it.
+- **`CHANGELOG.md` gets a line for every consumer-visible change** under `Unreleased`, moved
+  under the tag when one is cut. A consumer reads it to bump a pin; `git log` is for us.

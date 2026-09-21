@@ -199,6 +199,18 @@ const verbRow = walk(withVerb.el).filter(n => n.className === 'menu-buttons')[0]
 const ids = walk(verbRow).filter(n => n.dataset && n.dataset.id).map(n => n.dataset.id);
 assert.deepEqual(ids, ['open', 'menu-close'], `close goes last, got ${ids}`);
 
+// ---- onDismiss fires once per dismissal: a second close() on a shut menu is a no-op
+{
+  let dismissed = 0;
+  const once = new Menu({sections: [{kind: 'list', items: []}], onDismiss: () => dismissed++});
+  once.close();
+  assert.equal(dismissed, 0, 'closing a menu that never opened dismisses nothing');
+  once.openAt({x: 0, y: 0});
+  once.close();
+  once.close();
+  assert.equal(dismissed, 1, 'one dismissal, one onDismiss, however many times close() is called');
+}
+
 // ---- a head toggles its own menu shut
 const trigger = element('div');
 trigger.contains = n => n === trigger;
