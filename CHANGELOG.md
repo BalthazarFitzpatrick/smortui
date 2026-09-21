@@ -6,6 +6,10 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
+nothing yet
+
+## v0.2.3 - 2026-09-21
+
 - `indicateFocus(null)` hides the marker: the call for a host that re-renders its rows and knows
   the focused one is gone before any scroll does (it used to throw)
 - `destroy()` on the drawer and the expander agree: teardown is not a close - no `onClose`, no
