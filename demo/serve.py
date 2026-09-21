@@ -25,7 +25,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(DEMO.read_bytes(), "text/html")
             return
         if self.path.startswith("/ui/"):
-            name = self.path[len("/ui/") :]
+            # a cache-busting ?v= is the host's business, not the asset's name
+            name = self.path[len("/ui/") :].split("?", 1)[0]
             try:
                 body = read_asset(name)
             except UiBaseError:

@@ -36,7 +36,7 @@ EXPECTED = {
 
 
 def test_every_expected_asset_is_present_and_not_empty():
-    assert EXPECTED <= set(asset_names())
+    assert set(asset_names()) >= EXPECTED
     for name in EXPECTED:
         assert read_asset(name).strip(), f"{name} is empty"
 
@@ -132,8 +132,8 @@ RUNNER_FOR = {
     "indicate.js": "focus_marker.mjs",
     "pile.js": "pile_layout.mjs",
     "select.js": "listeners.mjs",  # teardown only; the gestures need a real pointer
-    "shell.js": None,  # tab switching against real focus and localStorage - the demo covers it
-    "align.js": None,  # drag geometry against real mouse events - its consumer covers it
+    "shell.js": "shell_tabs.mjs",
+    "align.js": "aligner.mjs",
 }
 
 

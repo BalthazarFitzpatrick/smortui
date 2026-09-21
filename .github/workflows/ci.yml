@@ -6,7 +6,8 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    # development is where tags are cut, so a tagged commit is one CI has run on
+    branches: [main, development]
   pull_request:
 
 jobs:
