@@ -539,7 +539,13 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
    before it, so the edge doing the overlapping is its top. */
 .fan-item {
   margin-top: -80%;
-  transition: transform 140ms;
+  /* THE SAME THREE PROPERTIES .focus-glow TRANSITIONS, restated, because two transition shorthands
+     on one element do not merge - the later rule wins whole. this said `transform 140ms` alone, so
+     a fan card wearing the glow slid at 140ms while its ring and light SNAPPED (measured:
+     transition-property came out as `transform` on a fan card against `transform, filter,
+     box-shadow` on a plain one). the slide now runs at the glow's own timing, which is the same
+     140ms it had. */
+  transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms);
   box-shadow:
     0 -8px 0 0 var(--bg),
     0 -8px 20px 3px rgba(0, 0, 0, 0.72);

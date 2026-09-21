@@ -317,6 +317,23 @@ def test_the_nav_bar_is_reachable_by_class():
     assert re.search(r"^\.nav-bar, #nav-bar\s*\{", _css(), re.MULTILINE)
 
 
+def test_a_fan_item_transitions_everything_the_focus_glow_does():
+    """two transition shorthands on one element do not merge; the later wins whole. .fan-item's
+    `transform 140ms` alone left a glowing fan card sliding smoothly while its ring and light
+    snapped - measured as transition-property `transform` against the plain card's three.
+    """
+    css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)  # the comments quote the old literal
+    fan = re.search(r"\.fan-item\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    glow = re.search(r"\.focus-glow\s*\{(.*?)\}", css, re.DOTALL).group(1)
+
+    def transitioned(body: str) -> list[str]:
+        shorthand = re.search(r"transition:\s*([^;]+);", body).group(1)
+        return sorted(part.strip().split()[0] for part in shorthand.split(","))
+
+    assert transitioned(fan) == transitioned(glow) == ["box-shadow", "filter", "transform"]
+    assert "140" not in fan, "the slide reads the glow's token, not its own literal"
+
+
 def test_edge_pulse_keeps_focus_and_reduced_motion_visible():
     css = _css()
     pulse = css[css.index(".edge-pulse {") : css.index("/* ---- column grouping")]
