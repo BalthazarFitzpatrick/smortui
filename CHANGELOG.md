@@ -6,7 +6,8 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
-nothing yet
+- `indicateFocus`: the marker hides while its target is out of the dom instead of collapsing to a
+  0x0 box in the page's corner on the next scroll; `.focus-marker[hidden]` is `display: none`
 
 ## v0.2.2 - 2026-09-21
 
