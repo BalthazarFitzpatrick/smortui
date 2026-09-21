@@ -6,6 +6,10 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
+- `.fan-item` transitions `filter` and `box-shadow` as well as `transform`, so a fan card that
+  also wears `.focus-glow` fades its ring and light in instead of snapping (its slide is unchanged
+  at 140ms, now read from `--focus-glow-ms`)
+
 - `content_type(name)` in `ui_base`: the header for an asset, stated (`text/css`,
   `application/javascript`) rather than guessed through `mimetypes`
 
