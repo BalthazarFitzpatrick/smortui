@@ -124,6 +124,15 @@ def test_a_rule_does_not_add_to_the_gap_it_sits_in():
     assert margin.strip().startswith("0 "), f"the rule must add no vertical space: {margin}"
 
 
+def test_a_filter_row_keeps_baseline_because_its_column_wraps():
+    """measured against base.css with a 54px caption beside six pills wrapping to three rows in
+    300px: baseline leaves the caption's centre 0px off the first pill's, centre drops it 37px to
+    the middle of the column. .strip centres because its cells never wrap; this row does.
+    """
+    row = re.search(r"\.filter-row\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
+    assert "align-items: baseline" in row
+
+
 def test_a_strip_centres_its_cells_and_shares_the_width():
     """`align-items: baseline` is the obvious choice for a label-and-value pair and the wrong one:
     a short cell pinned its text to the first baseline, flush against the top of a 31px box

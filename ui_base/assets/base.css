@@ -436,6 +436,11 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
   display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap;
   min-height: var(--row-height);
 }
+/* BASELINE HERE, AND CENTRE ON .strip, and both are measured. a filter row is a caption beside a
+   column of pills that WRAPS - three rows of them at 300px - and the caption belongs on the first
+   row: baseline puts its centre 0px off the first pill's, centre puts it 37px down, in the middle
+   of the column, beside nothing. .strip's cells are single-line, where baseline is the wrong
+   choice for the reason its comment gives. same property, different shapes, different answers */
 .filter-row { display: flex; align-items: baseline; gap: 12px; }
 /* A CONTROL ROW MAY NOT CHANGE HEIGHT, and text is what makes it. `.stat` had no rule at all, so a
    count like "0 positives, 0 implied negatives" was five wrappable words in a nowrap flex row: the
