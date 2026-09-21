@@ -333,8 +333,9 @@ Every behaviour here was paid for by a real failure in a tool first:
 
 Copying the files copies the code and loses the reasons. The reasons are most of the value, so they
 live in the comments and travel with it. Used by
-[smortboard](https://github.com/BalthazarFitzpatrick/smortboard) and a screenshot review tool, both
-consuming it as a package.
+[smortboard](https://github.com/BalthazarFitzpatrick/smortboard),
+[smolsmort](https://github.com/BalthazarFitzpatrick/smolsmort) and a game-automation review tool,
+all consuming it as a package pinned by tag.
 
 ## Development
 
