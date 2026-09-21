@@ -254,7 +254,8 @@ the rendered order, because the mismatches you can see sit together on screen.
 
 ### Pan, zoom, slider, aligner
 
-`makePanZoom` zooms about the pointer and `reset` fits and centres. `makeSlider` is an axis with ticks
+`makePanZoom` zooms about the pointer, `reset` fits and centres, and `destroy` lets go of its
+window listeners, as `makeSelection`, `makeDrawer`, `makeExpander` and `makeAligner` do. `makeSlider` is an axis with ticks
 and an optional distribution drawn over it, so "no results" and "your cut sits above every value"
 stop looking identical. `makeAligner` is for last-pixel crop work and owns no persistence.
 
@@ -274,6 +275,10 @@ table above, but a documented shape for composing what already exists.
 | recipe | what it shows |
 |---|---|
 | [a preset list that fills sibling fields](docs/recipes/preset-fills-fields.md) | a `list` row that fills the `field` sections beside it, one revealed only for one choice, each row's own number computed live |
+| [a directory browser menu](docs/recipes/directory-browser.md) | `dirMenu` drilling through folders from a host-supplied `fetchDir`, so the package never learns where the tree lives |
+| [a two-by-two button grid](docs/recipes/button-grid-2x2.md) | four equal buttons from `.toggle` and a two-column grid, handlers bound by id |
+| [stepper rows](docs/recipes/stepper-rows.md) | labelled `-`/`+` rows from `.run-controls.stepper`, one handler for the stack |
+| [a split toolbar row](docs/recipes/split-toolbar-row.md) | controls left, `.spacer`, primary actions alone on the right |
 
 Each recipe has a live block in the gallery (find it by title in the matching tab) and a doc under
 `docs/recipes/`. The set is also indexed at `docs/recipes/index.json` - a small, stable manifest an
@@ -331,10 +336,14 @@ consuming it as a package.
 ## Development
 
 ```bash
-uv run pytest                                # asset serving, the palette guard, the font-size rule
-for f in tests/js/*.mjs; do node "$f"; done  # the scripts, against a stub DOM
-uv run ruff check .
+uv run pytest            # asset serving, the palette and stylesheet guards, and every tests/js
+                         # runner under node - a script's behaviour against a stub DOM
+node tests/js/menu_sections.mjs   # one runner on its own, while working on that script
+uv run ruff check . --fix && uv run ruff format .
 ```
+
+Every component that listens on `window` returns `destroy()`; a host that mounts once per page can
+ignore it, a host that rebuilds must call it.
 
 ## Licence
 

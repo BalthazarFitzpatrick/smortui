@@ -3,8 +3,10 @@
 Read this before writing any interface code against this package. It is the precise contract; the
 `README.md` beside it is prose for a human.
 
-**What this is.** One stylesheet and three scripts that a local Python tool serves, giving menus,
-dropdowns, a tab shell, sliders, pan/zoom and crop alignment. No build step, no framework, no npm.
+**What this is.** One stylesheet and a dozen plain scripts that a local Python tool serves, giving
+menus, dropdowns, a tab shell, sliders, pan/zoom, crop alignment, selection, an edge drawer, an
+expanding strip, help tips, and the card/fan/pile board layout. No build step, no framework, no npm.
+`README.md`'s Components table is the one-line-per-file index; this file is the contract per API.
 
 **What this is not.** It has no application logic, no persistence, and no opinion about your data.
 Every component owns interaction and rendering only. Where a component could plausibly save
@@ -48,10 +50,18 @@ Order is load-bearing.
 <link rel="stylesheet" href="/ui/your-layout.css">
 <script src="/ui/menu.js"></script>
 <script src="/ui/shell.js"></script>            <!-- BEFORE the script that calls initShell -->
-<script src="/ui/align.js"></script>            <!-- only if you need crop alignment -->
+<!-- each of the rest only if you use it: align.js select.js buckets.js expand.js drawer.js
+     indicate.js help.js entrytext.js pile.js -->
 ```
 
-Scripts define globals; there are no modules and no imports.
+Scripts define globals; there are no modules and no imports. Every script is independent of the
+others except that `menu.js` must come before anything that opens a `Menu`.
+
+**Teardown.** A component that listens on `window` or `document` returns `destroy()`:
+`makeAligner`, `makePanZoom`, `makeSelection`, `makeDrawer`, `makeExpander`. A host that rebuilds
+the element it mounted on must call it, or every rebuild leaves one more listener behind. A host that
+mounts once for the page's life can ignore it. `Menu` cleans up on `close()` and `helpTip`,
+`indicateFocus` and `initShell` are page-lifetime singletons by design.
 
 ---
 
@@ -65,9 +75,10 @@ activateTab(name)
 **Markup contract.** `initShell` finds elements by class and reads `data-` attributes. Get these
 wrong and it silently does nothing.
 
+- the bar: `class="nav-bar"` (the `#nav-bar` id still works, from before the class existed)
 - every tab button: `class="nav-tab" data-tab="<name>"`
 - every panel: `class="tab-panel" data-panel="<name>"`
-- a hidden panel gets `class="hidden"` — your stylesheet must define `.hidden { display: none }`
+- a hidden panel gets `class="hidden"`, which `base.css` defines as `display: none !important`
 
 **Behaviour.** Click and arrow-key navigation (left/right wrap), Enter/Space activate, `aria-selected`
 maintained, and only the active tab sits in the tab order. The active tab is remembered in
@@ -115,7 +126,15 @@ Reach for `node` last. If you find yourself building a list by hand inside a `no
 ### `listMenu(title, items, onPick, extra = {})`
 
 The one-liner for the common case: a flat list of choices. Use this rather than constructing a
-`Menu` with a single `list` section.
+`Menu` with a single `list` section. `extra.onDismiss` goes to the menu; anything else goes onto
+the section.
+
+### `dirMenu(title, fetchDir, onPick, {start = '', onDismiss = null})`
+
+A persistent menu that walks a tree. The host supplies `fetchDir(path) -> {path, parent, dirs,
+files}` (`parent` null at the root); folder rows drill in, `..` goes up, a file row calls
+`onPick(fullPath)` and closes. Only the latest navigation may draw, so a slow earlier fetch never
+overwrites the folder you have moved on to. Filtering what shows is the host's, in `fetchDir`.
 
 ### `renderTree(container, items, {itemClass = ''})`
 
@@ -145,12 +164,17 @@ The readout is painted by the slider itself and does not depend on `onChange` be
 ### `makePanZoom(wrap, stage, opts)`
 
 ```js
-makePanZoom(wrap, stage, {onChange = null, maxZoom = 12, minZoom = 0.05, panModifier = 'shift'})
+makePanZoom(wrap, stage, {
+  onChange = null, maxZoom = 12, minZoom = 0.05, panModifier = 'shift', fit = 'width',
+})
+  -> {reset(naturalWidth, naturalHeight), apply, zoom(), set(z), destroy()}
 ```
 
-Wheel zoom anchored on the pointer, drag to pan, and `reset(width, height)` to fit **and centre** —
-resetting the scale without recentring leaves the picture wherever it was dragged, which reads as a
-button that half works.
+Wheel zoom anchored on the pointer, drag to pan (with the modifier held, or `panModifier: null`
+for a plain drag), and `reset(width, height)` to fit **and centre** — resetting the scale without
+recentring leaves the picture wherever it was dragged, which reads as a button that half works.
+`fit: 'width'` fits the width and never grows past 1:1; `fit: 'contain'` fits both axes and may
+grow.
 
 Two things it already handles, so do not add them: zooming about a corner walks the target off
 screen, and with a modifier held the browser delivers wheel movement as `deltaX`, so reading `deltaY`
@@ -193,15 +217,19 @@ Six rules carry the look. Override by redefining tokens, never by fighting the r
 `--ambient-pulse-*` tokens to tune the colour, periods, opacity, width, blur, spread and reach.
 Reduced motion keeps a static ring and glow. Pair the effect with a text label in the host.
 
-Three states, not two. An explicit choice stamps `data-theme="dark"`/`"light"` on the root; the
-default "system" setting stamps **nothing**, so only `prefers-color-scheme` separates light from dark.
+**The palette is dark, and there is one of it.** `base.css` carries no `prefers-color-scheme`
+block and no `[data-theme]` rule today; a host wanting a light look redefines the tokens itself.
+If a second palette is ever added here, these are the rules, and `tests/test_assets.py` already
+guards the first two:
 
 - the bare `:root` block defines the **complete** palette
-- `@media (prefers-color-scheme: dark)` redefines only tokens, guarded `:root:not([data-theme="light"])`
-- `:root[data-theme="dark"]` redefines them again so an explicit toggle wins
+- a `@media (prefers-color-scheme: ...)` block redefines only tokens, guarded
+  `:root:not([data-theme="..."])`, and `:root[data-theme="..."]` redefines them again so an
+  explicit toggle wins over the system setting
+- **never give a colour its only definition inside a media or `[data-theme]` block** — it will be
+  undefined for everyone whose root carries no attribute, which is the default
 
-**Never give a colour its only definition inside a media or `[data-theme]` block** — it will be
-undefined for most viewers. Style components through tokens, never with literals.
+Style components through tokens, never with literals.
 
 ### The palette
 
@@ -251,5 +279,10 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
   storage keys or comments. Storage keys are namespaced `ui-base:*`.
 - **Keep the reasons in the comments.** Every behaviour here was paid for by a real failure; a
   comment saying only what the code does invites someone to "simplify" the fix away.
+- **A component that listens on `window` returns `destroy()`.** See Teardown above; `tests/js/
+  listeners.mjs` proves each one lets go of everything it registered.
 - **Tests live in `tests/`** and cover three things: serving what it should not, failing to serve
-  what a consumer links, and shipping broken CSS or JS. Run `uv run pytest`.
+  what a consumer links, and shipping broken CSS or JS. `uv run pytest` runs the python tests and
+  every `tests/js/*.mjs` runner under node (discovered by glob, so a new runner is picked up by
+  existing); `RUNNER_FOR` in `tests/test_assets.py` names which runner proves which script, and a
+  new script must be added there or excused.
