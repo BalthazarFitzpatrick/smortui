@@ -8,6 +8,8 @@ first two; test_scripts.py and test_stylesheet.py are the third.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from ui_base import ASSETS, UiBaseError, asset_names, content_type, read_asset
@@ -95,3 +97,14 @@ def test_a_symlink_out_of_the_directory_is_refused(tmp_path):
             read_asset("_test_link.css")
     finally:
         link.unlink(missing_ok=True)
+
+
+def test_the_artifact_page_links_only_assets_this_package_ships():
+    """docs/artifact/smortui.html is the published design-system page; it loads the real assets as
+    supporting files under ui/, so a renamed or removed script would leave it pointing at nothing"""
+    page = (ASSETS.parent.parent / "docs" / "artifact" / "smortui.html").read_text()
+    linked = set(re.findall(r'(?:href|src)="ui/([^"]+)"', page))
+    assert linked, "the page must load the assets rather than copy them"
+    assert linked <= EXPECTED, (
+        f"the artifact links assets that do not ship: {sorted(linked - EXPECTED)}"
+    )
