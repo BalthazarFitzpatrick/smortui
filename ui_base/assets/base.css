@@ -960,6 +960,9 @@ textarea.text-field {
   border: 2px solid var(--cream);
   transition: left 120ms, top 120ms, width 120ms, height 120ms;
 }
+/* indicate.js hides it while its target is out of the dom; stated here like .help-tip's, so a
+   host rule that sets display on the marker cannot bring it back */
+.focus-marker[hidden] { display: none; }
 
 
 /* ---- hazard stripes: a placeholder for content that is not there yet ----

@@ -18,7 +18,8 @@ const docListeners = {};
 function element(tag) {
   const listeners = {};
   return {
-    tag, style: {}, className: '', children: [], rect: {left: 0, top: 0, width: 100, height: 30},
+    tag, style: {}, className: '', children: [], isConnected: true, hidden: false,
+    rect: {left: 0, top: 0, width: 100, height: 30},
     addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
     removeEventListener(type, fn) { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
     fire(type) { (listeners[type] || []).slice().forEach(fn => fn({})); },
@@ -73,5 +74,15 @@ assert.equal(a.listenerCount('transitionend'), 0, 'which also drops the listener
 a.rect.top = 60;
 (docListeners.scroll || []).forEach(fn => fn({}));
 assert.equal(marker().style.top, '60px', 'a scroll re-places the marker on the current target');
+
+// ---- a target that left the dom hides the marker instead of collapsing it into the corner
+a.isConnected = false;
+a.rect = {left: 0, top: 0, width: 0, height: 0};
+(docListeners.scroll || []).forEach(fn => fn({}));
+assert.equal(marker().hidden, true, 'a detached target hides the marker');
+assert.equal(marker().style.top, '60px', 'and leaves it where it was rather than at 0,0');
+indicateFocus(b);
+assert.equal(marker().hidden, false, 'the next real target shows it again');
+assert.equal(marker().style.top, '450px', 'placed on b where the test last put it');
 
 console.log('ok');

@@ -40,6 +40,11 @@ function _marker() {
 // the resting box straight away, so the marker travels once, to the right place.
 function _placeMarker(target) {
   if (!target || target !== _focusTarget) return;
+  // A TARGET THAT LEFT THE DOM HAS NO BOX. a host that re-renders its rows drops the focused one,
+  // and the next scroll re-measured it as 0x0 at (0,0) - a stray cream dot in the page's corner
+  // (measured). hide until something that exists takes focus
+  if (target.isConnected === false) { _focusMarker.hidden = true; return; }
+  _focusMarker.hidden = false;
   const r = target.getBoundingClientRect();
   const t = getComputedStyle(target).transform;
   let dx = 0, dy = 0;
