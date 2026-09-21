@@ -16,10 +16,11 @@ buckets, cards and the fan, drawers, expanders, menus, the focus marker, the pal
 Requirements: **Python 3.11+** and **uv**. Nothing else - no node, no npm, no build step. A
 `<link>` and a few `<script>` tags is the whole integration.
 
-In a tool, pin it by commit (the repo is `smortui`; the Python package inside is `ui_base`):
+In a tool, pin it by tag or commit (the repo is `smortui`; the Python package inside is `ui_base`;
+`CHANGELOG.md` says what each tag changed for a consumer):
 
 ```toml
-dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@<commit sha>"]
+dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.1"]
 ```
 
 Serve its assets from your request handler, then load them in the page. **Order matters**:
@@ -27,13 +28,14 @@ Serve its assets from your request handler, then load them in the page. **Order 
 calls `initShell`.
 
 ```python
-from ui_base import read_asset, UiBaseError
+from ui_base import content_type, read_asset, UiBaseError
 
 # a path like /ui/menu.js -> "menu.js"; refuses anything outside the assets
 try:
     body = read_asset(name)
 except UiBaseError:
     ...  # 404
+headers = {"Content-Type": content_type(name)}
 ```
 
 ```html

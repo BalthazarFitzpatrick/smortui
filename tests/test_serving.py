@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from ui_base import ASSETS, UiBaseError, asset_names, read_asset
+from ui_base import ASSETS, UiBaseError, asset_names, content_type, read_asset
 
 from .expected import EXPECTED
 
@@ -37,6 +37,8 @@ def test_asset_names_matches_what_is_on_disk():
         ".",
         "no-such-file.js",
         ".DS_Store",
+        "/etc/passwd",
+        "/ui_base/assets/menu.js",
     ],
 )
 def test_nothing_outside_the_assets_directory_can_be_read(name):
@@ -45,6 +47,23 @@ def test_nothing_outside_the_assets_directory_can_be_read(name):
     """
     with pytest.raises(UiBaseError):
         read_asset(name)
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("base.css", "text/css"),
+        ("menu.js", "application/javascript"),
+        ("/ui/menu.js", "application/javascript"),
+        ("something.png", "application/octet-stream"),
+        ("noext", "application/octet-stream"),
+    ],
+)
+def test_content_type_is_stated_not_guessed(name, expected):
+    """mimetypes says text/javascript on one python and application/javascript on another; a
+    consumer serving this package should get the same header everywhere without knowing that
+    """
+    assert content_type(name) == expected
 
 
 def test_a_dotfile_planted_in_the_directory_is_neither_listed_nor_served():
