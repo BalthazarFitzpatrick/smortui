@@ -77,14 +77,17 @@ assert.ok(openBackdrop.removed, 'the closing backdrop is removed once the fallba
 let destroyedCloses = 0;
 const strip3 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
 const expander3 = makeExpander(strip3, {onClose: () => destroyedCloses++});
+// relative, because an earlier case above leaves an expander open on purpose
+const keydownsBefore = (docListeners.keydown || []).length;
 strip3._listeners.click[0]();
+assert.equal(docListeners.keydown.length, keydownsBefore + 1, 'open listens for escape on document');
 const openBackdrop3 = document.body.children[document.body.children.length - 1];
 expander3.destroy();
 assert.equal(destroyedCloses, 0, 'teardown fires no onClose');
 assert.ok(openBackdrop3.removed, 'the backdrop is removed at once');
 assert.equal(strip3.focused, false, 'focus is not moved to the strip');
 assert.equal(strip3._listeners.click.length, 0, 'the strip click is gone');
-assert.equal((docListeners.keydown || []).length, 0, 'and so is the document keydown');
+assert.equal(docListeners.keydown.length, keydownsBefore, 'and so is its document keydown');
 
 // ---- escape on an open expander is preventDefault-ed, the signal a pinned help tip yields to
 const strip4 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});

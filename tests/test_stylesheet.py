@@ -299,8 +299,14 @@ def test_the_drawer_slides_on_the_shared_motion_tokens():
     """drawer.js carried its own 220ms while base.css declared --motion-duration THE one timing
     every animated thing reads; a host retuning motion moved the expander and not the drawer
     """
-    rule = re.search(r"\.drawer\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
+    css = _css()
+    # the main rule, not the reduced-motion one that also names .drawer earlier in the file
+    rule = next(r for r in re.findall(r"\.drawer\s*\{(.*?)\}", css, re.DOTALL) if "z-index" in r)
     assert "transition: left var(--motion-duration) var(--motion-ease)" in rule
+    reduced = css.split("@media (prefers-reduced-motion: reduce)")[1]
+    assert re.search(r"\.drawer\s*\{[^}]*transition: none", reduced), (
+        "and it stops under reduced motion"
+    )
     assert "position: fixed" in rule, "the drawer's placement is the stylesheet's, not inline"
     drawer = (ASSETS / "drawer.js").read_text()
     assert not re.search(r"\d+\s*ms\b", drawer), "no second timing source"
