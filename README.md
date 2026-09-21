@@ -311,7 +311,8 @@ No build step: the assets are the files a browser loads, unminified and unbundle
 its own files first and falls back to `read_asset` for anything it does not override, so one tool
 can replace a single file by name without editing the package the others read.
 
-A tool consumes it by pinning a commit sha in its `pyproject.toml` (see Install above), the same way
+A tool consumes it by pinning a tag or commit sha in its `pyproject.toml` (see Install above;
+`CHANGELOG.md` says what each tag changed for a consumer), the same way
 it would pin any other dependency - `uv sync` fetches that exact revision, so an update to smortui
 never moves a tool's build without that tool's own commit changing.
 

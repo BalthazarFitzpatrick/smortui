@@ -389,6 +389,11 @@ class Menu {
   }
 
   close() {
+    // ONCE PER DISMISSAL. a menu that is not open has nothing to dismiss: a host calling close()
+    // after a pick already closed it (dirMenu does exactly that) must not fire onDismiss a second
+    // time and drop a selection the first firing already handled - the same guard the expander
+    // keeps for escape-and-backdrop-click landing together
+    if (!this.el) return;
     document.removeEventListener('mousedown', this._onDocDown);
     document.removeEventListener('keydown', this._onKey);
     this._trigger?.classList.remove('open');
