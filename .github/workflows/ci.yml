@@ -33,7 +33,11 @@ jobs:
           node-version: "22"
 
       - name: sync
-        run: uv sync --dev --python ${{ matrix.python }}
+        run: uv sync --dev --group shots --python ${{ matrix.python }}
+
+      # the whole-system test drives the demo in headless chromium (tests/test_demo.py)
+      - name: chromium
+        run: uv run playwright install --with-deps chromium
 
       - name: ruff check
         run: uv run ruff check .

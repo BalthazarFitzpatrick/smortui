@@ -287,7 +287,10 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
   should not, failing to serve what a consumer links), `test_scripts.py` (every script parses and
   every `tests/js/*.mjs` runner passes under node, discovered by glob; `RUNNER_FOR` there names
   which runner proves which script, and a new script must be added or excused) and
-  `test_stylesheet.py` (every rule `base.css`'s header promises). `tests/expected.py` is the named
-  asset list. `uv run pytest` runs all of it.
+  `test_stylesheet.py` (every rule `base.css`'s header promises), plus `test_demo.py`, the
+  whole-system test: the demo served by its own handler in headless Chromium, every tab, every
+  recipe trigger, zero console errors (needs `uv sync --group shots` and
+  `uv run playwright install chromium`; skipped without them locally, required under CI).
+  `tests/expected.py` is the named asset list. `uv run pytest` runs all of it.
 - **`CHANGELOG.md` gets a line for every consumer-visible change** under `Unreleased`, moved
   under the tag when one is cut. A consumer reads it to bump a pin; `git log` is for us.
