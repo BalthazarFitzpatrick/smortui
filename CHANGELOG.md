@@ -6,6 +6,9 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
+- `content_type(name)` in `ui_base`: the header for an asset, stated (`text/css`,
+  `application/javascript`) rather than guessed through `mimetypes`
+
 - `Menu.close()` is a no-op on a menu that is not open, so `onDismiss` fires once per dismissal
   however many times `close()` is called (was: every call fired it)
 - a pinned help tip lets go on Escape, like a menu

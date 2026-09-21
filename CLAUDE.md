@@ -17,11 +17,12 @@ something, it deliberately does not — the host decides.
 ## Serving it
 
 ```python
-from ui_base import ASSETS, asset_names, read_asset, UiBaseError
+from ui_base import ASSETS, asset_names, content_type, read_asset, UiBaseError
 
-read_asset(name) -> bytes     # one asset; raises UiBaseError for anything outside ASSETS
-asset_names()    -> list[str] # every file you may serve
-ASSETS           -> Path      # the directory itself
+read_asset(name)   -> bytes     # one asset; raises UiBaseError for anything outside ASSETS
+asset_names()      -> list[str] # every file you may serve
+content_type(name) -> str       # "text/css" / "application/javascript" / octet-stream
+ASSETS             -> Path      # the directory itself
 ```
 
 `read_asset` resolves the path then checks containment, rather than string-matching on `..`. Do not
@@ -38,8 +39,9 @@ else:
     data = read_asset(name)  # UiBaseError -> 404
 ```
 
-Set `Content-Type` from the extension (`.css` → `text/css`, `.js` → `application/javascript`) and
-send `Cache-Control: no-store` while developing, or an edit looks like it did nothing.
+Set `Content-Type` from `content_type(name)` rather than `mimetypes`, which answers
+`text/javascript` on one Python and `application/javascript` on another, and send
+`Cache-Control: no-store` while developing, or an edit looks like it did nothing.
 
 ## Loading it in the page
 

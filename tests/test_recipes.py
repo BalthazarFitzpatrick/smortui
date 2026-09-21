@@ -1,5 +1,5 @@
-"""docs/recipes/index.json: the manifest guard, same job test_assets.py does for the palette -
-this is what stops the index drifting from the docs and demo blocks it points at.
+"""docs/recipes/index.json: the manifest guard, the same job test_stylesheet.py does for the
+palette - this is what stops the index drifting from the docs and demo blocks it points at.
 """
 
 from __future__ import annotations

@@ -27,13 +27,14 @@ Serve its assets from your request handler, then load them in the page. **Order 
 calls `initShell`.
 
 ```python
-from ui_base import read_asset, UiBaseError
+from ui_base import content_type, read_asset, UiBaseError
 
 # a path like /ui/menu.js -> "menu.js"; refuses anything outside the assets
 try:
     body = read_asset(name)
 except UiBaseError:
     ...  # 404
+headers = {"Content-Type": content_type(name)}
 ```
 
 ```html

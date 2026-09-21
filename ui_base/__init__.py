@@ -13,10 +13,11 @@ reasons are most of the value. Consuming them from here keeps both.
 
 HOW A TOOL CONSUMES IT. Serve `ASSETS` under some route and link it:
 
-    from ui_base import ASSETS, read_asset
+    from ui_base import ASSETS, content_type, read_asset
 
     # in a request handler, for a path like /ui/menu.js
     body = read_asset(name)          # refuses anything outside ASSETS
+    header = content_type(name)      # "application/javascript" - no mimetypes guessing
 
 Then in the page, in this order - base.css first so a tool's own stylesheet can override it, and
 shell.js before the script that calls initShell:
@@ -41,13 +42,24 @@ from __future__ import annotations
 
 from pathlib import Path
 
-__all__ = ["ASSETS", "UiBaseError", "asset_names", "read_asset"]
+__all__ = ["ASSETS", "UiBaseError", "asset_names", "content_type", "read_asset"]
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
 
 class UiBaseError(Exception):
     pass
+
+
+# the two types this package ships, stated rather than guessed: mimetypes answers text/javascript on
+# one python and application/javascript on another, and a consumer's handler should not have to
+# know that. anything else is a bytestream
+_CONTENT_TYPES = {".css": "text/css", ".js": "application/javascript"}
+
+
+def content_type(name: str) -> str:
+    """the Content-Type header for an asset name: menu.js -> application/javascript"""
+    return _CONTENT_TYPES.get(Path(name).suffix, "application/octet-stream")
 
 
 def _is_asset(path: Path) -> bool:
