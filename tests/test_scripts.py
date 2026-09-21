@@ -28,7 +28,9 @@ needs_node = pytest.mark.skipif(
     reason="node is not installed",
 )
 # an underscore-prefixed file is a helper the runners import (tests/js/_dom.mjs), not a runner
-JS_TESTS = sorted(p for p in (Path(__file__).parent / "js").glob("*.mjs") if not p.name.startswith("_"))
+JS_TESTS = sorted(
+    p for p in (Path(__file__).parent / "js").glob("*.mjs") if not p.name.startswith("_")
+)
 
 
 @needs_node
