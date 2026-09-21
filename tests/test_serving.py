@@ -21,9 +21,10 @@ def test_every_expected_asset_is_present_and_not_empty():
         assert read_asset(name).strip(), f"{name} is empty"
 
 
-def test_asset_names_matches_what_is_on_disk():
-    on_disk = {p.name for p in ASSETS.iterdir() if p.is_file() and not p.name.startswith(".")}
-    assert set(asset_names()) == on_disk
+def test_asset_names_is_exactly_the_named_set():
+    """named, not re-derived from the directory: a test that restates the reader's own filter
+    passes whatever the filter does. a new asset goes into EXPECTED first."""
+    assert set(asset_names()) == EXPECTED
 
 
 @pytest.mark.parametrize(

@@ -79,4 +79,13 @@ left.open();
 const leftOpenLeft = parseFloat(left.el.style.left);
 assert.ok(leftOpenLeft >= 0 && leftOpenLeft + leftWidth <= vw / 2, 'a left-edge drawer opens within the left half');
 
+// ---- destroy is not a close: no onClose, but isOpen answers false and the element is gone
+let torn = 0;
+const doomed = makeDrawer({edge: 'right', onClose: () => torn++});
+doomed.open();
+doomed.destroy();
+assert.equal(torn, 0, 'teardown fires no onClose');
+assert.equal(doomed.isOpen(), false, 'but it is not open any more');
+assert.ok(doomed.el.removed, 'and its element is gone');
+
 console.log('ok');

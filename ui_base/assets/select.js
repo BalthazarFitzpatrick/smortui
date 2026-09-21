@@ -168,7 +168,13 @@ function makeSelection(container, options = {}) {
     // the move/up listeners are on window - a host that rebuilds its grid must drop them, or each
     // rebuild leaves one more pair behind netting a container that is gone
     destroy: () => {
-      onUp();
+      // a net in progress is dropped, not finished: teardown fires no onChange into a host that
+      // is mid-rebuild
+      if (frame) cancelAnimationFrame(frame);
+      frame = null;
+      band?.remove();
+      band = null;
+      origin = pointer = null;
       container.removeEventListener('click', onClick);
       container.removeEventListener('contextmenu', onContextMenu);
       container.removeEventListener('mousedown', onDown);

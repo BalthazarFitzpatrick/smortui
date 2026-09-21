@@ -170,6 +170,13 @@
   --ambient-pulse-reach: 4px;
 }
 
+/* REDUCED MOTION AT THE TOKEN, not per component: the drawer's slide and the expander's grow both
+   read --motion-duration, and zeroing it here is what keeps them agreeing - expand.js used to
+   zero its own copy while the drawer kept sliding */
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-duration: 0ms; }
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {

@@ -72,12 +72,8 @@ def test_every_script_has_a_named_behaviour_runner_or_an_excuse():
 @needs_node
 @pytest.mark.parametrize("script", JS_TESTS, ids=[p.stem for p in JS_TESTS])
 def test_the_scripts_behave(script):
-    """PARSING IS NOT BEHAVIOUR. `node --check` proves a file loads, which says nothing about
-    whether a column carries its own heading, a drawer parks its sliver, or a focus marker ignores
-    the element focus already left. each runner under tests/js is one script's contract exercised
-    against a dom stub or against plain values - the two things under test are structure and
-    arithmetic, so a full jsdom would be testing the browser as much as the code. DISCOVERED BY
-    GLOB on purpose: dir_menu.mjs sat here for a release with no case naming it, and nothing ran it.
+    """one runner, one script's contract (see the module docstring). DISCOVERED BY GLOB on
+    purpose: dir_menu.mjs sat here for a release with no case naming it, and nothing ran it.
     """
     assert not _NO_NODE, "CI must have node"
     result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)

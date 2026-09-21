@@ -20,7 +20,7 @@ In a tool, pin it by tag or commit (the repo is `smortui`; the Python package in
 `CHANGELOG.md` says what each tag changed for a consumer):
 
 ```toml
-dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.1"]
+dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.2"]
 ```
 
 Serve its assets from your request handler, then load them in the page. **Order matters**:

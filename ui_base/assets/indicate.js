@@ -64,10 +64,13 @@ function _placeMarker(target) {
 // THE TARGET MAY BE MOVING WHEN IT TAKES FOCUS - a fan item slides back to its resting place - so
 // place it now, again on the next frame, and once more when its own transition ends, all of it
 // cancelled the moment focus moves on
+// indicateFocus(null) CLEARS IT. a host that re-renders its rows knows the focused one is gone
+// before any scroll does; this is the call for that moment, since nothing here can see a removal
 function indicateFocus(target) {
   _marker();
   if (_dropPending) _dropPending();
   _focusTarget = target;
+  if (!target) { _focusMarker.hidden = true; return; }
   _placeMarker(target);
 
   const settle = () => { _placeMarker(target); drop(); };

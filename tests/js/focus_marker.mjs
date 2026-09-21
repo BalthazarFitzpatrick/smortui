@@ -70,4 +70,10 @@ indicateFocus(b);
 assert.equal(marker().hidden, false, 'the next real target shows it again');
 assert.equal(marker().style.top, '450px', 'placed on b where the test last put it');
 
+// ---- indicateFocus(null) clears it, for a host that knows its focused row is gone
+indicateFocus(null);
+assert.equal(marker().hidden, true, 'null hides the marker');
+indicateFocus(c);
+assert.equal(marker().hidden, false);
+
 console.log('ok');

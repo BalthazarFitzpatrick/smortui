@@ -48,10 +48,15 @@ button.fire('click');
 fire(window, 'scroll');
 assert.equal(tip.hidden, true, 'scrolling unpins');
 
-// ---- and escape, the same key that shuts a menu
+// ---- and escape, the same key that shuts a menu - answered a tick later so an open menu wins
+const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 button.fire('click');
 assert.equal(tip.hidden, false);
-document.fire('keydown', {key: 'Escape'});
+document.fire('keydown', {key: 'Escape', defaultPrevented: true});
+await tick();
+assert.equal(tip.hidden, false, 'an escape a menu already answered leaves the tip alone');
+document.fire('keydown', {key: 'Escape', defaultPrevented: false});
+await tick();
 assert.equal(tip.hidden, true, 'escape unpins');
 document.fire('keydown', {key: 'a'});
 

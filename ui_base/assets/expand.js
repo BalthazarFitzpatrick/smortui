@@ -168,10 +168,15 @@ function makeExpander(strip, {
 
   strip.addEventListener('click', open);
 
-  // drops the strip's click and shuts anything open, for a host that rebuilds the strip
+  // TEARDOWN IS NOT A CLOSE: drops the strip's click and removes an open panel at once, with no
+  // collapse, no onClose and no focus moved - the same contract as the drawer's destroy
   function destroy() {
     strip.removeEventListener('click', open);
-    close();
+    if (!backdrop) return;
+    document.removeEventListener('keydown', onKey);
+    backdrop.remove();
+    backdrop = null;
+    panel = null;
   }
 
   return {open, close, destroy};
