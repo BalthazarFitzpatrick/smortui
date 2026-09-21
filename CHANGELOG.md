@@ -6,6 +6,10 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
+nothing yet
+
+## v0.2.2 - 2026-09-21
+
 - `.fan-item` transitions `filter` and `box-shadow` as well as `transform`, so a fan card that
   also wears `.focus-glow` fades its ring and light in instead of snapping (its slide is unchanged
   at 140ms, now read from `--focus-glow-ms`)
