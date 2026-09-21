@@ -163,6 +163,23 @@
   </div>
   <div class="stat" id="menu-said">nothing picked yet</div>
 
+  <h2>a directory browser</h2>
+  <p class="demo-note">
+    <code>dirMenu(title, fetchDir, onPick)</code>: folders drill in, '..' goes up, a file calls
+    onPick. The fake tree below is in memory; a real host answers fetchDir from its server.
+  </p>
+  <div class="demo-row">
+    <div class="toggle dropdown-head" id="open-dirs"><span>browse</span></div>
+  </div>
+  <div class="stat" id="dirs-said">nothing picked yet</div>
+
+  <h2>a range input with the slider look</h2>
+  <p class="demo-note">
+    A bare <code>&lt;input type=range&gt;</code> plus the <code>range-slider</code> class; not routed
+    through makeSlider.
+  </p>
+  <div style="max-width: 460px;"><input type="range" class="range-slider" id="range-demo" min="0" max="100" value="35"></div>
+
   <h2>a preset list that fills fields</h2>
   <p class="demo-note">
     Recipe, not a new primitive - see <a href="../docs/recipes/preset-fills-fields.md">docs/recipes</a>.
@@ -175,6 +192,44 @@
     <div class="toggle dropdown-head" id="open-presets"><span>settings</span></div>
   </div>
   <div class="stat" id="presets-said">nothing applied yet</div>
+
+  <h2>a two-by-two button grid</h2>
+  <p class="demo-note">
+    Recipe - see <a href="../docs/recipes/button-grid-2x2.md">docs/recipes</a>. Equal columns and the
+    shared row height make four equal buttons; handlers bind by id.
+  </p>
+  <div id="grid-2x2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); max-width: 320px;">
+    <div class="toggle" id="grid-alpha">alpha</div>
+    <div class="toggle" id="grid-beta">beta</div>
+    <div class="toggle" id="grid-gamma">gamma</div>
+    <div class="toggle" id="grid-delta">delta</div>
+  </div>
+  <div class="stat" id="grid-said" style="margin-top: 8px;">nothing pressed yet</div>
+
+  <h2>stepper rows</h2>
+  <p class="demo-note">
+    Recipe - see <a href="../docs/recipes/stepper-rows.md">docs/recipes</a>. Each row is <code>.run-controls.stepper</code>
+    with a label, a spacer, a value and two toggles.
+  </p>
+  <div id="stepper-rows" style="display: flex; flex-direction: column; gap: var(--gap); max-width: 320px;">
+    <div class="run-controls stepper" data-stepper="alpha"><span class="field-label">alpha</span><span class="spacer"></span><span class="field-value">3</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+    <div class="run-controls stepper" data-stepper="beta"><span class="field-label">beta</span><span class="spacer"></span><span class="field-value">0</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+    <div class="run-controls stepper" data-stepper="gamma"><span class="field-label">gamma</span><span class="spacer"></span><span class="field-value">7</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+  </div>
+
+  <h2>a split toolbar row</h2>
+  <p class="demo-note">
+    Recipe - see <a href="../docs/recipes/split-toolbar-row.md">docs/recipes</a>. Controls left in
+    written order, a spacer, then the primary actions alone on the right.
+  </p>
+  <div id="split-toolbar" class="run-controls" style="max-width: 560px;">
+    <div class="toggle">alpha</div>
+    <div class="toggle">beta</div>
+    <div class="toggle">gamma</div>
+    <span class="spacer"></span>
+    <div class="toggle" id="tb-save">save</div>
+    <div class="toggle" id="tb-apply">apply</div>
+  </div>
 
   <h2>rows that carry numbers</h2>
   <p class="demo-note">
@@ -368,6 +423,22 @@ renderTree(document.getElementById('tree-demo'), [
   {id: 'd', label: 'combo points', dot: false},
 ]);
 
+// grid buttons bind by id, so the layout can change without touching these
+['alpha', 'beta', 'gamma', 'delta'].forEach(name => {
+  document.getElementById(`grid-${name}`).onclick = () => {
+    document.getElementById('grid-said').textContent = `pressed ${name}`;
+  };
+});
+
+// one handler for every stepper row; clamped to 0..9
+document.getElementById('stepper-rows').onclick = evt => {
+  const button = evt.target.closest('[data-step]');
+  if (!button) return;
+  const value = button.parentElement.querySelector('.field-value');
+  const next = Number(value.textContent) + Number(button.dataset.step);
+  value.textContent = Math.min(9, Math.max(0, next));
+};
+
 const said = text => { document.getElementById('menu-said').textContent = text; };
 
 document.getElementById('open-list').onclick = evt =>
@@ -479,6 +550,23 @@ document.getElementById('open-presets').onclick = evt => {
   presetMenu = new Menu({title: 'settings', persistent: true, sections: presetSections()});
   presetMenu.openAt(evt.currentTarget);
 };
+
+// fake in-memory tree for the directory browser
+const FAKE_TREE = {
+  '/': {dirs: ['docs', 'data'], files: ['readme.txt']},
+  '/docs': {dirs: [], files: ['a.md', 'b.md']},
+  '/data': {dirs: ['raw'], files: ['table.csv']},
+  '/data/raw': {dirs: [], files: ['one.csv', 'two.csv']},
+};
+const fetchFakeDir = async path => {
+  const at = path || '/';
+  const parent = at === '/' ? null : at.slice(0, at.lastIndexOf('/')) || '/';
+  return {path: at, parent, ...FAKE_TREE[at]};
+};
+document.getElementById('open-dirs').onclick = evt =>
+  dirMenu('pick a file', fetchFakeDir, file => {
+    document.getElementById('dirs-said').textContent = `picked ${file}`;
+  }).openAt(evt.currentTarget);
 
 // ---- the colour board -------------------------------------------------------------------
 // grouped by ROLE and in reading order, because "which one is which" is the question a bare
