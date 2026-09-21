@@ -291,6 +291,8 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
   whole-system test: the demo served by its own handler in headless Chromium, every tab, every
   recipe trigger, zero console errors (needs `uv sync --group shots` and
   `uv run playwright install chromium`; skipped without them locally, required under CI).
-  `tests/expected.py` is the named asset list. `uv run pytest` runs all of it.
+  `tests/expected.py` is the named asset list. `uv run pytest` runs all of it. A runner that needs
+  a DOM imports `tests/js/_dom.mjs` (the one shared stub: `element()`, `installDom()`,
+  `liveListeners()`); never hand-roll a second one.
 - **`CHANGELOG.md` gets a line for every consumer-visible change** under `Unreleased`, moved
   under the tag when one is cut. A consumer reads it to bump a pin; `git log` is for us.

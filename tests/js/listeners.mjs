@@ -5,34 +5,10 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-class Element {}
-globalThis.Element = Element;
+import {installDom, element, liveListeners} from './_dom.mjs';
 
-const winListeners = new Map();
-globalThis.window = {
-  innerWidth: 1200, innerHeight: 800,
-  addEventListener: (type, fn) => winListeners.set(fn, type),
-  removeEventListener: (type, fn) => winListeners.delete(fn),
-};
-const hostListeners = new Map();
-function element(tag) {
-  const el = Object.assign(new Element(), {
-    tag, className: '', style: {}, children: [], dataset: {}, tabIndex: 0,
-    addEventListener: (type, fn) => hostListeners.set(fn, el),
-    removeEventListener: (type, fn) => hostListeners.delete(fn),
-    appendChild(child) { el.children.push(child); return child; },
-    remove() { el.removed = true; },
-    querySelector: () => null, querySelectorAll: () => [], focus() {},
-    getBoundingClientRect: () => ({left: 0, top: 0, width: 100, height: 50}),
-    classList: {add() {}, remove() {}, contains: () => false, toggle() {}},
-  });
-  return el;
-}
-globalThis.document = {
-  createElement: element, body: element('body'), documentElement: element('html'),
-  addEventListener() {}, removeEventListener() {},
-};
-globalThis.requestAnimationFrame = fn => 1;
+const {window} = installDom();
+globalThis.requestAnimationFrame = () => 1;
 globalThis.cancelAnimationFrame = () => {};
 
 const load = (file, name) => {
@@ -41,17 +17,14 @@ const load = (file, name) => {
 };
 
 // a listener on an element that was itself removed goes with it - only live hosts count
-const settled = () => ({
-  window: winListeners.size,
-  host: [...hostListeners.values()].filter(el => !el.removed).length,
-});
+const settled = () => liveListeners(window);
 const clean = {window: 0, host: 0};
 
 {
   const makePanZoom = load('menu.js', 'makePanZoom');
   const wrap = element('div');
   const view = makePanZoom(wrap, element('div'));
-  assert.equal(winListeners.size, 2, 'pan/zoom listens for move and up on window');
+  assert.equal(settled().window, 2, 'pan/zoom listens for move and up on window');
   view.destroy();
   assert.deepEqual(settled(), clean, 'makePanZoom.destroy drops every listener it added');
 }
@@ -59,14 +32,14 @@ const clean = {window: 0, host: 0};
   const makeSelection = load('select.js', 'makeSelection');
   const grid = element('div');
   const sel = makeSelection(grid);
-  assert.equal(winListeners.size, 2, 'the net listens for move and up on window');
+  assert.equal(settled().window, 2, 'the net listens for move and up on window');
   sel.destroy();
   assert.deepEqual(settled(), clean, 'makeSelection.destroy drops every listener it added');
 }
 {
   const makeDrawer = load('drawer.js', 'makeDrawer');
   const drawer = makeDrawer({edge: 'left'});
-  assert.equal(winListeners.size, 1, 'a drawer listens for resize');
+  assert.equal(settled().window, 1, 'a drawer listens for resize');
   drawer.destroy();
   assert.deepEqual(settled(), clean, 'makeDrawer.destroy drops the resize listener');
   assert.ok(drawer.el.removed, 'and takes its element with it');

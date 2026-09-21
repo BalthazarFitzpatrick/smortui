@@ -4,22 +4,12 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-const winListeners = new Map();
-globalThis.window = {
-  addEventListener: (t, fn) => winListeners.set(fn, t),
-  removeEventListener: (t, fn) => winListeners.delete(fn),
-};
-globalThis.requestAnimationFrame = fn => { fn(); return 1; };
+import {installDom, element, liveListeners} from './_dom.mjs';
 
-function element() {
-  const listeners = new Map();
-  return {
-    style: {}, addEventListener: (t, fn) => listeners.set(fn, t), removeEventListener: (t, fn) => listeners.delete(fn),
-    _listeners: listeners,
-  };
-}
+const {window} = installDom();
+globalThis.requestAnimationFrame = fn => { fn(); return 1; };
 const img = element(), guide = element();
-const viewport = Object.assign(element(), {
+const viewport = element('div', {
   querySelector: sel => (sel === '.drag-image' ? img : sel === '.guide-overlay' ? guide : null),
 });
 
@@ -54,9 +44,9 @@ assert.equal(img.style.transform, `translate(${(target.left - rect.left) * 2}px,
 assert.equal(guide.style.left, '60px', 'the guide never moves');
 
 // ---- a drag moves the rect against the scale, from wherever it started
-const down = [...viewport._listeners.keys()].find(fn => viewport._listeners.get(fn) === 'mousedown');
-const move = [...winListeners.keys()].find(fn => winListeners.get(fn) === 'mousemove');
-const up = [...winListeners.keys()].find(fn => winListeners.get(fn) === 'mouseup');
+const down = viewport._listeners.mousedown[0];
+const move = window._listeners.mousemove[0];
+const up = window._listeners.mouseup[0];
 rect.left = 100; rect.top = 50;
 down({clientX: 0, clientY: 0});
 move({clientX: 20, clientY: -10});
@@ -74,7 +64,7 @@ assert.equal(guide.style.width, '60px', 'the guide took its new drawn size');
 
 // ---- destroy drops the window pair and the viewport's mousedown
 aligner.destroy();
-assert.equal(winListeners.size, 0);
-assert.equal(viewport._listeners.size, 0);
+assert.equal(liveListeners(window).window, 0);
+assert.equal(viewport.listenerCount('mousedown'), 0);
 
 console.log('ok');

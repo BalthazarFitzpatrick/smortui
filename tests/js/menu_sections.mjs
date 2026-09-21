@@ -4,50 +4,9 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-// openAt asks `where instanceof Element` to tell a trigger from an {x, y} point, so the stub's
-// nodes have to be instances of something by that name
-class Element {}
-globalThis.Element = Element;
+import {installDom, element} from './_dom.mjs';
 
-function element(tag) {
-  const el = Object.assign(new globalThis.Element(), {
-    tag, className: '', textContent: '', innerHTML: '', title: '',
-    dataset: {}, children: [], onclick: null, style: {}, tabIndex: 0,
-    replaceWith() {},
-    focus() {}, remove() {}, setAttribute() {}, removeAttribute() {},
-    // real containment, so a click inside the panel is told from one outside it
-    contains(n) { return n === el || (el.children || []).some(c => c.contains && c.contains(n)); },
-    insertAdjacentHTML() {},
-    querySelector: () => null,
-    querySelectorAll: () => [],
-    getBoundingClientRect: () => ({left: 0, top: 0, bottom: 0, right: 0, width: 0, height: 0}),
-    appendChild(child) { this.children.push(child); return child; },
-    append(...kids) { kids.forEach(k => this.children.push(k)); },
-    classList: {
-      _of: () => el.className.split(' ').filter(Boolean),
-      contains: name => el.className.split(' ').includes(name),
-      toggle(name) {
-        const has = el.className.split(' ').includes(name);
-        el.className = has
-          ? el.className.split(' ').filter(c => c && c !== name).join(' ')
-          : `${el.className} ${name}`.trim();
-        return !has;
-      },
-      add(name) { if (!this.contains(name)) el.className = `${el.className} ${name}`.trim(); },
-      remove(name) { el.className = el.className.split(' ').filter(c => c && c !== name).join(' '); },
-    },
-  });
-  return el;
-}
-
-const docBody = element('body');
-globalThis.document = {
-  createElement: element, addEventListener() {}, removeEventListener() {},
-  body: docBody, activeElement: null,
-};
-globalThis.window = {addEventListener() {}, removeEventListener() {}, innerWidth: 1200, innerHeight: 800};
-globalThis.addEventListener = () => {};
-globalThis.removeEventListener = () => {};
+const {document} = installDom();
 
 // the path is an argument so the suite can prove these tests FAIL against an older menu.js -
 // a guard that cannot fail is not a guard

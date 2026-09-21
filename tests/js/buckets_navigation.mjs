@@ -4,39 +4,11 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-function node(tag, className = '') {
-  const n = {
-    tag, className, children: [], parentNode: null, tabIndex: -1, focused: false,
-    listeners: {},
-    appendChild(child) { child.parentNode = n; n.children.push(child); return child; },
-    addEventListener(type, fn) { (n.listeners[type] ||= []).push(fn); },
-    focus() { n.focused = true; },
-    matches(sel) { return sel.split(',').some(s => n.className.split(' ').includes(s.trim().slice(1))); },
-    closest(sel) {
-      let cur = n;
-      while (cur) { if (cur.matches && cur.matches(sel)) return cur; cur = cur.parentNode; }
-      return null;
-    },
-    contains(other) {
-      let cur = other;
-      while (cur) { if (cur === n) return true; cur = cur.parentNode; }
-      return false;
-    },
-    querySelectorAll(sel) {
-      const out = [];
-      const walk = list => list.forEach(c => { if (c.matches(sel)) out.push(c); walk(c.children); });
-      walk(n.children);
-      return out;
-    },
-  };
-  return n;
-}
+import {element} from './_dom.mjs';
 
+const node = (tag, className = '') => element(tag, {className, tabIndex: -1});
 const container = node('div');
-container.dispatchKeydown = (row, key) => {
-  const evt = {key, target: row, preventDefault() {}};
-  (container.listeners.keydown || []).forEach(fn => fn(evt));
-};
+container.dispatchKeydown = (row, key) => container.fire('keydown', {key, target: row});
 
 // five buckets, three rows each - the shape the contract's verify cases are written against
 const buckets = [];
@@ -77,10 +49,7 @@ const wide = uneven.appendChild(node('div', 'bucket'));
 const wideRows = [0, 1, 2].map(() => wide.appendChild(node('div', 'row')));
 const narrow = uneven.appendChild(node('div', 'bucket'));
 const narrowRow = narrow.appendChild(node('div', 'row'));
-uneven.dispatchKeydown = (row, key) => {
-  const evt = {key, target: row, preventDefault() {}};
-  (uneven.listeners.keydown || []).forEach(fn => fn(evt));
-};
+uneven.dispatchKeydown = (row, key) => uneven.fire('keydown', {key, target: row});
 makeBuckets(uneven, {});
 uneven.dispatchKeydown(wideRows[2], 'ArrowRight');
 assert.ok(narrowRow.focused, 'the only row of the shorter bucket should take focus');
