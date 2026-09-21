@@ -46,6 +46,10 @@ export function element(tag = 'div', extra = {}) {
       el.removed = true;
       el.isConnected = false;
       if (el.parentNode) el.parentNode.children = el.parentNode.children.filter(c => c !== el);
+      el.parentNode = null;
+      // a removed subtree goes with it, so nothing under it counts as a live host
+      const drop = list => list.forEach(c => { c.removed = true; c.isConnected = false; drop(c.children || []); });
+      drop(el.children);
     },
     replaceWith() {},
     focus() { el.focused = true; },
@@ -123,12 +127,13 @@ export function installDom({document: docExtra = {}, window: winExtra = {}} = {}
   return {document, window};
 }
 
-// how many listeners sit on window, and on elements still in the page - the two numbers a
-// destroy() test asserts go to zero
-export function liveListeners(window) {
-  const count = target => Object.values(target._listeners).reduce((n, fns) => n + fns.length, 0);
+// how many listeners sit on window, on document, and on elements still in the page - the three
+// numbers a destroy() test asserts go to zero. document is where menu.js and expand.js register
+export function liveListeners(window, document = globalThis.document) {
+  const count = target => Object.values(target?._listeners || {}).reduce((n, fns) => n + fns.length, 0);
   return {
     window: count(window),
+    document: count(document),
     host: created.filter(el => !el.removed).reduce((n, el) => n + count(el), 0),
   };
 }

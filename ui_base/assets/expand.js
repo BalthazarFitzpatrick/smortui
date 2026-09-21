@@ -120,7 +120,9 @@ function makeExpander(strip, {
     onOpen(panel);
   }
 
-  function onKey(evt) { if (evt.key === 'Escape') close(); }
+  // preventDefault, the same signal a Menu gives: a pinned help tip yields its escape to whatever
+  // overlay answered first, and only knows one answered by this
+  function onKey(evt) { if (evt.key === 'Escape' && backdrop) { evt.preventDefault(); close(); } }
 
   function close() {
     if (!backdrop || closing) return;   // ESCAPE AND OUTSIDE-CLICK CAN BOTH FIRE for one dismissal

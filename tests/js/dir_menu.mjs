@@ -53,4 +53,21 @@ assert.equal(heading(), '/', '.. goes back up');
 rows()[1].onclick();
 assert.deepEqual(picked, ['/top.txt'], 'a file calls onPick with its full path');
 assert.equal(menu.isOpen, false);
+// ---- an empty folder says so, its heading notwithstanding
+const bare = dirMenu('pick', async path => ({path, parent: null, dirs: [], files: []}), () => {}, {start: '/x'});
+bare.openAt({x: 0, y: 0});
+await settle();
+const walkBare = n => [n, ...(n.children || []).flatMap(walkBare)];
+assert.equal(walkBare(bare.el).find(n => n.className === 'none')?.textContent, 'empty folder');
+bare.close();
+
+// ---- a fetchDir that rejects shows a folder that could not be read, never the previous listing
+const failing = dirMenu('pick', async () => { throw new Error('boom'); }, () => {}, {start: '/'});
+failing.openAt({x: 0, y: 0});
+await settle();
+const walkAll = n => [n, ...(n.children || []).flatMap(walkAll)];
+const notice = walkAll(failing.el).find(n => n.className === 'none');
+assert.ok(notice && notice.textContent.includes('boom'), `expected the error shown, got ${notice?.textContent}`);
+failing.close();
+
 console.log('ok');

@@ -30,10 +30,12 @@ function makeDrawer({
 
   let opened = false;
 
-  // position and the slide's timing are .drawer's in base.css, where the timing reads the same
-  // --motion-duration every other animated thing in this kit does
+  // the slide's timing is .drawer's in base.css, on the same --motion-duration every animated
+  // thing here reads. the position is stated HERE, with the left/top/width/height it belongs to:
+  // a host serving its own older base.css must not get an in-flow drawer at the foot of the page
   const el = document.createElement('div');
   el.className = `panel-floating drawer drawer-${edge}`;
+  el.style.position = 'fixed';
 
   const body = document.createElement('div');
   body.className = 'drawer-body';

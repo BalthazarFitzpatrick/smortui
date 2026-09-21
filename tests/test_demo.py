@@ -24,9 +24,13 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
-playwright = pytest.importorskip(
-    "playwright.sync_api", reason="playwright is not installed (uv sync --group shots)"
-)
+if os.environ.get("CI"):
+    # under CI a missing playwright is a failure, the same rule test_scripts.py keeps for node
+    import playwright.sync_api  # noqa: F401
+else:
+    pytest.importorskip(
+        "playwright.sync_api", reason="playwright is not installed (uv sync --group shots)"
+    )
 # after the importorskip on purpose: a missing playwright must skip before this line runs
 from playwright.sync_api import sync_playwright  # noqa: E402
 

@@ -18,7 +18,7 @@ const load = (file, name) => {
 
 // a listener on an element that was itself removed goes with it - only live hosts count
 const settled = () => liveListeners(window);
-const clean = {window: 0, host: 0};
+const clean = {window: 0, document: 0, host: 0};
 
 {
   const makePanZoom = load('menu.js', 'makePanZoom');
@@ -49,6 +49,8 @@ const clean = {window: 0, host: 0};
   const strip = element('div');
   const exp = makeExpander(strip);
   assert.equal(settled().host, 1, 'an expander listens for the strip click');
+  strip._listeners.click[0]();
+  assert.equal(settled().document, 1, 'an open expander listens for escape on document');
   exp.destroy();
   assert.deepEqual(settled(), clean, 'makeExpander.destroy drops the strip click');
 }

@@ -34,5 +34,5 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = ["ruff>=0.11.0", "pytest>=8.0"]
-# tools/shoot_readme_images.py only: `uv run --group shots python tools/shoot_readme_images.py`
+# tests/test_demo.py (the demo in headless chromium) and tools/shoot_readme_images.py; CI syncs it
 shots = ["playwright>=1.45"]
