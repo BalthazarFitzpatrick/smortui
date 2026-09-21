@@ -216,7 +216,7 @@ body {
   border: 2px solid var(--grey-border); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font: inherit; color: var(--text);
-  background: var(--panel-row); padding: 0 14px;
+  background: var(--panel-row); padding: 0 var(--inset-x);
   height: var(--row-height); box-sizing: border-box; flex: 0 0 auto;
 }
 .toggle:hover { border-color: var(--cream); color: var(--cream); }
@@ -625,9 +625,10 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
    each tab used to be its own box with border-bottom removed, so the strip read as eight open
    containers competing with the panels below it. one bordered bar with the active tab underlined
    says the same thing with a single line, and the underline is the only cream on the strip. */
-#nav-bar {
+/* .nav-bar is the name; #nav-bar is kept because the first consumers were written against it */
+.nav-bar, #nav-bar {
   display: flex; align-items: stretch; gap: 0;
-  margin: 10px 14px 0; border: 2px solid var(--grey-border);
+  margin: 10px var(--inset-x) 0; border: 2px solid var(--grey-border);
 }
 .nav-tab {
   padding: 0 20px; background: transparent; color: var(--text-dim);
@@ -766,8 +767,10 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
   color: var(--text-dim);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* 2px and square, like every other control - this was 1px with a 2px radius, the one place in the
+   file that broke both rules at once, and it read as a foreign widget inside the row */
 .menu-item .menu-action {
-  flex: 0 0 auto; padding: 0 8px; border: 1px solid var(--grey-border); border-radius: 2px;
+  flex: 0 0 auto; padding: 0 8px; border: 2px solid var(--grey-border);
   color: var(--text-dim);
 }
 .menu-item .menu-action:hover { border-color: var(--cream); color: var(--cream); }
@@ -793,7 +796,7 @@ textarea.text-field {
 }
 .text-field:focus { outline: none; border-color: var(--cream); color: var(--cream); }
 .text-field::placeholder { color: var(--text-dim); opacity: 1; }
-.menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.menu-buttons { display: flex; gap: var(--gap); flex-wrap: wrap; }
 .menu-section .none { color: var(--text-dim); font-style: italic; }
 .menu-item:focus { outline: none; border-color: var(--cream); color: var(--cream); }
 
@@ -840,42 +843,37 @@ textarea.text-field {
       var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
     linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
 }
-.slider-axis input[type="range"] {
+/* ONE SET OF RULES FOR THE INPUT, TWO WAYS TO GET IT: inside makeSlider's .slider-axis, or as a bare
+   <input type=range class="range-slider"> that draws the axis on itself. the two used to be a
+   verbatim copy of each other, which is a retune waiting to be made in one place only */
+.slider-axis input[type="range"], .range-slider {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
 }
-.slider-axis input[type="range"]::-webkit-slider-runnable-track { background: transparent; height: 22px; }
-.slider-axis input[type="range"]::-moz-range-track { background: transparent; height: 22px; }
-/* THE PIPE. 5px of cream, full height of the axis - the one bright thing in the control */
-.slider-axis input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 5px; height: 18px;
-  background: var(--cream); border: none; cursor: ew-resize;
-}
-.slider-axis input[type="range"]::-moz-range-thumb {
-  width: 5px; height: 18px;
-  background: var(--cream); border: none; cursor: ew-resize;
-}
-.slider-axis input[type="range"]:focus { outline: none; }
-.slider-axis input[type="range"]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
-/* the same look on a bare <input type=range>: opt in with the class, no makeSlider needed */
 .range-slider {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 22px; margin: 0; cursor: pointer; background:
+  background:
     repeating-linear-gradient(to right,
       var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
     linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
 }
+.slider-axis input[type="range"]::-webkit-slider-runnable-track,
 .range-slider::-webkit-slider-runnable-track { background: transparent; height: 22px; }
+.slider-axis input[type="range"]::-moz-range-track,
 .range-slider::-moz-range-track { background: transparent; height: 22px; }
+/* THE PIPE. 5px of cream, full height of the axis - the one bright thing in the control */
+.slider-axis input[type="range"]::-webkit-slider-thumb,
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 5px; height: 18px; background: var(--cream); border: none; cursor: ew-resize;
+  width: 5px; height: 18px;
+  background: var(--cream); border: none; cursor: ew-resize;
 }
+.slider-axis input[type="range"]::-moz-range-thumb,
 .range-slider::-moz-range-thumb {
-  width: 5px; height: 18px; background: var(--cream); border: none; cursor: ew-resize;
+  width: 5px; height: 18px;
+  background: var(--cream); border: none; cursor: ew-resize;
 }
-.range-slider:focus { outline: none; }
+.slider-axis input[type="range"]:focus, .range-slider:focus { outline: none; }
+.slider-axis input[type="range"]:focus::-webkit-slider-thumb,
 .range-slider:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
 .slider-ends {
   position: relative; display: flex; justify-content: space-between;
@@ -926,7 +924,9 @@ textarea.text-field {
    rides .panel-floating for the same reason expand.js does - a floating surface here has one
    border and one shadow, not a second set invented per component */
 .drawer {
-  z-index: 55; display: flex; flex-direction: column; overflow: hidden;
+  position: fixed; z-index: 55; display: flex; flex-direction: column; overflow: hidden;
+  /* the slide reads the kit's one motion timing - drawer.js used to carry its own 220ms */
+  transition: left var(--motion-duration) var(--motion-ease);
 }
 .drawer:not(.open) { cursor: pointer; }
 .drawer-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
@@ -939,7 +939,7 @@ textarea.text-field {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px;
   background: var(--lichen-deep); color: var(--cream);
-  font-size: var(--font-size); line-height: 1; flex: 0 0 auto;
+  line-height: 1; flex: 0 0 auto;
 }
 
 /* ---- indicate.js: focus marker ----
@@ -968,6 +968,6 @@ textarea.text-field {
 }
 
 /* a labelled +/- row: label, spacer, right-aligned value, then the two buttons. wrap in .run-controls */
-.stepper { gap: 8px; }
+.stepper { gap: var(--gap); }
 .stepper .toggle { padding: 0 10px; }
 .stepper .field-value { min-width: 46px; text-align: right; }

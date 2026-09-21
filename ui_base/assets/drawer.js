@@ -5,8 +5,6 @@
 // OWNS NO PERSISTENCE. the host decides what goes in `body` and whether an open/closed state
 // sticks anywhere
 
-const DRAWER_DURATION_MS = 220;
-
 // edge          'left' or 'right' - required, which side the drawer parks against
 // sliverRatio   how much of the drawer's own width stays visible while parked
 // heightRatio   the drawer's height as a fraction of the space below `top`
@@ -32,10 +30,10 @@ function makeDrawer({
 
   let opened = false;
 
+  // position and the slide's timing are .drawer's in base.css, where the timing reads the same
+  // --motion-duration every other animated thing in this kit does
   const el = document.createElement('div');
   el.className = `panel-floating drawer drawer-${edge}`;
-  el.style.position = 'fixed';
-  el.style.transition = `left ${DRAWER_DURATION_MS}ms`;
 
   const body = document.createElement('div');
   body.className = 'drawer-body';
@@ -107,5 +105,12 @@ function makeDrawer({
   // geometry and never appears - which no dom-stub test can see
   document.body.appendChild(el);
 
-  return {el, body, open, close, toggle, isOpen: () => opened};
+  // the resize listener is on window, so a host that rebuilds its page must drop it or every
+  // rebuild leaves one more behind laying out an element that is no longer there
+  function destroy() {
+    window.removeEventListener('resize', layout);
+    el.remove();
+  }
+
+  return {el, body, open, close, toggle, destroy, isOpen: () => opened};
 }

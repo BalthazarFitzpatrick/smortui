@@ -168,5 +168,11 @@ function makeExpander(strip, {
 
   strip.addEventListener('click', open);
 
-  return {open, close};
+  // drops the strip's click and shuts anything open, for a host that rebuilds the strip
+  function destroy() {
+    strip.removeEventListener('click', open);
+    close();
+  }
+
+  return {open, close, destroy};
 }
