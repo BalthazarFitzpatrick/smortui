@@ -4,30 +4,10 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-function node(kind, name) {
-  const classes = new Set();
-  const attrs = {};
-  const el = {
-    kind, dataset: kind === 'tab' ? {tab: name} : {panel: name}, tabIndex: -1, focused: false,
-    onclick: null, onkeydown: null,
-    classList: {
-      add: c => classes.add(c), remove: c => classes.delete(c), contains: c => classes.has(c),
-      toggle(c, on) { on ? classes.add(c) : classes.delete(c); return on; },
-    },
-    setAttribute(k, v) { attrs[k] = v; }, getAttribute: k => attrs[k],
-    focus() { el.focused = true; },
-  };
-  return el;
-}
+import {installDom, element} from './_dom.mjs';
 
+const {document} = installDom();
 let tabs = [], panels = [];
-globalThis.document = {
-  querySelectorAll: sel => sel === '.nav-tab' ? tabs : panels,
-  querySelector: sel => {
-    const m = sel.match(/data-tab="([^"]+)"/);
-    return m ? tabs.find(t => t.dataset.tab === m[1]) || null : null;
-  },
-};
 let store = {};
 globalThis.localStorage = {
   getItem: k => (k in store ? store[k] : null),
@@ -38,8 +18,9 @@ const src = readFileSync(new URL('../../ui_base/assets/shell.js', import.meta.ur
 const {initShell, activateTab} = new Function(`${src}; return {initShell, activateTab};`)();
 
 function page(names, marked = null) {
-  tabs = names.map(n => node('tab', n));
-  panels = names.map(n => node('panel', n));
+  document.body.children = [];
+  tabs = names.map(n => document.body.appendChild(element('div', {className: 'nav-tab', dataset: {tab: n}, tabIndex: -1})));
+  panels = names.map(n => document.body.appendChild(element('div', {className: 'tab-panel', dataset: {panel: n}})));
   if (marked) tabs.find(t => t.dataset.tab === marked).classList.add('active');
 }
 const active = () => tabs.filter(t => t.classList.contains('active')).map(t => t.dataset.tab);

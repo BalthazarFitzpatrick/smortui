@@ -4,39 +4,14 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-class Element {}
-globalThis.Element = Element;
+import {installDom, element} from './_dom.mjs';
 
-function element(tag) {
-  const el = Object.assign(new Element(), {
-    tag, className: '', style: {}, children: [], parentNode: null,
-    addEventListener(type, fn) { (el._listeners ||= {})[type] = (el._listeners[type] || []); el._listeners[type].push(fn); },
-    removeEventListener() {},
-    appendChild(child) { child.parentNode = el; el.children.push(child); return child; },
-    remove() { el.removed = true; },
-    getBoundingClientRect: () => ({left: 10, top: 10, width: 300, height: 100}),
-    classList: {
-      _list: () => el.className.split(' ').filter(Boolean),
-      contains: name => el.className.split(' ').includes(name),
-    },
-  });
-  return el;
-}
-
-const docListeners = {};
-globalThis.document = {
-  createElement: element,
-  body: element('body'),
-  addEventListener(type, fn) { (docListeners[type] ||= []).push(fn); },
-  removeEventListener(type, fn) {
-    docListeners[type] = (docListeners[type] || []).filter(f => f !== fn);
-  },
-};
-globalThis.window = {innerWidth: 1200, innerHeight: 800};
+const {document} = installDom();
+const docListeners = document._listeners;
 // run the raf callback synchronously - determinism matters more than realism in this stub
 globalThis.requestAnimationFrame = fn => fn();
 
-const strip = element('div');
+const strip = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
 
 const target = process.argv[2] || new URL('../../ui_base/assets/expand.js', import.meta.url);
 const src = readFileSync(target, 'utf8');
@@ -88,11 +63,11 @@ expander2.close();
 assert.equal(closes2, 1, 'onClose fires synchronously inside close()');
 assert.ok(openBackdrop.className.includes('expand-closing'), 'expand-closing is added synchronously on close');
 assert.equal(openBackdrop.style.pointerEvents, 'none', 'a closing backdrop stops taking clicks immediately');
-assert.equal(openBackdrop.removed, undefined, 'the backdrop is not removed synchronously - it collapses first');
+assert.equal(openBackdrop.removed, false, 'the backdrop is not removed synchronously - it collapses first');
 
 // ---- a new open() while the old backdrop is still collapsing must not be blocked by it
 strip._listeners.click[0]();
-assert.equal(document.body.children[document.body.children.length - 1].removed, undefined, 'a fresh expander opened normally');
+assert.equal(document.body.children[document.body.children.length - 1].removed, false, 'a fresh expander opened normally');
 
 // ---- the dying backdrop is removed after the fallback timeout (no transitionend in this stub)
 await new Promise(resolve => setTimeout(resolve, 280));
