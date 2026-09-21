@@ -1,0 +1,906 @@
+<title>smortui</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="ui/base.css">
+<style>
+  /* THIS PAGE IS THE SYSTEM. every control, rule, colour and row here is drawn by ui_base's own
+     base.css and scripts, loaded unchanged; what follows is only the page's own layout. one dark
+     palette on purpose - base.css has exactly one, and a design system shown in a theme it does
+     not have would be lying about itself. */
+  html, body { height: auto; min-height: 100%; }
+  body {
+    font-family: "SF Mono", Menlo, "JetBrains Mono", ui-monospace, monospace;
+    padding-inline: 16px;
+    padding-block: 0 80px;
+  }
+  .page { display: flex; gap: 40px; max-width: 1240px; margin: 0 auto; align-items: flex-start; }
+  .rail {
+    position: sticky; top: calc(env(safe-area-inset-top, 0px) + 18px);
+    flex: 0 0 200px; display: flex; flex-direction: column; gap: 2px; padding-top: 18px;
+  }
+  .rail a {
+    color: var(--text-dim); text-decoration: none; padding: 5px 0 5px 12px;
+    border-left: 2px solid transparent;
+  }
+  .rail a:hover { color: var(--cream); }
+  .rail a.here { color: var(--cream); border-left-color: var(--cream); }
+  .rail .group { color: var(--text-dim); padding: 14px 0 4px 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .rail .group:first-child { padding-top: 0; }
+  .main { flex: 1 1 0; min-width: 0; max-width: 900px; }
+  header.masthead { padding: 56px 0 28px; display: flex; flex-direction: column; gap: 14px; }
+  .masthead .name { font-size: 34px; line-height: 1.1; color: var(--cream); font-weight: 500; letter-spacing: -0.01em; }
+  .masthead .name b { color: var(--lichen); font-weight: 500; }
+  .masthead .lede { max-width: 66ch; line-height: 1.6; }
+  .masthead .facts { display: flex; flex-wrap: wrap; gap: 0; border: 2px solid var(--grey-border); }
+  .masthead .facts > .cell { border-right: 2px solid var(--grey-border); }
+  .masthead .facts > .cell:last-child { border-right: 0; }
+  section { padding: 34px 0 8px; scroll-margin-top: 20px; }
+  section > h2 {
+    font-size: var(--font-size); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 0 14px;
+  }
+  section > h2 b { color: var(--cream); font-weight: 500; }
+  h3 { font-size: var(--font-size); font-weight: 500; color: var(--cream); margin: 26px 0 8px; }
+  p { max-width: 70ch; line-height: 1.6; margin: 0 0 12px; }
+  p.dim { color: var(--text-dim); }
+  code { color: var(--cream); }
+  .why {
+    border-left: 2px solid var(--grey-border); padding: 2px 0 2px 14px; margin: 10px 0 14px;
+    color: var(--text-dim); max-width: 70ch; line-height: 1.55;
+  }
+  .why b { color: var(--text); font-weight: 500; }
+  pre.code {
+    margin: 10px 0 16px; padding: 12px 14px; background: var(--panel-row);
+    border: 2px solid var(--grey-border); overflow-x: auto; line-height: 1.5; color: var(--text);
+    font: inherit; white-space: pre;
+  }
+  pre.code .k { color: var(--kingfisher-milk); }
+  pre.code .s { color: var(--lichen-milk); }
+  pre.code .c { color: var(--text-dim); }
+  .example {
+    border: 2px solid var(--grey-border); background: var(--panel-row);
+    padding: var(--inset) var(--inset-x); margin: 10px 0 16px;
+    display: flex; flex-direction: column; gap: var(--gap);
+  }
+  .example .demo-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .example .said { color: var(--text-dim); }
+  .example .said b { color: var(--cream); font-weight: 500; }
+  .rules { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2px; }
+  .rules li { border: 2px solid var(--grey-border); padding: 14px; display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+  .rules li .n { color: var(--lichen); }
+  .rules li .t { color: var(--cream); }
+  .rules li .d { color: var(--text-dim); }
+  table.tokens { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font: inherit; }
+  table.tokens th { text-align: left; color: var(--text-dim); font-weight: 400; padding: 6px 10px; border-bottom: 2px solid var(--grey-border); }
+  table.tokens td { padding: 6px 10px; border-bottom: 1px solid var(--grey-border); vertical-align: top; line-height: 1.5; }
+  table.tokens td:first-child { color: var(--cream); white-space: nowrap; }
+  table.tokens td:nth-child(2) { color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.tokens td:last-child { color: var(--text-dim); }
+  .table-wrap { overflow-x: auto; }
+  /* the colour board, the demo's own: big swatches, because a colour judged at 20px is not the one
+     you will see */
+  .swatch-group { margin-bottom: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .swatch-row { display: grid; gap: 2px; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); }
+  .swatch { border: 2px solid var(--grey-border); }
+  .swatch i { display: block; height: 78px; }
+  .swatch .meta { padding: 9px 11px; background: var(--panel-row); display: flex; flex-direction: column; gap: 4px; }
+  .swatch .top { display: flex; justify-content: space-between; gap: 8px; }
+  .swatch .token { color: var(--cream); }
+  .swatch .hex { color: var(--text-dim); }
+  .swatch .what { color: var(--text-dim); line-height: 1.45; }
+  .swatch .ratio { color: var(--text-dim); }
+  .swatch .ratio b { color: var(--text); font-weight: 500; }
+  #viewport-demo { width: 100%; max-width: 480px; height: 200px; border: 2px solid var(--grey-border); overflow: hidden; position: relative; background: var(--bg); }
+  #viewport-demo .stage { position: absolute; transform-origin: 0 0; }
+  #viewport-demo .stage > div { width: 600px; height: 340px; background: repeating-linear-gradient(45deg, #22222a 0 20px, #2b2b34 20px 40px); }
+  #band-area { display: grid; grid-template-columns: repeat(auto-fill, 54px); gap: 6px; padding: 10px; border: 2px solid var(--grey-border); user-select: none; background: var(--bg); }
+  #buckets-demo { display: flex; gap: var(--gap); }
+  #buckets-demo .bucket { flex: 1 1 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  #fan-demo { display: flex; gap: var(--gap); max-width: 520px; margin-bottom: 220px; }
+  #fan-demo > div { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+  .changelog h3 { margin-top: 22px; }
+  .changelog ul { margin: 0 0 8px; padding-left: 18px; line-height: 1.55; max-width: 74ch; }
+  .changelog li { margin: 4px 0; }
+  .changelog .date { color: var(--text-dim); font-weight: 400; }
+  .recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2px; }
+  .recipes div { border: 2px solid var(--grey-border); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+  .recipes .t { color: var(--cream); }
+  .recipes .s { color: var(--text-dim); }
+  .recipes .p { color: var(--text-dim); }
+  .recipes .p code { color: var(--lichen-milk); }
+  footer { padding: 40px 0 0; color: var(--text-dim); line-height: 1.6; max-width: 70ch; }
+  @media (max-width: 860px) {
+    .page { flex-direction: column; gap: 0; align-items: stretch; }
+    .main { width: 100%; max-width: none; }
+    .masthead .facts { flex-wrap: wrap; }
+    .masthead .facts > .cell { flex: 1 1 45%; border-right: 0; border-bottom: 2px solid var(--grey-border); }
+    .masthead .facts > .cell:nth-last-child(-n+2) { border-bottom: 0; }
+    .rail { position: static; flex: none; flex-direction: row; flex-wrap: wrap; gap: 2px 14px; padding-top: 14px; }
+    .rail .group { width: 100%; padding-left: 0; }
+    .rail a { padding-left: 0; border-left: 0; }
+    header.masthead { padding-top: 26px; }
+    .masthead .name { font-size: 26px; }
+  }
+</style>
+
+<div class="page">
+  <nav class="rail" id="rail" aria-label="sections">
+    <span class="group">the system</span>
+    <a href="#rules">six rules</a>
+    <a href="#tokens">tokens</a>
+    <a href="#palette">palette</a>
+    <span class="group">components</span>
+    <a href="#controls">controls</a>
+    <a href="#rows">rows and panes</a>
+    <a href="#menus">menus</a>
+    <a href="#slider">slider and tree</a>
+    <a href="#board">board primitives</a>
+    <a href="#viewport">viewport</a>
+    <a href="#selection">selection</a>
+    <span class="group">reference</span>
+    <a href="#recipes">recipes</a>
+    <a href="#api">api</a>
+    <a href="#changelog">changelog</a>
+  </nav>
+
+  <div class="main">
+    <header class="masthead">
+      <div class="name">smort<b>ui</b></div>
+      <p class="lede">The shared web interface for a family of local tools: one stylesheet and a dozen plain
+        scripts a small Python server hands out, so every tool looks and behaves like one product. No build
+        step, no framework, no npm. Every control on this page is drawn by that stylesheet and those scripts,
+        loaded unchanged.</p>
+      <div class="strip facts">
+        <div class="cell"><span class="field-label">tag</span><span class="field-value">v0.2.3</span></div>
+        <div class="cell"><span class="field-label">package</span><span class="field-value">ui_base</span></div>
+        <div class="cell"><span class="field-label">python</span><span class="field-value">3.11+</span></div>
+        <div class="cell"><span class="field-label">tests</span><span class="field-value">74</span></div>
+      </div>
+      <pre class="code"><span class="c"># pyproject.toml of a tool that consumes it</span>
+dependencies = [<span class="s">"ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.3"</span>]
+
+<span class="c"># the whole integration: serve the assets, link them in order</span>
+<span class="k">from</span> ui_base <span class="k">import</span> read_asset, content_type, UiBaseError
+body = read_asset(name)              <span class="c"># refuses anything outside the asset folder</span>
+header = content_type(name)          <span class="c"># text/css or application/javascript, stated</span></pre>
+    </header>
+
+    <section id="rules">
+      <h2>the <b>six rules</b> that carry the look</h2>
+      <p>They live in <code>base.css</code>'s header, where someone about to override something will be
+        looking. Override by redefining tokens, never by fighting the rules.</p>
+      <ol class="rules">
+        <li><span class="n">1</span><span class="t">one row height, app-wide</span><span class="d"><code>--row-height</code> sizes every row and every button, so nothing reads as a different size class</span></li>
+        <li><span class="n">2</span><span class="t">one clickable class</span><span class="d"><code>.toggle</code> is a button, a list row, a filter pill and a dropdown head. A head is a toggle with a caret</span></li>
+        <li><span class="n">3</span><span class="t">dividers never touch the edge</span><span class="d">15px inset, 2px thick, the weight of a button border. A 1px rule beside 2px buttons reads as a different system</span></li>
+        <li><span class="n">4</span><span class="t">selection is bright, rejection is muted</span><span class="d">rejecting is a decision, not an achievement; giving it the accent makes a wall of rejections look like a wall of wins</span></li>
+        <li><span class="n">5</span><span class="t">text stays selectable</span><span class="d"><code>user-select: none</code> on controls also makes every name and readout uncopyable, which costs more than the stray drag-select it prevents</span></li>
+        <li><span class="n">6</span><span class="t">monospace throughout</span><span class="d">these tools show filenames, counts and coordinates, and those line up or they are not readable</span></li>
+      </ol>
+      <div class="why"><b>One font size, everywhere.</b> Emphasis is carried by colour (dim, text, cream) and by the
+        row a thing sits in. Size was a third channel saying the same thing less clearly. A test fails the build
+        if a <code>font-size</code> is set anywhere but the token.</div>
+    </section>
+
+    <section id="tokens">
+      <h2>the <b>tokens</b></h2>
+      <p>Named for what they space, not how big they are, so a consumer asks for "the gap between rows" and
+        cannot accidentally ask for eight pixels.</p>
+      <div class="table-wrap"><table class="tokens">
+        <tr><th>token</th><th>value</th><th>what it spaces</th></tr>
+        <tr><td>--row-height</td><td>31px</td><td>every row and every button</td></tr>
+        <tr><td>--font-size</td><td>13px</td><td>the one size</td></tr>
+        <tr><td>--gap</td><td>8px</td><td>between rows inside a panel</td></tr>
+        <tr><td>--inset</td><td>12px</td><td>a panel's own top and bottom</td></tr>
+        <tr><td>--inset-x</td><td>14px</td><td>a panel's sides, and any row's own gutter</td></tr>
+        <tr><td>--motion-duration</td><td>220ms</td><td>the one timing every animated thing reads; 0ms under reduced motion</td></tr>
+        <tr><td>--motion-ease</td><td>cubic-bezier(0.22, 0.61, 0.36, 1)</td><td>a shallow ease-out that settles rather than braking</td></tr>
+        <tr><td>--card-gap</td><td>10px</td><td>between two cards that do not overlap</td></tr>
+        <tr><td>--stack-peek</td><td>60px</td><td>the band a covered card still shows of itself</td></tr>
+        <tr><td>--focus-lift</td><td>1.03</td><td>how much larger a focused surface draws; four more <code>--focus-*</code> tokens tune the ring, the inner glow and the coloured light</td></tr>
+        <tr><td>--ambient-pulse-*</td><td>burnt orange, 4.8s</td><td>the breathing ring and drifting glow of <code>.edge-pulse</code></td></tr>
+      </table></div>
+    </section>
+
+    <section id="palette">
+      <h2>the <b>palette</b>, with its contrast on the ground</h2>
+      <p>Neutrals do the work. Two hues were sampled from photographs of lichen and stone; the rest are derived.
+        The semantic pointers (<code>--status-*</code>, <code>--fill-*</code>, <code>--attention</code>) aim at them,
+        so a repalette moves a pointer and keeps the record of where each colour came from. Contrast is computed
+        live from the loaded stylesheet.</p>
+      <div id="colour-board"></div>
+    </section>
+
+    <section id="controls">
+      <h2><b>controls</b></h2>
+      <h3>toggle</h3>
+      <div class="example">
+        <div class="demo-row">
+          <div class="toggle">plain</div>
+          <div class="toggle on">selected</div>
+          <div class="toggle disabled">disabled</div>
+          <div class="toggle dropdown-head" id="head-demo"><span>dropdown head</span></div>
+          <div class="toggle dropdown-head narrow">20%</div>
+          <div class="toggle help" id="tip-demo">?</div>
+        </div>
+        <div class="demo-row">
+          <div class="toggle dropdown-head stacked"><span>C:\datasets\pool-one</span><span>C:\datasets\pool-two</span></div>
+          <input class="text-field" id="tf-demo" placeholder="a text field at the row height">
+        </div>
+      </div>
+      <div class="why"><b>The dropdown head holds one width</b> whatever it holds, so a picker never stretches to its
+        widest option; <code>.stacked</code> lays several values down the box and grows to fit them. The round
+        <code>?</code> is <code>helpTip</code>: hover to peek, click to pin, Escape or a click anywhere lets go.</div>
+
+      <h3>what a button does, in colour</h3>
+      <div class="example">
+        <div class="demo-row">
+          <div class="toggle adds">promote</div>
+          <div class="toggle removes">not a class</div>
+          <div class="toggle adds disabled">adds, disabled</div>
+          <div class="toggle removes disabled">removes, disabled</div>
+        </div>
+      </div>
+      <div class="why"><b>Only two verbs get a colour</b>, because only two are worth stopping for: one adds, one
+        takes away. The colour sits on the border and the text at rest and only fills on hover, so a row still
+        reads as a row of buttons rather than a row of warnings. Disabled wins over both.</div>
+
+      <h3>columns and dividers</h3>
+      <div class="example">
+        <div class="label-columns" style="border: 2px solid var(--grey-border); width: max-content; max-width: 100%;">
+          <div class="col"><div class="toggle on">alpha</div><div class="toggle">beta</div></div>
+          <div class="divider"></div>
+          <div class="col"><div class="toggle">one</div><div class="toggle on">two</div></div>
+        </div>
+      </div>
+
+      <h3>scrollbars, drawn not borrowed</h3>
+      <div class="example">
+        <div style="height: 110px; overflow-y: auto; border: 2px solid var(--grey-border); padding: 10px; max-width: 420px; background: var(--bg);">
+          <div style="height: 380px; color: var(--text-dim);">scroll me. The bar to the right is the one base.css draws:
+            a track that is always there and a block that rides it, square like everything else. The same bar every
+            panel, menu body and long list gets, so nothing opts in and nothing looks like a different application.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="rows">
+      <h2><b>rows</b> and panes</h2>
+      <h3>a control row, a strip, a split</h3>
+      <div class="example">
+        <div class="run-controls">
+          <span class="row-label">a caption is still a row</span>
+          <div class="toggle">run</div>
+          <span class="stat">0 positives, 0 implied negatives, and a fifth word</span>
+          <span class="spacer"></span>
+          <div class="toggle adds">save</div>
+        </div>
+        <div class="strip">
+          <div class="cell"><span class="field-label">fps</span><span class="field-value">59.8</span></div>
+          <div class="cell"><span class="field-label">frames</span><span class="field-value">12 480</span></div>
+          <div class="cell"><span class="field-label">dropped</span><span class="field-value">3</span></div>
+          <div class="cell"><span class="field-label">state</span><span class="field-value">running</span></div>
+        </div>
+        <div class="split" style="border: 2px solid var(--grey-border); padding: var(--inset) var(--inset-x);">
+          <div class="pane"><span class="field-label">left pane</span><div class="toggle">alpha</div><div class="toggle">beta</div></div>
+          <div class="divider" style="margin: 0;"></div>
+          <div class="pane"><span class="field-label">right pane</span><div class="toggle">gamma</div><div class="toggle on">delta</div></div>
+        </div>
+      </div>
+      <div class="why"><b>A control row may not change height</b>, and text is what makes it: a five-word stat in a
+        nowrap flex row used to shrink to its longest word and take the row to three lines. <b>The split is symmetric by
+        construction</b>: the gutter is on the pane and only the outermost edges are removed, so the space either side
+        of the rule is equal by arithmetic rather than by someone remembering.</div>
+
+      <h3>three arrangement recipes</h3>
+      <div class="example">
+        <div id="split-toolbar" class="run-controls">
+          <div class="toggle">alpha</div><div class="toggle">beta</div><div class="toggle">gamma</div>
+          <span class="spacer"></span>
+          <div class="toggle" id="tb-save">save</div><div class="toggle" id="tb-apply">apply</div>
+        </div>
+        <div id="grid-2x2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); max-width: 320px;">
+          <div class="toggle" id="grid-alpha">alpha</div><div class="toggle" id="grid-beta">beta</div>
+          <div class="toggle" id="grid-gamma">gamma</div><div class="toggle" id="grid-delta">delta</div>
+        </div>
+        <div id="stepper-rows" style="display: flex; flex-direction: column; gap: var(--gap); max-width: 320px;">
+          <div class="run-controls stepper" data-stepper="alpha"><span class="field-label">alpha</span><span class="spacer"></span><span class="field-value">3</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+          <div class="run-controls stepper" data-stepper="beta"><span class="field-label">beta</span><span class="spacer"></span><span class="field-value">0</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+        </div>
+        <div class="said" id="rows-said">a split toolbar, a two-by-two grid, stepper rows. press something.</div>
+      </div>
+    </section>
+
+    <section id="menus">
+      <h2><b>menus</b>: one class, many shapes</h2>
+      <p>One <code>Menu</code> for every popup, built from generic sections, so a new menu is a data structure rather
+        than new code. The class owns anchoring, viewport clamping (and dropping up near the bottom), one menu at a time,
+        dismissal on outside click and Escape, arrow and Enter navigation. <code>onDismiss</code> always fires.</p>
+      <div class="example">
+        <div class="demo-row">
+          <div class="toggle dropdown-head" id="open-list"><span>a list</span></div>
+          <div class="toggle dropdown-head" id="open-columns"><span>two columns</span></div>
+          <div class="toggle dropdown-head" id="open-rich"><span>every section kind</span></div>
+          <div class="toggle dropdown-head" id="open-presets"><span>settings</span></div>
+          <div class="toggle dropdown-head" id="open-dirs"><span>browse</span></div>
+          <div class="toggle" id="open-context">right-click me</div>
+          <div class="toggle" id="open-modal">a modal</div>
+        </div>
+        <div class="said" id="menu-said">nothing picked yet</div>
+      </div>
+      <div class="why"><b>"settings" is a recipe, not a primitive</b>: a <code>list</code> row that fills the
+        <code>field</code> sections beside it, one revealed only for one choice, each row's number computed live.
+        <b>"browse" is <code>dirMenu</code></b>: folders drill in, <code>..</code> goes up, a file calls
+        <code>onPick</code>; the host supplies <code>fetchDir</code>, so the package never learns where the tree lives.
+        <b>The modal</b> is the one popup not anchored to what opened it; Escape always picks the harmless answer.</div>
+      <div class="table-wrap"><table class="tokens">
+        <tr><th>section kind</th><th>for</th></tr>
+        <tr><td>list</td><td>rows with optional <code>stats</code>, <code>on</code>, <code>disabled</code>, <code>state</code> flags and a trailing <code>action</code></td></tr>
+        <tr><td>columns</td><td>two or more axes side by side, each with its own label, items, empty text, multi and onPick</td></tr>
+        <tr><td>add</td><td>a "+ new" row: a text field and a button</td></tr>
+        <tr><td>field</td><td>a single text input</td></tr>
+        <tr><td>buttons</td><td>a footer row of verbs, pinned below the scrolling body wherever it is declared</td></tr>
+        <tr><td>node</td><td>the escape hatch: content you built, placed and styled by the panel</td></tr>
+      </table></div>
+      <h3>rows that carry numbers</h3>
+      <div class="example">
+        <div class="menu-panel panel-inline" style="position: static; max-width: 460px;">
+          <div class="menu-section">
+            <div class="toggle menu-item"><span class="name">short_name</span><span class="stats">144f &middot; 126d &middot; 126c</span></div>
+            <div class="toggle menu-item on"><span class="name">selected_row</span><span class="stats">86f &middot; 67d</span></div>
+            <div class="toggle menu-item"><span class="name">a_name_long_enough_that_it_has_to_be_truncated_somewhere</span><span class="stats">43f &middot; 56d &middot; 27c</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="why"><b>The name takes the room and the stats give way</b>, and both orders have been wrong in turn.
+        Measured on a dataset picker at 1600px: the stats held 157px of a 303px row while the name got 96 and needed
+        282. Nobody picks a dataset by its counts.</div>
+    </section>
+
+    <section id="slider">
+      <h2><b>slider</b> and tree</h2>
+      <div class="example">
+        <div id="slider-demo" style="max-width: 460px;"></div>
+        <div style="max-width: 460px;"><input type="range" class="range-slider" id="range-demo" min="0" max="100" value="35"></div>
+      </div>
+      <div class="why"><b>A threshold is a position on a range</b>, not one of seven listed numbers. The distribution
+        drawn over the axis is why: "no results" and "no results because your cut sits above every value in the data"
+        look identical until something shows the shape. The bare <code>.range-slider</code> below it is the same look on
+        a plain input, no <code>makeSlider</code> needed.</div>
+      <div class="example">
+        <div id="tree-demo" style="max-width: 340px; border: 2px solid var(--grey-border); padding: 0 10px 8px; background: var(--bg);"></div>
+      </div>
+      <div class="why"><b><code>renderTree</code></b>: a grouped list with a status pip and trailing badges pushed to the far
+        edge, so several rows' badges line up as a column. Item <code>state</code> flags become classes; the caller keeps
+        its own styling.</div>
+    </section>
+
+    <section id="board">
+      <h2><b>board primitives</b></h2>
+      <h3>buckets with 2D roving focus</h3>
+      <div class="example">
+        <div id="buckets-demo"></div>
+        <div class="said" id="buckets-said">focus a row and use the arrow keys</div>
+      </div>
+      <div class="why"><b>Only the focused row sits in the tab order.</b> Left and right move between buckets, up and
+        down between rows; a shorter bucket clamps to its last row instead of losing focus, and up from the top row
+        exits the grid rather than doing nothing.</div>
+
+      <h3>card, fan, and the focus glow</h3>
+      <div class="example">
+        <div id="fan-demo"></div>
+      </div>
+      <div class="why"><b>Tab or click into a card</b>: it stays exactly where it is while the ones after it slide down,
+        so the item you are reading is never the item that moved. The overlap is a proportion, not a pixel count.
+        <b>The focus glow</b> is four things that are only good together, shipped as one class: the lift, an inset ring,
+        the inner glow, and the coloured light over the whole face. A card is never shrunk; what gives is how the cards meet.</div>
+
+      <h3>the pile</h3>
+      <div class="example">
+        <div class="card-pile" tabindex="0" style="max-width: 240px;">
+          <div class="card-pile-layer" style="transform: rotate(-4deg) translate(-6px, 3px);"></div>
+          <div class="card-pile-layer" style="transform: rotate(3deg) translate(5px, -2px);"></div>
+          <div class="card-pile-layer card-pile-top" style="transform: rotate(-1deg);"><div class="card-title">brief the resume</div></div>
+          <div class="card-pile-count"><span>7</span></div>
+        </div>
+      </div>
+      <div class="why"><b>A desk pile of real cards.</b> Each layer is nudged and turned from its own card's id
+        (<code>pileLayerJitter</code>, a hash rather than <code>Math.random</code>, so the same cards always draw the same
+        pile). The count stays level over the lot. <code>pile.js</code> is all geometry and no DOM: the three regimes,
+        spread, fan, piled, and the fold that eats a card at the pile's own edge.</div>
+
+      <h3>expander, drawer, badge, marker, hazard stripes</h3>
+      <div class="example">
+        <div class="demo-row">
+          <div class="toggle" id="expand-strip" style="width: 220px; aspect-ratio: 3 / 1;">click to expand</div>
+          <div class="toggle" id="drawer-toggle">park a drawer at the right edge</div>
+          <div class="toggle" id="badge-demo">a row<span id="badge-slot"></span></div>
+          <div class="toggle" id="badge-bump">+1</div>
+        </div>
+        <div class="demo-row" id="marker-demo">
+          <div class="toggle" tabindex="0">one</div>
+          <div class="toggle" tabindex="0">two</div>
+          <div class="toggle" tabindex="0">three</div>
+          <span class="said">tab through these: the marker glides</span>
+        </div>
+        <div class="hazard-stripes" style="max-width: 460px; height: 70px;"><span class="hazard-label">not loaded yet</span></div>
+        <div class="said" id="board-said">the drawer is created on demand and destroyed on the second click, which is the teardown contract</div>
+      </div>
+      <div class="why"><b>The expander</b> grows a strip into a centred panel on the same backdrop the modal uses, so
+        it is not a second language for "floating over everything". <b>The drawer</b> parks a sliver at a screen edge and
+        opens into the middle of its half. <b>The badge</b> hides at zero. <b>The marker</b> is one element moved between
+        focus targets; only the element focused last may move it, and it hides while its target is out of the DOM.
+        <b>Hazard stripes</b> read as "nothing here on purpose" rather than "failed to load".</div>
+    </section>
+
+    <section id="viewport">
+      <h2><b>viewport</b>: pan and zoom</h2>
+      <div class="example">
+        <div class="demo-row">
+          <div class="toggle" id="zoom-reset">reset view</div>
+          <span class="stat" id="zoom-value">100%</span>
+          <span class="said">wheel to zoom, drag to pan</span>
+        </div>
+        <div id="viewport-demo"><div class="stage"><div></div></div></div>
+      </div>
+      <div class="why"><b>Wheel zooms anchored on the pointer</b>, because zooming about a corner walks whatever you are
+        aiming at off screen. <b>Reset centres as well as unzooming</b>: setting the scale back and leaving the pan alone
+        reads as a button that half works. With shift held a browser sends the wheel as <code>deltaX</code>; reading
+        <code>deltaY</code> alone made every shift+scroll take the zoom-out branch.</div>
+    </section>
+
+    <section id="selection">
+      <h2><b>selection</b>: click, cmd+click, shift+drag, right-click</h2>
+      <div class="example">
+        <div id="band-area"></div>
+        <div class="said" id="band-said">nothing caught</div>
+      </div>
+      <div class="why"><b>Plain click picks</b>; it does not toggle a destructive flag. <b>Right-click on something
+        unselected selects it first</b>, so the menu can only ever act on things wearing a visible ring. <b>Shift+drag
+        is a net, not a range</b>: the mismatches you can see sit together on screen, so a rectangle you drag over them is
+        the honest gesture, and it autoscrolls at the edges.</div>
+    </section>
+
+    <section id="recipes">
+      <h2><b>recipes</b>: patterns built from what exists</h2>
+      <p>A recipe never adds a section kind or a file; it documents a shape for composing the primitives above. Each has
+        a live block on this page and in the repo's demo, a doc under <code>docs/recipes/</code>, and an entry in
+        <code>docs/recipes/index.json</code>, a small manifest an agent can read before loading anything else.</p>
+      <div class="recipes">
+        <div><span class="t">a preset list that fills sibling fields</span><span class="s">a list row is a shortcut into the state the field sections read; refresh redraws with the values filled in; a conditional field is a conditional array entry</span><span class="p"><code>menu.js:Menu</code></span></div>
+        <div><span class="t">a directory browser menu</span><span class="s">folders drill in, .. goes up, a file calls onPick; fetchDir is the host's, so the package stays server-agnostic</span><span class="p"><code>menu.js:dirMenu</code></span></div>
+        <div><span class="t">a two-by-two button grid</span><span class="s">equal columns and the shared row height make four equal buttons; handlers bind by id, never by position</span><span class="p"><code>base.css:toggle</code></span></div>
+        <div><span class="t">stepper rows</span><span class="s">label, spacer, right-aligned value, then the - and + pair; one handler on the stack covers every row</span><span class="p"><code>base.css:stepper run-controls spacer</code></span></div>
+        <div><span class="t">a split toolbar row</span><span class="s">controls left in written order, a spacer, the one or two primary actions alone on the right</span><span class="p"><code>base.css:run-controls spacer</code></span></div>
+      </div>
+    </section>
+
+    <section id="api">
+      <h2>the <b>api</b>, per file</h2>
+      <p>Scripts define globals; there are no modules and no imports. <code>base.css</code> first so a tool's own
+        stylesheet can override it; <code>menu.js</code> before anything that opens a <code>Menu</code>;
+        <code>shell.js</code> before the script that calls <code>initShell</code>. Every other script only if you use it.</p>
+      <pre class="code"><span class="c">// menu.js</span>
+<span class="k">new</span> Menu({title, sections, onDismiss, adopt, columns, persistent})
+  .openAt(triggerElement | {x, y}) .close() .refresh(sections) .setButtonEnabled(id, on)
+listMenu(title, items, onPick, {onDismiss, ...sectionExtras})
+dirMenu(title, fetchDir, onPick, {start, onDismiss})     <span class="c">// fetchDir(path) -> {path, parent, dirs, files}</span>
+renderTree(container, items, {itemClass})
+makeSlider(container, {id, label, min, max, step, value, format, onChange, onCommit, distribution})
+  -> {input, value(), set(v), setDistribution(counts)}
+makePanZoom(wrap, stage, {onChange, maxZoom, minZoom, panModifier, fit})
+  -> {reset(w, h), apply, zoom(), set(z), destroy()}
+
+<span class="c">// shell.js</span>
+initShell({onEnter, fallback})   activateTab(name)      <span class="c">// .nav-bar / .nav-tab[data-tab] / .tab-panel[data-panel]</span>
+
+<span class="c">// select.js</span>
+makeSelection(container, {itemSelector, keyOf, selectedClass, onChange, onContext, isPickable})
+  -> {selected(), has(key), size(), clear(), setKeys(keys, on), repaint(), destroy()}
+
+<span class="c">// buckets.js</span>
+makeBuckets(container, {bucketSel, rowSel, onFocus, onExitTop}) -> {moveTo(bi, ri), locate(el)}
+
+<span class="c">// expand.js / drawer.js</span>
+makeExpander(strip, {collapsedRatio, expandedRatio, origin, onOpen, onClose}) -> {open, close, destroy}
+makeDrawer({edge, sliverRatio, heightRatio, top, bottom, width, widthRatio, onOpen, onClose})
+  -> {el, body, open, close, toggle, isOpen(), destroy}
+
+<span class="c">// indicate.js / help.js / align.js</span>
+indicateBadge(host, count)   indicateFocus(target | null)
+helpTip(button, lines) -> tipElement
+makeAligner({viewport, rect, bounds, target, scale, preview, onChange})
+  -> {rect, nudge(key), resize(w, h, nextTarget), setTarget, setScale, refresh, destroy}
+
+<span class="c">// pile.js, all pure</span>
+computeColumnFit(total, available, gap, width)   computeColumnLayout(sorted, focusIndex, start, anchor, fit)
+placeGroup(...)  foldFrames(card, above)  cardFlipFrames(from, to)  pileLayerJitter(id)  planPileMotion(prior, next)
+
+<span class="c">// entrytext.js</span>
+deriveEntryHeader(text, {maxWords})   splitEntryParagraphs(text, {charCap})
+
+<span class="c"># ui_base (python)</span>
+ASSETS: Path   asset_names() -> list[str]   read_asset(name) -> bytes   content_type(name) -> str   UiBaseError</pre>
+      <div class="why"><b>Teardown.</b> A component that listens on <code>window</code> or <code>document</code> returns
+        <code>destroy()</code>, and it means teardown, not close: no <code>onClose</code>, no <code>onChange</code>, no focus
+        moved. A host that mounts once for the page's life can ignore it; a host that rebuilds must call it, or every
+        rebuild leaves one more listener behind.</div>
+    </section>
+
+    <section id="changelog" class="changelog">
+      <h2>the <b>changelog</b>: what a consumer sees between two tags</h2>
+      <p class="dim">Only consumer-visible changes: an api, a class, a dom shape, a behaviour. Internals are in git log.</p>
+      <h3>unreleased</h3>
+      <ul>
+        <li>an expander that closes on Escape preventDefaults it, so a pinned help tip yields to it as to a menu</li>
+        <li><code>dirMenu</code> shows a rejected <code>fetchDir</code> as a folder that could not be read; a list whose only item is a heading shows its empty text</li>
+        <li><code>.drawer</code> also stops its slide by rule under reduced motion; the slider measures its end labels once</li>
+      </ul>
+      <h3>v0.2.3 <span class="date">2026-09-21</span></h3>
+      <ul>
+        <li><code>indicateFocus(null)</code> hides the marker; the marker hides while its target is out of the DOM instead of collapsing into the page corner</li>
+        <li><code>destroy()</code> on the drawer and the expander agree that teardown is not a close; <code>makeSelection.destroy()</code> drops a net in progress silently</li>
+        <li><code>--motion-duration</code> is 0ms under <code>prefers-reduced-motion</code></li>
+        <li>a pinned help tip yields its Escape to an open menu</li>
+      </ul>
+      <h3>v0.2.2 <span class="date">2026-09-21</span></h3>
+      <ul>
+        <li><code>ui_base.content_type(name)</code>: the header for an asset, stated rather than guessed</li>
+        <li><code>.fan-item</code> transitions <code>filter</code> and <code>box-shadow</code> too, so a fan card wearing the glow fades in instead of snapping</li>
+        <li><code>Menu.close()</code> is a no-op on a menu that is not open: <code>onDismiss</code> once per dismissal</li>
+        <li>a pinned help tip lets go on Escape; <code>.count-badge</code> text is dark on the deep lichen</li>
+      </ul>
+      <h3>v0.2.1 <span class="date">2026-09-21</span></h3>
+      <ul>
+        <li>a menu opened and closed in the same tick no longer leaves two document listeners behind</li>
+        <li><code>dirMenu</code> only draws the latest navigation; <code>makeSlider</code> builds its labels with <code>textContent</code></li>
+        <li><code>makePanZoom</code>, <code>makeSelection</code>, <code>makeDrawer</code>, <code>makeExpander</code> return <code>destroy()</code></li>
+        <li>the drawer slides on <code>--motion-duration</code>; <code>.range-slider</code> and the slider input share one rule set; <code>.menu-action</code> is 2px and square; <code>.nav-bar</code> class beside <code>#nav-bar</code>; dotfiles refused</li>
+      </ul>
+      <h3>v0.2.0 <span class="date">2026-09-20</span></h3>
+      <ul>
+        <li><code>dirMenu</code>, <code>.range-slider</code>, <code>.stepper</code>; a menu near the bottom opens above; <code>.focus-glow-soft</code> and <code>.edge-pulse</code>; the recipes manifest</li>
+      </ul>
+    </section>
+
+    <footer>
+      Every behaviour here was paid for by a real failure in a tool first, and the reasons travel with the code
+      in its comments. Repo: <code>BalthazarFitzpatrick/smortui</code>. Run the same page locally with
+      <code>uv run python demo/serve.py --port 8770</code>.
+    </footer>
+  </div>
+</div>
+
+<script src="ui/menu.js"></script>
+<script src="ui/select.js"></script>
+<script src="ui/buckets.js"></script>
+<script src="ui/expand.js"></script>
+<script src="ui/indicate.js"></script>
+<script src="ui/drawer.js"></script>
+<script src="ui/help.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const say = (id, text) => { $(id).textContent = text; };
+
+  // ---- rail: the section in view is the one lit
+  const links = [...document.querySelectorAll('.rail a')];
+  const byId = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const seen = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { links.forEach(a => a.classList.remove('here')); byId.get(e.target.id)?.classList.add('here'); } });
+  }, {rootMargin: '-20% 0px -70% 0px'});
+  document.querySelectorAll('section[id]').forEach(s => seen.observe(s));
+
+  // ---- controls
+  $('head-demo').onclick = evt => listMenu('anything', [
+    {id: 'one', label: 'first choice'}, {id: 'two', label: 'second choice'},
+  ], item => { evt.currentTarget.querySelector('span').textContent = item.label; }).openAt(evt.currentTarget);
+  helpTip($('tip-demo'), ['hover shows this, moving away hides it', 'click pins it; escape, a click anywhere, or a scroll lets go']);
+
+  // ---- rows and the three recipes
+  ['alpha', 'beta', 'gamma', 'delta'].forEach(n => { $(`grid-${n}`).onclick = () => say('rows-said', `grid: pressed ${n}`); });
+  $('tb-save').onclick = () => say('rows-said', 'toolbar: save');
+  $('tb-apply').onclick = () => say('rows-said', 'toolbar: apply');
+  $('stepper-rows').onclick = evt => {
+    const button = evt.target.closest('[data-step]');
+    if (!button) return;
+    const value = button.parentElement.querySelector('.field-value');
+    value.textContent = Math.min(9, Math.max(0, Number(value.textContent) + Number(button.dataset.step)));
+    say('rows-said', `stepper: ${button.parentElement.dataset.stepper} = ${value.textContent}`);
+  };
+
+  // ---- menus
+  const said = text => say('menu-said', text);
+  $('open-list').onclick = evt => listMenu('pick one', [
+    {id: 'a', label: 'first thing', stats: '128 rows'}, {id: 'b', label: 'second thing', stats: '4 rows'},
+    {id: 'c', label: 'unavailable', disabled: true},
+  ], item => said(`picked ${item.label}`)).openAt(evt.currentTarget);
+  $('open-columns').onclick = evt => new Menu({
+    title: 'two lists, side by side', columns: true,
+    sections: [
+      {kind: 'list', label: 'left', items: [{id: '1', label: 'alpha'}, {id: '2', label: 'beta'}], onPick: i => said(`left: ${i.label}`)},
+      {kind: 'list', label: 'right', items: [{id: '3', label: 'gamma'}, {id: '4', label: 'delta'}], onPick: i => said(`right: ${i.label}`)},
+    ],
+  }).openAt(evt.currentTarget);
+  $('open-rich').onclick = evt => {
+    const custom = document.createElement('div');
+    custom.className = 'stat';
+    custom.textContent = 'a node section: anything the kinds above do not describe';
+    new Menu({
+      title: 'every section kind',
+      sections: [
+        {kind: 'add', placeholder: 'name a new one', button: 'add', onAdd: v => said(`added ${v}`)},
+        {kind: 'columns', columns: [
+          {label: 'axis one', items: [{id: 'x', label: 'x', on: true}, {id: 'y', label: 'y'}]},
+          {label: 'axis two', items: [{id: 'p', label: 'p'}, {id: 'q', label: 'q'}]},
+        ], onPick: (item, on) => said(`${item.label} ${on ? 'on' : 'off'}`)},
+        {kind: 'node', node: custom},
+        {kind: 'field', value: 'a filled field', onInput: v => said(`typed ${v}`)},
+        {kind: 'buttons', buttons: [{label: 'apply', onClick: () => said('applied')}]},
+      ],
+    }).openAt(evt.currentTarget);
+  };
+  $('open-context').oncontextmenu = evt => {
+    evt.preventDefault();
+    listMenu('at the pointer', [{id: 'r', label: 'rename'}, {id: 'd', label: 'delete'}],
+      item => said(`context: ${item.label}`)).openAt({x: evt.clientX, y: evt.clientY});
+  };
+
+  // the preset recipe: state outside the menu, refresh redraws with it
+  let presetState = {a: 0.5, b: 10, size: 'medium'};
+  let presetMenu = null;
+  const PRESETS = [
+    {id: 'fast', label: 'fast', why: 'fewer, quicker passes', a: 0.8, b: 4},
+    {id: 'balanced', label: 'balanced', why: 'a sensible default', a: 0.5, b: 10},
+    {id: 'careful', label: 'careful', why: 'slow, avoids overshooting', a: 0.2, b: 30},
+  ];
+  const costFor = size => ({small: 10, medium: 40, large: 90})[size] ?? null;
+  const presetSections = () => [
+    {kind: 'list', label: 'presets', items: PRESETS.map(p => ({id: p.id, label: p.label, stats: p.why})),
+      onPick: item => { Object.assign(presetState, PRESETS.find(p => p.id === item.id)); presetMenu.refresh(presetSections()); }},
+    {kind: 'field', label: 'a', value: String(presetState.a), onInput: v => { presetState.a = v; }},
+    {kind: 'field', label: 'b', value: String(presetState.b), onInput: v => { presetState.b = v; }},
+    {kind: 'list', label: 'size', items: ['small', 'medium', 'large', 'custom'].map(name => ({
+      id: name, label: costFor(name) == null ? name : `${name} (~${costFor(name)} units)`, on: presetState.size === name,
+    })), onPick: item => { presetState.size = item.id; presetMenu.refresh(presetSections()); }},
+    ...(presetState.size === 'custom' ? [{kind: 'field', label: 'custom value', onInput: v => { presetState.custom = v; }}] : []),
+    {kind: 'buttons', buttons: [{label: 'apply', onClick: () => said(`applied a=${presetState.a} b=${presetState.b} size=${presetState.size}`)}]},
+  ];
+  $('open-presets').onclick = evt => {
+    presetMenu = new Menu({title: 'settings', persistent: true, sections: presetSections()});
+    presetMenu.openAt(evt.currentTarget);
+  };
+
+  // the directory browser, against a tree in memory
+  const TREE = {
+    '/': {dirs: ['docs', 'data'], files: ['readme.txt']},
+    '/docs': {dirs: [], files: ['a.md', 'b.md']},
+    '/data': {dirs: ['raw', 'empty'], files: ['table.csv']},
+    '/data/raw': {dirs: [], files: ['one.csv', 'two.csv']},
+    '/data/empty': {dirs: [], files: []},
+  };
+  const fetchDir = async path => {
+    const at = path || '/';
+    const parent = at === '/' ? null : at.slice(0, at.lastIndexOf('/')) || '/';
+    return {path: at, parent, ...TREE[at]};
+  };
+  $('open-dirs').onclick = evt => dirMenu('pick a file', fetchDir, file => said(`picked ${file}`)).openAt(evt.currentTarget);
+
+  // the modal: escape picks the harmless one
+  $('open-modal').onclick = () => {
+    const back = document.createElement('div');
+    back.className = 'modal-backdrop';
+    const dialog = document.createElement('div');
+    dialog.className = 'panel-floating modal-dialog';
+    const title = document.createElement('div'); title.className = 'popup-title'; title.textContent = 'plates already exists';
+    const rule = document.createElement('div'); rule.className = 'h-divider';
+    const body = document.createElement('div'); body.className = 'modal-body';
+    body.textContent = 'it holds 54 rows. this promote has 138 to add. merging keeps every row from a source this pool does not hold.';
+    const buttons = document.createElement('div'); buttons.className = 'menu-buttons modal-buttons';
+    [['toggle adds', 'merge into'], ['toggle removes', 'overwrite'], ['toggle', 'abandon']].forEach(([cls, label]) => {
+      const b = document.createElement('div'); b.className = cls; b.textContent = label; b.onclick = () => { said(`modal: ${label}`); close(); };
+      buttons.appendChild(b);
+    });
+    dialog.append(title, rule, body, buttons);
+    back.appendChild(dialog);
+    const onKey = e => { if (e.key === 'Escape') { said('modal: abandon'); close(); } };
+    const close = () => { back.remove(); document.removeEventListener('keydown', onKey); };
+    back.onclick = e => { if (e.target === back) close(); };
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(back);
+  };
+
+  // ---- slider and tree
+  makeSlider($('slider-demo'), {
+    label: 'a threshold, with what the data actually answered drawn over it',
+    min: 0, max: 1, step: 0.01, value: 0.35,
+    distribution: [1, 1, 2, 3, 6, 9, 14, 21, 28, 37, 47, 56, 63, 68, 70, 68, 63, 56, 47, 37, 28, 21, 14, 9, 6, 3, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  });
+  renderTree($('tree-demo'), [
+    {heading: 'mandatory'},
+    {id: 'a', label: 'target frame', state: {marked: true}, badges: ['1729, 1500']},
+    {id: 'b', label: 'player health', state: {marked: true}, badges: ['245, 36']},
+    {heading: 'optional'},
+    {id: 'c', label: 'cast bar', state: {needed: true}, badges: ['not marked']},
+    {id: 'd', label: 'combo points', dot: false},
+  ]);
+
+  // ---- buckets
+  {
+    const host = $('buckets-demo');
+    for (let b = 0; b < 4; b++) {
+      const bucket = document.createElement('div');
+      bucket.className = 'bucket';
+      for (let r = 0; r < (b === 2 ? 2 : 3); r++) {
+        const row = document.createElement('div');
+        row.className = 'toggle row';
+        row.tabIndex = -1;
+        row.textContent = `b${b + 1} r${r + 1}`;
+        bucket.appendChild(row);
+      }
+      host.appendChild(bucket);
+    }
+    makeBuckets(host, {
+      onFocus: (bi, ri) => say('buckets-said', `focus: bucket ${bi + 1}, row ${ri + 1}`),
+      onExitTop: e => say('buckets-said', `${e.type} from bucket ${e.bucket + 1}`),
+    });
+  }
+
+  // ---- card and fan
+  {
+    const host = $('fan-demo');
+    const columns = [['cut the worktree', 'enforce the lease', 'stream the events'], ['run the gates', 'surface the merge', 'brief the resume']];
+    columns.forEach(titles => {
+      const col = document.createElement('div');
+      titles.forEach((title, i) => {
+        const card = document.createElement('div');
+        card.className = 'card fan-item focus-glow';
+        card.tabIndex = 0;
+        const head = document.createElement('div'); head.className = 'card-head';
+        const t = document.createElement('div'); t.className = 'card-title'; t.textContent = title; head.appendChild(t);
+        const r1 = document.createElement('div'); r1.className = 'h-divider';
+        const body = document.createElement('div'); body.className = 'card-body';
+        body.textContent = 'A body long enough to be clamped, so the foot stays where the other cards put it.';
+        const r2 = document.createElement('div'); r2.className = 'h-divider';
+        const foot = document.createElement('div'); foot.className = 'card-foot';
+        const a = document.createElement('span'); a.textContent = 'a workstream';
+        const n = document.createElement('span'); n.className = 'stat'; n.textContent = String(i + 1);
+        foot.append(a, n);
+        card.append(head, r1, body, r2, foot);
+        col.appendChild(card);
+      });
+      host.appendChild(col);
+    });
+  }
+
+  // ---- expander, drawer, badge, marker
+  makeExpander($('expand-strip'), {
+    onOpen: panel => { const b = document.createElement('div'); b.className = 'modal-body'; b.style.padding = '16px'; b.textContent = 'expanded panel content. escape or a click on the backdrop closes it.'; panel.appendChild(b); },
+  });
+  let drawer = null;
+  $('drawer-toggle').onclick = evt => {
+    if (drawer) { drawer.destroy(); drawer = null; evt.currentTarget.textContent = 'park a drawer at the right edge'; say('board-said', 'drawer destroyed: its resize listener and element are gone, no onClose fired'); return; }
+    drawer = makeDrawer({edge: 'right', top: 80, bottom: 80, onOpen: () => say('board-said', 'drawer open'), onClose: () => say('board-said', 'drawer parked')});
+    const b = document.createElement('div'); b.className = 'modal-body'; b.style.padding = '16px';
+    b.textContent = 'drawer content. click the border, not the body, to park it again.'; drawer.body.appendChild(b);
+    evt.currentTarget.textContent = 'destroy the drawer';
+    say('board-said', 'a sliver is parked at the right edge; click it');
+  };
+  {
+    let count = 0;
+    indicateBadge($('badge-slot'), count);
+    $('badge-bump').onclick = () => { count = (count + 1) % 4; indicateBadge($('badge-slot'), count); };
+  }
+  $('marker-demo').addEventListener('focusin', evt => { if (evt.target.classList.contains('toggle')) indicateFocus(evt.target); });
+
+  // ---- viewport
+  const wrap = $('viewport-demo');
+  const view = makePanZoom(wrap, wrap.querySelector('.stage'), {panModifier: null, onChange: z => say('zoom-value', `${Math.round(z * 100)}%`)});
+  $('zoom-reset').onclick = () => view.reset(600, 340);
+  view.reset(600, 340);
+
+  // ---- selection
+  {
+    const area = $('band-area');
+    for (let i = 0; i < 24; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'toggle select-item';
+      cell.dataset.name = `cell-${i + 1}`;
+      cell.style.height = '38px';
+      cell.textContent = String(i + 1);
+      area.appendChild(cell);
+    }
+    makeSelection(area, {
+      onChange: keys => say('band-said', keys.length ? `${keys.length} selected` : 'nothing selected'),
+      onContext: (keys, x, y) => new Menu({
+        title: `${keys.length} selected`,
+        sections: [{kind: 'list', items: [{id: 'a', label: 'assign a class'}, {id: 'b', label: 'not a class'}],
+          onPick: pick => say('band-said', `${pick.label} on ${keys.length}`)}],
+      }).openAt({x, y}),
+    });
+  }
+
+  // ---- the colour board, computed from the loaded stylesheet
+  const PALETTE = [
+    ['neutrals: the ground everything sits on', [
+      ['--bg', 'the page ground; everything else is judged against this'],
+      ['--panel-row', "any control's own ground: a button, a row, a panel"],
+      ['--grey-border', 'every border and every divider, always 2px'],
+      ['--text', 'body text'],
+      ['--text-dim', 'secondary text: stats, hints, placeholders'],
+      ['--cream', 'emphasis, hover, and a value worth reading'],
+    ]],
+    ['decision colours: what a choice looks like', [
+      ['--accent-on', 'a selected or kept thing; the brightest surface in the system'],
+      ['--accent-on-text', 'text on that near-white ground'],
+      ['--muted-on', 'a rejected thing, dull on purpose'],
+      ['--text-on-accent-dim', 'secondary text on the accent ground'],
+    ]],
+    ['hues: two sampled, the rest derived', [
+      ['--lichen', 'corrected, not sampled: hue 62 to 76 and saturation to 0.60 on the eye of someone who stood there'],
+      ['--lichen-deep', 'the lichen as a fill; not a bed for cream text (3.00)'],
+      ['--lichen-milk', 'a step done, a verdict, a menu accent'],
+      ['--stone-red', 'the red stone itself, median of 39k pixels; a pip or a fill, not text'],
+      ['--stone-red-lift', 'the stone with the light on it, so a highlight can carry text'],
+      ['--kingfisher', 'the only cold colour: green against red collapses under red-green colour blindness, blue against red survives'],
+      ['--kingfisher-milk', 'the kingfisher at fill strength; what --fill-good points at'],
+      ['--vanilla', 'the third hue, only for attention; chosen by maximising its smaller separation from cream and from the lichen'],
+      ['--burnt-orange', 'the loudest thing the palette owns; nothing uses it by default'],
+      ['--burnt-orange-milk', 'the same at fill strength'],
+    ]],
+    ['semantic pointers: repalette by moving these', [
+      ['--status-good', 'a stroke or a pip; points at the lichen'],
+      ['--status-warn', 'points at the stone'],
+      ['--fill-good', 'a plate colour, what a surface is painted with; the kingfisher milk'],
+      ['--fill-warn', 'the lifted stone'],
+      ['--fill-attention', 'the vanilla'],
+      ['--attention', 'nothing uses it by default: an attention colour that is always on stops being one'],
+    ]],
+  ];
+  const contrastOn = (hex, groundHex) => {
+    const channel = c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const lum = h => {
+      const n = h.replace('#', '');
+      const full = n.length === 3 ? n.split('').map(c => c + c).join('') : n;
+      const [r, g, b] = [0, 2, 4].map(i => channel(parseInt(full.slice(i, i + 2), 16) / 255));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const [a, b] = [lum(hex), lum(groundHex)].sort((x, y) => y - x);
+    return (a + 0.05) / (b + 0.05);
+  };
+  const resolve = token => {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+    return raw.startsWith('var(') ? resolve(raw.slice(4, -1).trim()) : raw;
+  };
+  {
+    const board = $('colour-board');
+    const ground = resolve('--bg');
+    PALETTE.forEach(([heading, entries]) => {
+      const group = document.createElement('div'); group.className = 'swatch-group';
+      const label = document.createElement('div'); label.className = 'field-label'; label.textContent = heading;
+      const row = document.createElement('div'); row.className = 'swatch-row';
+      entries.forEach(([token, what]) => {
+        const hex = resolve(token);
+        const ratio = contrastOn(hex, ground);
+        const cell = document.createElement('div'); cell.className = 'swatch';
+        const chip = document.createElement('i'); chip.style.background = hex;
+        const meta = document.createElement('div'); meta.className = 'meta';
+        const top = document.createElement('div'); top.className = 'top';
+        const t = document.createElement('span'); t.className = 'token'; t.textContent = token;
+        const h = document.createElement('span'); h.className = 'hex'; h.textContent = hex;
+        top.append(t, h);
+        const w = document.createElement('span'); w.className = 'what'; w.textContent = what;
+        const r = document.createElement('span'); r.className = 'ratio';
+        const verdict = ratio < 3 ? 'too low for a pip' : ratio < 4.5 ? 'a fill or a pip, not text' : 'carries text';
+        r.textContent = 'contrast on the ground ';
+        const b = document.createElement('b'); b.textContent = ratio.toFixed(2);
+        r.append(b, document.createTextNode(`, ${verdict}`));
+        meta.append(top, w, r);
+        cell.append(chip, meta);
+        row.appendChild(cell);
+      });
+      group.append(label, row);
+      board.appendChild(group);
+    });
+  }
+})();
+</script>
