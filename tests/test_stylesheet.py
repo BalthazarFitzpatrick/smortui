@@ -304,7 +304,8 @@ def test_the_drawer_slides_on_the_shared_motion_tokens():
     assert "position: fixed" in rule, "the drawer's placement is the stylesheet's, not inline"
     drawer = (ASSETS / "drawer.js").read_text()
     assert not re.search(r"\d+\s*ms\b", drawer), "no second timing source"
-    assert "style.transition" not in drawer and "style.position" not in drawer
+    assert "style.transition" not in drawer, "the timing is the stylesheet's"
+    assert "style.position = 'fixed'" in drawer, "the geometry stays the script's"
 
 
 def test_the_range_look_is_one_rule_set_under_two_selectors():

@@ -139,7 +139,9 @@ class Menu {
       row.append(input, btn);
       wrap.appendChild(row);
     } else if (section.kind === 'list') {
-      if (!section.items.length) {
+      // a heading is not a row: a list holding only its heading is empty and says so. dirMenu's
+      // "empty folder" never showed before this, because the folder's own name counted
+      if (!section.items.some(item => !item.heading)) {
         const empty = document.createElement('span');
         empty.className = 'none';
         empty.textContent = section.empty || 'nothing here';
@@ -441,7 +443,14 @@ class DirMenu extends Menu {
     // ONLY THE LATEST NAVIGATION MAY DRAW. two quick clicks fire two fetches, and a slow first one
     // resolving after the fast second would redraw the folder you had already left
     const request = ++this._request;
-    const listing = await this._fetchDir(path);
+    let listing;
+    try {
+      listing = await this._fetchDir(path);
+    } catch (err) {
+      // a rejected fetch is the host's failure, shown as a folder that could not be read; the
+      // previous folder must not stay on screen pretending to be this one
+      listing = {path, parent: null, dirs: [], files: [], error: String(err?.message || err)};
+    }
     if (!this.isOpen || request !== this._request) return;
     const join = name => `${listing.path.replace(/\/$/, '')}/${name}`;
     const items = [{heading: listing.path}];
@@ -449,7 +458,7 @@ class DirMenu extends Menu {
     listing.dirs.forEach(name => items.push({id: `d:${name}`, label: `${name}/`, dir: join(name)}));
     listing.files.forEach(name => items.push({id: `f:${name}`, label: name, file: join(name)}));
     this.refresh([{
-      kind: 'list', items, empty: 'empty folder',
+      kind: 'list', items, empty: listing.error ? `could not read: ${listing.error}` : 'empty folder',
       onPick: item => {
         if (item.file != null) { this._onPick(item.file); this.close(); }
         else this._show(item.dir);
@@ -582,6 +591,9 @@ function makeSlider(container, {
   //
   // canvas measures the real advance and, unlike offsetWidth, needs no layout - which is the
   // property the old comment actually wanted.
+  // the end labels never change after build, so they are measured once; only the readout is
+  // measured per event
+  const endWidths = {min: textWidth(minLabel.textContent), max: textWidth(maxLabel.textContent)};
   const paint = () => {
     const v = Number(input.value);
     const text = format(v);
@@ -598,9 +610,9 @@ function makeSlider(container, {
     const raw = pct * ends.clientWidth || pct * container.clientWidth || pct * 190;
     const gap = 6;
     const half = textWidth(text) / 2;
-    const low = textWidth(minLabel.textContent) + gap + half;
+    const low = endWidths.min + gap + half;
     const width = ends.clientWidth || container.clientWidth || 190;
-    const high = width - textWidth(maxLabel.textContent) - gap - half;
+    const high = width - endWidths.max - gap - half;
     const clamped = Math.max(low, Math.min(high, raw));
     readout.style.left = `${clamped}px`;
     return v;
