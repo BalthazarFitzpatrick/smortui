@@ -7,6 +7,7 @@ and shipping CSS or JS that is broken in a way no python test would ever notice.
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -54,6 +55,7 @@ def test_asset_names_matches_what_is_on_disk():
         "",
         ".",
         "no-such-file.js",
+        ".DS_Store",
     ],
 )
 def test_nothing_outside_the_assets_directory_can_be_read(name):
@@ -62,6 +64,21 @@ def test_nothing_outside_the_assets_directory_can_be_read(name):
     """
     with pytest.raises(UiBaseError):
         read_asset(name)
+
+
+def test_a_dotfile_planted_in_the_directory_is_neither_listed_nor_served():
+    """macos drops .DS_Store into any folder it looks at; a listing that includes it hands a consumer
+    a name that 404s from everyone else's checkout, and serving it leaks nothing useful but is
+    still serving what was never an asset
+    """
+    planted = ASSETS / ".planted"
+    planted.write_text("not an asset")
+    try:
+        assert ".planted" not in asset_names()
+        with pytest.raises(UiBaseError):
+            read_asset(".planted")
+    finally:
+        planted.unlink(missing_ok=True)
 
 
 def test_a_symlink_out_of_the_directory_is_refused(tmp_path):
@@ -82,81 +99,65 @@ def test_a_symlink_out_of_the_directory_is_refused(tmp_path):
 # ---------------------------------------------------------------- the assets themselves
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+# node runs the scripts' behaviour tests. locally a missing node skips them; under CI it is a
+# failure, because a runner that quietly skipped half the suite would report green for nothing
+_NO_NODE = shutil.which("node") is None
+needs_node = pytest.mark.skipif(
+    _NO_NODE and not os.environ.get("CI"),
+    reason="node is not installed",
+)
+JS_TESTS = sorted((Path(__file__).parent / "js").glob("*.mjs"))
+
+
+@needs_node
 @pytest.mark.parametrize("name", sorted(n for n in EXPECTED if n.endswith(".js")))
 def test_the_scripts_parse(name):
     """a syntax error ships silently: the browser drops the whole file and the page goes inert"""
+    assert not _NO_NODE, "CI must have node"
     result = subprocess.run(
         ["node", "--check", str(ASSETS / name)], capture_output=True, text=True, check=False
     )
     assert result.returncode == 0, f"{name} does not parse:\n{result.stderr}"
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_menu_builds_the_sections_it_promises():
-    """PARSING IS NOT BEHAVIOUR. `node --check` proves the file loads, which says nothing about
-    whether a column carries its own heading or an item's state reaches the row. This runs the real
-    class against a DOM stub - the two things under test are pure structure, so a full jsdom would
-    be testing the browser as much as the code.
+# which runner proves which script. a script with no entry is only proven to load, so this is the
+# list of who is excused and why - a new script cannot slip in untested by omission
+RUNNER_FOR = {
+    "menu.js": "menu_sections.mjs",
+    "buckets.js": "buckets_navigation.mjs",
+    "drawer.js": "drawer.mjs",
+    "entrytext.js": "entrytext.mjs",
+    "expand.js": "expander.mjs",
+    "help.js": "help_tip.mjs",
+    "indicate.js": "focus_marker.mjs",
+    "pile.js": "pile_layout.mjs",
+    "select.js": "listeners.mjs",  # teardown only; the gestures need a real pointer
+    "shell.js": None,  # tab switching against real focus and localStorage - the demo covers it
+    "align.js": None,  # drag geometry against real mouse events - its consumer covers it
+}
+
+
+def test_every_script_has_a_named_behaviour_runner_or_an_excuse():
+    scripts = sorted(n for n in EXPECTED if n.endswith(".js"))
+    assert set(RUNNER_FOR) == set(scripts), "every script is in the map, with a runner or None"
+    runners = {p.name for p in JS_TESTS}
+    for script, runner in RUNNER_FOR.items():
+        assert runner is None or runner in runners, f"{script}: {runner} does not exist"
+
+
+@needs_node
+@pytest.mark.parametrize("script", JS_TESTS, ids=[p.stem for p in JS_TESTS])
+def test_the_scripts_behave(script):
+    """PARSING IS NOT BEHAVIOUR. `node --check` proves a file loads, which says nothing about
+    whether a column carries its own heading, a drawer parks its sliver, or a focus marker ignores
+    the element focus already left. each runner under tests/js is one script's contract exercised
+    against a dom stub or against plain values - the two things under test are structure and
+    arithmetic, so a full jsdom would be testing the browser as much as the code. DISCOVERED BY
+    GLOB on purpose: dir_menu.mjs sat here for a release with no case naming it, and nothing ran it.
     """
-    script = Path(__file__).parent / "js" / "menu_sections.mjs"
+    assert not _NO_NODE, "CI must have node"
     result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"menu sections misbehave:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_entry_text_primitives_derive_headers_and_split_paragraphs():
-    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this exercises
-    deriveEntryHeader and splitEntryParagraphs directly against real strings, no DOM needed.
-    """
-    script = Path(__file__).parent / "js" / "entrytext.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, (
-        f"entry text primitives misbehave:\n{result.stdout}{result.stderr}"
-    )
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_pile_layout_picks_its_regime_by_measurement():
-    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above. What this guards is the one
-    rule the pile/fan model exists for - A CARD IS NEVER SHRUNK, what gives is how the cards meet -
-    plus the group stepping one card at a time and the fold shutting a card at its pile's own edge
-    without moving it. All pure, so no DOM stub is needed at all.
-    """
-    script = Path(__file__).parent / "js" / "pile_layout.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"pile layout misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_buckets_navigate_in_two_axes():
-    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this runs makeBuckets
-    against a dom stub to prove the roving focus actually moves across both axes and clamps or
-    exits where the contract says it should.
-    """
-    script = Path(__file__).parent / "js" / "buckets_navigation.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"bucket navigation misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_expander_dismisses_exactly_once():
-    """the risk with an animated open/close is a double-fire - escape and an outside click both
-    reachable in one dismissal - so this proves onClose runs once per dismissal, not per trigger.
-    """
-    script = Path(__file__).parent / "js" / "expander.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"expander misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_drawer_parks_opens_and_closes():
-    """proves the parked sliver, the move into the viewport on open, close returning to the
-    parked position, toggle alternating, and onOpen/onClose each firing once per transition.
-    """
-    script = Path(__file__).parent / "js" / "drawer.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"drawer misbehaves:\n{result.stdout}{result.stderr}"
+    assert result.returncode == 0, f"{script.name} fails:\n{result.stdout}{result.stderr}"
 
 
 def _css() -> str:
@@ -433,6 +434,38 @@ def test_a_menu_holding_columns_is_allowed_more_width_than_one_holding_a_list():
     line = next(ln for ln in css.splitlines() if ln.startswith(rule))
     assert "45vw" in line, "the viewport share is the half that protects a narrow window"
     assert "min(" in line, "a pixel ceiling and a viewport share, whichever binds first"
+
+
+def test_the_drawer_slides_on_the_shared_motion_tokens():
+    """drawer.js carried its own 220ms while base.css declared --motion-duration THE one timing
+    every animated thing reads; a host retuning motion moved the expander and not the drawer
+    """
+    rule = re.search(r"\.drawer\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
+    assert "transition: left var(--motion-duration) var(--motion-ease)" in rule
+    assert "position: fixed" in rule, "the drawer's placement is the stylesheet's, not inline"
+    drawer = (ASSETS / "drawer.js").read_text()
+    assert "220" not in drawer, "no second timing source"
+    assert "style.position" not in drawer
+
+
+def test_the_range_look_is_one_rule_set_under_two_selectors():
+    """.range-slider and makeSlider's input used to be a verbatim copy of each other - a retune of
+    the pipe that reached one and not the other would ship two sliders that no longer match
+    """
+    css = _css()
+    thumb = re.findall(r"::-webkit-slider-thumb\s*\{", css)
+    assert len(thumb) == 2, f"one thumb rule and one focus rule, found {len(thumb)}"
+    assert re.search(
+        r"\.slider-axis input\[type=\"range\"\]::-webkit-slider-thumb,\s*\n\s*\.range-slider::-webkit-slider-thumb",
+        css,
+    ), "both selectors share the one thumb rule"
+
+
+def test_the_nav_bar_is_reachable_by_class():
+    """every other primitive is a class; the bar was an id, which means a page cannot carry two
+    and a consumer's markup must use that exact id or get an unstyled strip
+    """
+    assert re.search(r"^\.nav-bar, #nav-bar\s*\{", _css(), re.MULTILINE)
 
 
 def test_edge_pulse_keeps_focus_and_reduced_motion_visible():

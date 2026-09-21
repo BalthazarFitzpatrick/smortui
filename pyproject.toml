@@ -1,6 +1,6 @@
 [project]
 name = "ui-base"
-version = "0.1.10"
+version = "0.2.1"
 description = "the shared web interface for these tools: menus, tabs, sliders, pan/zoom, alignment"
 # 3.11, matching the oldest consumer. nothing here needs anything newer - it is
 # path handling and file reads - and a floor above a consumer's makes the package unusable there
@@ -21,3 +21,5 @@ line-length = 100
 
 [dependency-groups]
 dev = ["ruff>=0.11.0", "pytest>=8.0"]
+# tools/shoot_readme_images.py only: `uv run --group shots python tools/shoot_readme_images.py`
+shots = ["playwright>=1.45"]

@@ -1,8 +1,7 @@
-# WHAT THIS CATCHES THAT ci-parity.sh CANNOT, and it is the whole reason to have both: that script
-# runs a tracked-files-only export on the developer's machine, and says so - "a Linux runner is not
-# macOS". This is the Linux runner. It also tests the OLDEST python the package claims to support,
-# which nothing local does; declaring >=3.11 while only ever running 3.14 is an aspiration, not a
-# fact.
+# the linux runner, and the OLDEST python the package claims to support, which nothing local runs:
+# declaring >=3.11 while only ever testing 3.14 is an aspiration, not a fact. CI=true also turns the
+# node-dependent tests from "skip if node is missing" into a failure, so half the suite cannot go
+# quietly missing here.
 name: ci
 
 on:
@@ -26,6 +25,11 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
+      # the scripts' behaviour tests run under node; a runner without it would skip them all
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: sync
         run: uv sync --dev --python ${{ matrix.python }}

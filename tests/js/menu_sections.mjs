@@ -284,4 +284,32 @@ assert.ok(!treeNodes.some(n => n.innerHTML.includes('<img')), 'a tree row must n
 assert.equal(treeNodes.find(n => n.className === 'name').textContent, payload);
 assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload);
 
+
+
+// ---- open-and-close in one tick leaves no document listener behind. registration is deferred a
+// tick so the opening click cannot dismiss the menu; the deferred half used to run unconditionally,
+// so a menu shut before it fired left 2 listeners on document that nothing ever removed - and the
+// next menu's first mousedown hit the stale handler. measured: 2 leaked per same-tick pair before,
+// 0 after; an ordinary open, wait, close pair was 0 both before and after
+{
+  const live = new Map();
+  const counting = {
+    addEventListener: (type, fn) => live.set(fn, type),
+    removeEventListener: (type, fn) => live.delete(fn),
+  };
+  const {addEventListener, removeEventListener} = globalThis.document;
+  Object.assign(globalThis.document, counting);
+  const sameTick = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+  sameTick.openAt({x: 0, y: 0});
+  sameTick.close();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(live.size, 0, `a same-tick open/close must leave nothing on document, left ${live.size}`);
+  const ordinary = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+  ordinary.openAt({x: 0, y: 0});
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(live.size, 2, 'an open menu listens for mousedown and keydown');
+  ordinary.close();
+  assert.equal(live.size, 0, 'and close drops both');
+  Object.assign(globalThis.document, {addEventListener, removeEventListener});
+}
 console.log('ok');
