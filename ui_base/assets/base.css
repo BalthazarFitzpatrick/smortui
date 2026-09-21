@@ -938,7 +938,10 @@ textarea.text-field {
 .count-badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px;
-  background: var(--lichen-deep); color: var(--cream);
+  /* DARK TEXT, because the deep lichen is a fill and not a bed for cream - the palette block says
+     so (cream on it is 3.00, under the 4.5 text needs; near-black on it is 4.93). this shipped as
+     cream, contradicting its own stylesheet */
+  background: var(--lichen-deep); color: var(--accent-on-text);
   line-height: 1; flex: 0 0 auto;
 }
 

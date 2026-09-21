@@ -54,4 +54,7 @@ function dismissPinnedHelp() {
   if (helpPinned) { helpPinned._hide(); helpPinned = null; }
 }
 document.addEventListener('click', dismissPinnedHelp);
+// escape lets go too, the way it shuts a Menu - one key means "close this" everywhere or it means
+// nothing anywhere
+document.addEventListener('keydown', evt => { if (evt.key === 'Escape') dismissPinnedHelp(); });
 window.addEventListener('scroll', dismissPinnedHelp, {passive: true, capture: true});

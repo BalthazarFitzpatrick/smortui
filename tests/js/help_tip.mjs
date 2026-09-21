@@ -76,6 +76,13 @@ button._fire('click');
 fire(winListeners, 'scroll');
 assert.equal(tip.hidden, true, 'scrolling unpins');
 
+// ---- and escape, the same key that shuts a menu
+button._fire('click');
+assert.equal(tip.hidden, false);
+(docListeners.keydown || []).forEach(fn => fn({key: 'Escape'}));
+assert.equal(tip.hidden, true, 'escape unpins');
+(docListeners.keydown || []).forEach(fn => fn({key: 'a'}));
+
 // ---- pinning a second tip releases the first
 const other = element('div');
 const otherTip = helpTip(other, ['other']);
