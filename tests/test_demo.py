@@ -13,9 +13,9 @@ it locally, a failure under CI like the node tests.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
-import sys
 import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -23,7 +23,6 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "demo"))
 
 playwright = pytest.importorskip(
     "playwright.sync_api", reason="playwright is not installed (uv sync --group shots)"
@@ -31,8 +30,16 @@ playwright = pytest.importorskip(
 # after the importorskip on purpose: a missing playwright must skip before this line runs
 from playwright.sync_api import sync_playwright  # noqa: E402
 
-# demo/serve.py, put on sys.path above - the demo's own handler is the thing under test
-from serve import Handler  # noqa: E402
+
+def _demo_handler():
+    # loaded from its path under a private name: `serve` is too generic to put on sys.path
+    spec = importlib.util.spec_from_file_location("ui_base_demo_serve", ROOT / "demo" / "serve.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.Handler
+
+
+Handler = _demo_handler()
 
 
 @pytest.fixture(scope="module")

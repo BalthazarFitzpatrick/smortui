@@ -6,6 +6,15 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
+- `indicateFocus(null)` hides the marker: the call for a host that re-renders its rows and knows
+  the focused one is gone before any scroll does (it used to throw)
+- `destroy()` on the drawer and the expander agree: teardown is not a close - no `onClose`, no
+  focus moved, `isOpen()` false; `makeSelection.destroy()` drops a net in progress without firing
+  `onChange`
+- `--motion-duration` is `0ms` under `prefers-reduced-motion: reduce`, so the drawer's slide and
+  the expander's grow both stop together
+- a pinned help tip yields its Escape to an open menu: one press closes the menu, the next the tip
+
 - `indicateFocus`: the marker hides while its target is out of the dom instead of collapsing to a
   0x0 box in the page's corner on the next scroll; `.focus-marker[hidden]` is `display: none`
 
@@ -22,7 +31,8 @@ refactors, docs and tests are in `git log`.
   however many times `close()` is called (was: every call fired it)
 - a pinned help tip lets go on Escape, like a menu
 - `.count-badge` text is dark (`--accent-on-text`) on the deep lichen; it was cream, which the
-  palette block itself rates at 3.00 contrast
+  palette block itself rates at 3.00 contrast. It also no longer restates `font-size`, so it
+  inherits its host's, which under the one-size rule is the same value
 
 ## v0.2.1 - 2026-09-21
 

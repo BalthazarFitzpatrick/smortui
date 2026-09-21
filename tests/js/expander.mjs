@@ -73,4 +73,16 @@ assert.equal(document.body.children[document.body.children.length - 1].removed, 
 await new Promise(resolve => setTimeout(resolve, 280));
 assert.ok(openBackdrop.removed, 'the closing backdrop is removed once the fallback timer fires');
 
+// ---- destroy is not a close: the open panel goes at once, no onClose, no focus moved
+let destroyedCloses = 0;
+const strip3 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
+const expander3 = makeExpander(strip3, {onClose: () => destroyedCloses++});
+strip3._listeners.click[0]();
+const openBackdrop3 = document.body.children[document.body.children.length - 1];
+expander3.destroy();
+assert.equal(destroyedCloses, 0, 'teardown fires no onClose');
+assert.ok(openBackdrop3.removed, 'the backdrop is removed at once');
+assert.equal(strip3.focused, false, 'focus is not moved to the strip');
+assert.equal(strip3._listeners.click.length, 0, 'the strip click is gone');
+
 console.log('ok');

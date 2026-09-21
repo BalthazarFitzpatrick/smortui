@@ -221,7 +221,7 @@ Reduced motion keeps a static ring and glow. Pair the effect with a text label i
 
 **The palette is dark, and there is one of it.** `base.css` carries no `prefers-color-scheme`
 block and no `[data-theme]` rule today; a host wanting a light look redefines the tokens itself.
-If a second palette is ever added here, these are the rules, and `tests/test_assets.py` already
+If a second palette is ever added here, these are the rules, and `tests/test_stylesheet.py` already
 guards the first two:
 
 - the bare `:root` block defines the **complete** palette
@@ -266,7 +266,7 @@ manifest alone to know what exists before reading anything else; it is small on 
 ```
 
 `demo.selector` must exist in `demo/index.html`, or `null` if the recipe has no live demo yet.
-`file` must exist under `docs/recipes/`. `tests/test_assets.py` guards both against drift.
+`file` must exist under `docs/recipes/`. `tests/test_recipes.py` guards both against drift.
 
 **Adding a recipe**: write `docs/recipes/<id>.md` in the README's own voice (why, one runnable
 snippet, a note on when the shape is wrong), add one block to an existing `demo/index.html` panel

@@ -56,5 +56,10 @@ function dismissPinnedHelp() {
 document.addEventListener('click', dismissPinnedHelp);
 // escape lets go too, the way it shuts a Menu - one key means "close this" everywhere or it means
 // nothing anywhere
-document.addEventListener('keydown', evt => { if (evt.key === 'Escape') dismissPinnedHelp(); });
+// deferred a tick so a Menu open at the same time answers first: it preventDefaults its escape,
+// and the tip then stays for the next press instead of vanishing with the menu
+document.addEventListener('keydown', evt => {
+  if (evt.key !== 'Escape') return;
+  setTimeout(() => { if (!evt.defaultPrevented) dismissPinnedHelp(); }, 0);
+});
 window.addEventListener('scroll', dismissPinnedHelp, {passive: true, capture: true});

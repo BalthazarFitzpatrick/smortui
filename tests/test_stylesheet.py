@@ -24,9 +24,10 @@ def test_every_token_the_stylesheet_uses_is_one_it_defines():
 
 
 def test_the_light_palette_is_complete_on_bare_root():
-    """THE THREE THEME STATES. an explicit choice stamps data-theme; the default "system" setting
-    stamps nothing, so a token whose only definition sits inside a media or [data-theme] block is
-    undefined for most viewers. every token must therefore exist on bare :root.
+    """the palette is one dark set today (see CLAUDE.md, Theming); if a second is ever added under
+    a media or [data-theme] block, every token must still exist on bare :root, because the
+    default "system" setting stamps no attribute and a token defined only under a condition is
+    undefined for most viewers. this guards that rule now so the second palette cannot break it.
     """
     css = _css()
     base = re.search(r":root\s*\{(.*?)\}", css, re.DOTALL)
@@ -293,8 +294,8 @@ def test_the_drawer_slides_on_the_shared_motion_tokens():
     assert "transition: left var(--motion-duration) var(--motion-ease)" in rule
     assert "position: fixed" in rule, "the drawer's placement is the stylesheet's, not inline"
     drawer = (ASSETS / "drawer.js").read_text()
-    assert "220" not in drawer, "no second timing source"
-    assert "style.position" not in drawer
+    assert not re.search(r"\d+\s*ms\b", drawer), "no second timing source"
+    assert "style.transition" not in drawer and "style.position" not in drawer
 
 
 def test_the_range_look_is_one_rule_set_under_two_selectors():
