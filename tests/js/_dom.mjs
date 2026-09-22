@@ -1,11 +1,6 @@
-// THE ONE DOM STUB every runner builds on. twelve runners each hand-rolled an element() with
-// slightly different quirks - classList backed by a Set in one and by className in the next,
-// listeners kept as arrays here and as a Map there - so a stub fix or a new capability had to be
-// made twelve times or drift. this is the superset: enough of an element for menu.js, shell.js,
-// drawer.js, expand.js, help.js, indicate.js, select.js, buckets.js and align.js to run their
-// structure and arithmetic against, and nothing that would make it a browser.
-//
-// not a test - the underscore keeps test_scripts.py's glob off it.
+// the one dom stub every runner builds on: twelve hand-rolled element() stubs had drifted into
+// dialects, so a fix had to be made twelve times. enough of an element for the scripts' structure
+// and arithmetic, nothing that makes it a browser. the underscore keeps the test glob off it
 
 export class Element {}
 globalThis.Element = Element;
