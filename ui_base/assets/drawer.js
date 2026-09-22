@@ -109,8 +109,8 @@ function makeDrawer({
 
   // the resize listener is on window, so a host that rebuilds its page must drop it or every
   // rebuild leaves one more behind laying out an element that is no longer there
-  // TEARDOWN IS NOT A CLOSE: no onClose, the same as the expander's destroy - a host tearing its
-  // page down did not ask for a close event, and isOpen() answers false afterwards
+  // teardown is not a close: no onClose, same as the expander's destroy - a host tearing its page
+  // down did not ask for a close event; isOpen() answers false afterwards
   function destroy() {
     window.removeEventListener('resize', layout);
     opened = false;

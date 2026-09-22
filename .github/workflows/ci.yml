@@ -1,7 +1,5 @@
-# the linux runner, and the OLDEST python the package claims to support, which nothing local runs:
-# declaring >=3.11 while only ever testing 3.14 is an aspiration, not a fact. CI=true also turns the
-# node-dependent tests from "skip if node is missing" into a failure, so half the suite cannot go
-# quietly missing here.
+# the linux runner and the oldest python the package claims (nothing local runs 3.11); CI=true
+# turns the node and browser tests from skip-if-missing into failures
 name: ci
 
 on:

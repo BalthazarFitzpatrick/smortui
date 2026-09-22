@@ -391,10 +391,9 @@ class Menu {
   }
 
   close() {
-    // ONCE PER DISMISSAL. a single-select pick already closes the menu; a host whose onPick then
-    // calls close() itself used to fire onDismiss a second time and drop a selection the first
-    // firing had already handled - the same guard the expander keeps for escape and a backdrop
-    // click landing together
+    // once per dismissal: a single-select pick already closes the menu, and a host whose onPick
+    // then calls close() itself used to fire onDismiss twice and drop a selection the first firing
+    // had handled - the same guard the expander keeps for escape and backdrop click together
     if (!this.el) return;
     document.removeEventListener('mousedown', this._onDocDown);
     document.removeEventListener('keydown', this._onKey);
@@ -440,7 +439,7 @@ class DirMenu extends Menu {
   }
 
   async _show(path) {
-    // ONLY THE LATEST NAVIGATION MAY DRAW. two quick clicks fire two fetches, and a slow first one
+    // only the latest navigation may draw: two quick clicks fire two fetches, and a slow first one
     // resolving after the fast second would redraw the folder you had already left
     const request = ++this._request;
     let listing;

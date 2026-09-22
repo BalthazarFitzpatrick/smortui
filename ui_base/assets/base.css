@@ -170,10 +170,9 @@
   --ambient-pulse-reach: 4px;
 }
 
-/* REDUCED MOTION, TWICE ON PURPOSE. the token goes to zero so anything reading it stops; the
-   .drawer rule below stops the slide even for a host that restates --motion-duration after this
-   file, which beats the media block by source order. expand.js also asks matchMedia itself, so the
-   two components agree whatever the host does to the token */
+/* reduced motion twice on purpose: the token stops anything reading it, and the .drawer rule holds
+   even for a host that restates --motion-duration after this file (source order beats the media
+   block); expand.js asks matchMedia itself, so both components agree whatever the host does */
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-duration: 0ms; }
   .drawer { transition: none; }
@@ -438,11 +437,9 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
   display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap;
   min-height: var(--row-height);
 }
-/* BASELINE HERE, AND CENTRE ON .strip, and both are measured. a filter row is a caption beside a
-   column of pills that WRAPS - three rows of them at 300px - and the caption belongs on the first
-   row: baseline puts its centre 0px off the first pill's, centre puts it 37px down, in the middle
-   of the column, beside nothing. .strip's cells are single-line, where baseline is the wrong
-   choice for the reason its comment gives. same property, different shapes, different answers */
+/* baseline here, centre on .strip, both measured: a caption beside a wrapping column of pills
+   belongs on the first row (baseline 0px off the first pill's centre, center 37px down beside
+   nothing); .strip's cells never wrap, so there baseline is the wrong choice */
 .filter-row { display: flex; align-items: baseline; gap: 12px; }
 /* A CONTROL ROW MAY NOT CHANGE HEIGHT, and text is what makes it. `.stat` had no rule at all, so a
    count like "0 positives, 0 implied negatives" was five wrappable words in a nowrap flex row: the
@@ -553,18 +550,17 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
    before it, so the edge doing the overlapping is its top. */
 .fan-item {
   margin-top: -80%;
-  /* THE SAME THREE PROPERTIES .focus-glow TRANSITIONS, restated, because two transition shorthands
-     on one element do not merge - the later rule wins whole. this said `transform 140ms` alone, so
-     a fan card wearing the glow slid at 140ms while its ring and light SNAPPED (measured:
-     transition-property came out as `transform` on a fan card against `transform, filter,
-     box-shadow` on a plain one). the slide now runs at the glow's own timing, which is the same
-     140ms it had. */
+  /* the same three properties .focus-glow transitions: two transition shorthands on one element do
+     not merge, the later wins whole, and `transform` alone here made a glowing fan card's ring and
+     light snap (measured: transition-property `transform` vs the plain card's three) */
   transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms);
   box-shadow:
     0 -8px 0 0 var(--bg),
     0 -8px 20px 3px rgba(0, 0, 0, 0.72);
 }
 .fan-item:first-child { margin-top: 0; }
+/* a focused card wearing .focus-glow shows its ring and inner glow in place of the seam and cast
+   above (the glow's box-shadow replaces this one) - intended, it is the smortboard look */
 .fan-item:focus { position: relative; z-index: 2; }
 /* the slide matches the hidden fraction, so a focused item is revealed exactly */
 .fan-item:focus ~ .fan-item { transform: translateY(80%); }
@@ -863,9 +859,8 @@ textarea.text-field {
       var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
     linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
 }
-/* ONE SET OF RULES FOR THE INPUT, TWO WAYS TO GET IT: inside makeSlider's .slider-axis, or as a bare
-   <input type=range class="range-slider"> that draws the axis on itself. the two used to be a
-   verbatim copy of each other, which is a retune waiting to be made in one place only */
+/* one rule set for the input, reached two ways: makeSlider's .slider-axis, or a bare .range-slider
+   that draws the axis on itself - they were a verbatim copy, a retune waiting to miss one */
 .slider-axis input[type="range"], .range-slider {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
@@ -958,9 +953,8 @@ textarea.text-field {
 .count-badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px;
-  /* DARK TEXT, because the deep lichen is a fill and not a bed for cream - the palette block says
-     so (cream on it is 3.00, under the 4.5 text needs; near-black on it is 4.93). this shipped as
-     cream, contradicting its own stylesheet */
+  /* dark text: the deep lichen is a fill, not a bed for cream (3.00 contrast, under the 4.5 text
+     needs; near-black on it is 4.93) - it shipped as cream against its own palette note */
   background: var(--lichen-deep); color: var(--accent-on-text);
   line-height: 1; flex: 0 0 auto;
 }
