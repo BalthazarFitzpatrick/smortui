@@ -276,6 +276,11 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
 
 ## Rules for extending this package
 
+- **Comments follow the global rule: lowercase, no capital letters, no period at the end, one to
+  three lines per block.** Keep the reason (the failure the code answers), drop the narrative. The
+  older comments in these files were written in a longer capitalised style; convert one when you
+  touch its block, never in a drive-by. Decided 2026-09-22.
+
 - **A component that could save something must not.** Interaction and rendering only.
 - **No component may know an application's vocabulary.** No domain nouns in class names, ids,
   storage keys or comments. Storage keys are namespaced `ui-base:*`.
