@@ -170,8 +170,8 @@ function makeExpander(strip, {
 
   strip.addEventListener('click', open);
 
-  // TEARDOWN IS NOT A CLOSE: drops the strip's click and removes an open panel at once, with no
-  // collapse, no onClose and no focus moved - the same contract as the drawer's destroy
+  // teardown is not a close: drops the strip's click and removes an open panel at once, no
+  // collapse, no onClose, no focus moved - the same contract as the drawer's destroy
   function destroy() {
     strip.removeEventListener('click', open);
     if (!backdrop) return;
