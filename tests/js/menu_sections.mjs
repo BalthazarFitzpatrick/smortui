@@ -4,50 +4,9 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-// openAt asks `where instanceof Element` to tell a trigger from an {x, y} point, so the stub's
-// nodes have to be instances of something by that name
-class Element {}
-globalThis.Element = Element;
+import {installDom, element} from './_dom.mjs';
 
-function element(tag) {
-  const el = Object.assign(new globalThis.Element(), {
-    tag, className: '', textContent: '', innerHTML: '', title: '',
-    dataset: {}, children: [], onclick: null, style: {}, tabIndex: 0,
-    replaceWith() {},
-    focus() {}, remove() {}, setAttribute() {}, removeAttribute() {},
-    // real containment, so a click inside the panel is told from one outside it
-    contains(n) { return n === el || (el.children || []).some(c => c.contains && c.contains(n)); },
-    insertAdjacentHTML() {},
-    querySelector: () => null,
-    querySelectorAll: () => [],
-    getBoundingClientRect: () => ({left: 0, top: 0, bottom: 0, right: 0, width: 0, height: 0}),
-    appendChild(child) { this.children.push(child); return child; },
-    append(...kids) { kids.forEach(k => this.children.push(k)); },
-    classList: {
-      _of: () => el.className.split(' ').filter(Boolean),
-      contains: name => el.className.split(' ').includes(name),
-      toggle(name) {
-        const has = el.className.split(' ').includes(name);
-        el.className = has
-          ? el.className.split(' ').filter(c => c && c !== name).join(' ')
-          : `${el.className} ${name}`.trim();
-        return !has;
-      },
-      add(name) { if (!this.contains(name)) el.className = `${el.className} ${name}`.trim(); },
-      remove(name) { el.className = el.className.split(' ').filter(c => c && c !== name).join(' '); },
-    },
-  });
-  return el;
-}
-
-const docBody = element('body');
-globalThis.document = {
-  createElement: element, addEventListener() {}, removeEventListener() {},
-  body: docBody, activeElement: null,
-};
-globalThis.window = {addEventListener() {}, removeEventListener() {}, innerWidth: 1200, innerHeight: 800};
-globalThis.addEventListener = () => {};
-globalThis.removeEventListener = () => {};
+const {document} = installDom();
 
 // the path is an argument so the suite can prove these tests FAIL against an older menu.js -
 // a guard that cannot fail is not a guard
@@ -199,6 +158,18 @@ const verbRow = walk(withVerb.el).filter(n => n.className === 'menu-buttons')[0]
 const ids = walk(verbRow).filter(n => n.dataset && n.dataset.id).map(n => n.dataset.id);
 assert.deepEqual(ids, ['open', 'menu-close'], `close goes last, got ${ids}`);
 
+// ---- onDismiss fires once per dismissal: a second close() on a shut menu is a no-op
+{
+  let dismissed = 0;
+  const once = new Menu({sections: [{kind: 'list', items: []}], onDismiss: () => dismissed++});
+  once.close();
+  assert.equal(dismissed, 0, 'closing a menu that never opened dismisses nothing');
+  once.openAt({x: 0, y: 0});
+  once.close();
+  once.close();
+  assert.equal(dismissed, 1, 'one dismissal, one onDismiss, however many times close() is called');
+}
+
 // ---- a head toggles its own menu shut
 const trigger = element('div');
 trigger.contains = n => n === trigger;
@@ -284,4 +255,32 @@ assert.ok(!treeNodes.some(n => n.innerHTML.includes('<img')), 'a tree row must n
 assert.equal(treeNodes.find(n => n.className === 'name').textContent, payload);
 assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload);
 
+
+
+// ---- open-and-close in one tick leaves no document listener behind. registration is deferred a
+// tick so the opening click cannot dismiss the menu; the deferred half used to run unconditionally,
+// so a menu shut before it fired left 2 listeners on document that nothing ever removed - and the
+// next menu's first mousedown hit the stale handler. measured: 2 leaked per same-tick pair before,
+// 0 after; an ordinary open, wait, close pair was 0 both before and after
+{
+  const live = new Map();
+  const counting = {
+    addEventListener: (type, fn) => live.set(fn, type),
+    removeEventListener: (type, fn) => live.delete(fn),
+  };
+  const {addEventListener, removeEventListener} = globalThis.document;
+  Object.assign(globalThis.document, counting);
+  const sameTick = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+  sameTick.openAt({x: 0, y: 0});
+  sameTick.close();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(live.size, 0, `a same-tick open/close must leave nothing on document, left ${live.size}`);
+  const ordinary = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+  ordinary.openAt({x: 0, y: 0});
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(live.size, 2, 'an open menu listens for mousedown and keydown');
+  ordinary.close();
+  assert.equal(live.size, 0, 'and close drops both');
+  Object.assign(globalThis.document, {addEventListener, removeEventListener});
+}
 console.log('ok');

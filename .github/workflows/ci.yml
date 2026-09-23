@@ -1,13 +1,11 @@
-# WHAT THIS CATCHES THAT ci-parity.sh CANNOT, and it is the whole reason to have both: that script
-# runs a tracked-files-only export on the developer's machine, and says so - "a Linux runner is not
-# macOS". This is the Linux runner. It also tests the OLDEST python the package claims to support,
-# which nothing local does; declaring >=3.11 while only ever running 3.14 is an aspiration, not a
-# fact.
+# the linux runner and the oldest python the package claims (nothing local runs 3.11); CI=true
+# turns the node and browser tests from skip-if-missing into failures
 name: ci
 
 on:
   push:
-    branches: [main]
+    # development is where tags are cut, so a tagged commit is one CI has run on
+    branches: [main, development]
   pull_request:
 
 jobs:
@@ -27,8 +25,17 @@ jobs:
         with:
           enable-cache: true
 
+      # the scripts' behaviour tests run under node; a runner without it would skip them all
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: sync
-        run: uv sync --dev --python ${{ matrix.python }}
+        run: uv sync --dev --group shots --python ${{ matrix.python }}
+
+      # the whole-system test drives the demo in headless chromium (tests/test_demo.py)
+      - name: chromium
+        run: uv run playwright install --with-deps chromium
 
       - name: ruff check
         run: uv run ruff check .

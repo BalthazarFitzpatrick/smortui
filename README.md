@@ -16,10 +16,11 @@ buckets, cards and the fan, drawers, expanders, menus, the focus marker, the pal
 Requirements: **Python 3.11+** and **uv**. Nothing else - no node, no npm, no build step. A
 `<link>` and a few `<script>` tags is the whole integration.
 
-In a tool, pin it by commit (the repo is `smortui`; the Python package inside is `ui_base`):
+In a tool, pin it by tag or commit (the repo is `smortui`; the Python package inside is `ui_base`;
+`CHANGELOG.md` says what each tag changed for a consumer):
 
 ```toml
-dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@<commit sha>"]
+dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.3"]
 ```
 
 Serve its assets from your request handler, then load them in the page. **Order matters**:
@@ -27,13 +28,14 @@ Serve its assets from your request handler, then load them in the page. **Order 
 calls `initShell`.
 
 ```python
-from ui_base import read_asset, UiBaseError
+from ui_base import content_type, read_asset, UiBaseError
 
 # a path like /ui/menu.js -> "menu.js"; refuses anything outside the assets
 try:
     body = read_asset(name)
 except UiBaseError:
     ...  # 404
+headers = {"Content-Type": content_type(name)}
 ```
 
 ```html
@@ -255,7 +257,8 @@ the rendered order, because the mismatches you can see sit together on screen.
 
 ### Pan, zoom, slider, aligner
 
-`makePanZoom` zooms about the pointer and `reset` fits and centres. `makeSlider` is an axis with ticks
+`makePanZoom` zooms about the pointer, `reset` fits and centres, and `destroy` lets go of its
+window listeners, as `makeSelection`, `makeDrawer`, `makeExpander` and `makeAligner` do. `makeSlider` is an axis with ticks
 and an optional distribution drawn over it, so "no results" and "your cut sits above every value"
 stop looking identical. `makeAligner` is for last-pixel crop work and owns no persistence.
 
@@ -275,6 +278,10 @@ table above, but a documented shape for composing what already exists.
 | recipe | what it shows |
 |---|---|
 | [a preset list that fills sibling fields](docs/recipes/preset-fills-fields.md) | a `list` row that fills the `field` sections beside it, one revealed only for one choice, each row's own number computed live |
+| [a directory browser menu](docs/recipes/directory-browser.md) | `dirMenu` drilling through folders from a host-supplied `fetchDir`, so the package never learns where the tree lives |
+| [a two-by-two button grid](docs/recipes/button-grid-2x2.md) | four equal buttons from `.toggle` and a two-column grid, handlers bound by id |
+| [stepper rows](docs/recipes/stepper-rows.md) | labelled `-`/`+` rows from `.run-controls.stepper`, one handler for the stack |
+| [a split toolbar row](docs/recipes/split-toolbar-row.md) | controls left, `.spacer`, primary actions alone on the right |
 
 Each recipe has a live block in the gallery (find it by title in the matching tab) and a doc under
 `docs/recipes/`. The set is also indexed at `docs/recipes/index.json` - a small, stable manifest an
@@ -307,7 +314,8 @@ No build step: the assets are the files a browser loads, unminified and unbundle
 its own files first and falls back to `read_asset` for anything it does not override, so one tool
 can replace a single file by name without editing the package the others read.
 
-A tool consumes it by pinning a commit sha in its `pyproject.toml` (see Install above), the same way
+A tool consumes it by pinning a tag or commit sha in its `pyproject.toml` (see Install above;
+`CHANGELOG.md` says what each tag changed for a consumer), the same way
 it would pin any other dependency - `uv sync` fetches that exact revision, so an update to smortui
 never moves a tool's build without that tool's own commit changing.
 
@@ -326,16 +334,22 @@ Every behaviour here was paid for by a real failure in a tool first:
 
 Copying the files copies the code and loses the reasons. The reasons are most of the value, so they
 live in the comments and travel with it. Used by
-[smortboard](https://github.com/BalthazarFitzpatrick/smortboard) and a screenshot review tool, both
-consuming it as a package.
+[smortboard](https://github.com/BalthazarFitzpatrick/smortboard),
+[smolsmort](https://github.com/BalthazarFitzpatrick/smolsmort) and a game-automation review tool,
+all consuming it as a package pinned by tag.
 
 ## Development
 
 ```bash
-uv run pytest                                # asset serving, the palette guard, the font-size rule
-for f in tests/js/*.mjs; do node "$f"; done  # the scripts, against a stub DOM
-uv run ruff check .
+uv run pytest            # asset serving, the palette and stylesheet guards, every tests/js
+                         # runner under node, and the demo itself in headless chromium
+                         # (uv sync --group shots && uv run playwright install chromium)
+node tests/js/menu_sections.mjs   # one runner on its own, while working on that script
+uv run ruff check . --fix && uv run ruff format .
 ```
+
+Every component that listens on `window` returns `destroy()`; a host that mounts once per page can
+ignore it, a host that rebuilds must call it.
 
 ## Licence
 

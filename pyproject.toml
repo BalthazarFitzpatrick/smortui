@@ -1,6 +1,6 @@
 [project]
 name = "ui-base"
-version = "0.1.10"
+version = "0.2.4"
 description = "the shared web interface for these tools: menus, tabs, sliders, pan/zoom, alignment"
 # 3.11, matching the oldest consumer. nothing here needs anything newer - it is
 # path handling and file reads - and a floor above a consumer's makes the package unusable there
@@ -18,6 +18,21 @@ packages = ["ui_base"]
 
 [tool.ruff]
 line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",  # line too long - the formatter owns it
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ui_base"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [dependency-groups]
 dev = ["ruff>=0.11.0", "pytest>=8.0"]
+# tests/test_demo.py (the demo in headless chromium) and tools/shoot_readme_images.py; CI syncs it
+shots = ["playwright>=1.45"]

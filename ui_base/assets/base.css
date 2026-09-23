@@ -170,6 +170,14 @@
   --ambient-pulse-reach: 4px;
 }
 
+/* reduced motion twice on purpose: the token stops anything reading it, and the .drawer rule holds
+   even for a host that restates --motion-duration after this file (source order beats the media
+   block); expand.js asks matchMedia itself, so both components agree whatever the host does */
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-duration: 0ms; }
+  .drawer { transition: none; }
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -216,7 +224,7 @@ body {
   border: 2px solid var(--grey-border); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font: inherit; color: var(--text);
-  background: var(--panel-row); padding: 0 14px;
+  background: var(--panel-row); padding: 0 var(--inset-x);
   height: var(--row-height); box-sizing: border-box; flex: 0 0 auto;
 }
 .toggle:hover { border-color: var(--cream); color: var(--cream); }
@@ -429,6 +437,9 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
   display: flex; gap: var(--gap); align-items: center; flex-wrap: wrap;
   min-height: var(--row-height);
 }
+/* baseline here, centre on .strip, both measured: a caption beside a wrapping column of pills
+   belongs on the first row (baseline 0px off the first pill's centre, center 37px down beside
+   nothing); .strip's cells never wrap, so there baseline is the wrong choice */
 .filter-row { display: flex; align-items: baseline; gap: 12px; }
 /* A CONTROL ROW MAY NOT CHANGE HEIGHT, and text is what makes it. `.stat` had no rule at all, so a
    count like "0 positives, 0 implied negatives" was five wrappable words in a nowrap flex row: the
@@ -539,12 +550,17 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
    before it, so the edge doing the overlapping is its top. */
 .fan-item {
   margin-top: -80%;
-  transition: transform 140ms;
+  /* the same three properties .focus-glow transitions: two transition shorthands on one element do
+     not merge, the later wins whole, and `transform` alone here made a glowing fan card's ring and
+     light snap (measured: transition-property `transform` vs the plain card's three) */
+  transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms);
   box-shadow:
     0 -8px 0 0 var(--bg),
     0 -8px 20px 3px rgba(0, 0, 0, 0.72);
 }
 .fan-item:first-child { margin-top: 0; }
+/* a focused card wearing .focus-glow shows its ring and inner glow in place of the seam and cast
+   above (the glow's box-shadow replaces this one) - intended, it is the smortboard look */
 .fan-item:focus { position: relative; z-index: 2; }
 /* the slide matches the hidden fraction, so a focused item is revealed exactly */
 .fan-item:focus ~ .fan-item { transform: translateY(80%); }
@@ -625,9 +641,10 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
    each tab used to be its own box with border-bottom removed, so the strip read as eight open
    containers competing with the panels below it. one bordered bar with the active tab underlined
    says the same thing with a single line, and the underline is the only cream on the strip. */
-#nav-bar {
+/* .nav-bar is the name; #nav-bar is kept because the first consumers were written against it */
+.nav-bar, #nav-bar {
   display: flex; align-items: stretch; gap: 0;
-  margin: 10px 14px 0; border: 2px solid var(--grey-border);
+  margin: 10px var(--inset-x) 0; border: 2px solid var(--grey-border);
 }
 .nav-tab {
   padding: 0 20px; background: transparent; color: var(--text-dim);
@@ -766,8 +783,10 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
   color: var(--text-dim);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* 2px and square, like every other control - this was 1px with a 2px radius, the one place in the
+   file that broke both rules at once, and it read as a foreign widget inside the row */
 .menu-item .menu-action {
-  flex: 0 0 auto; padding: 0 8px; border: 1px solid var(--grey-border); border-radius: 2px;
+  flex: 0 0 auto; padding: 0 8px; border: 2px solid var(--grey-border);
   color: var(--text-dim);
 }
 .menu-item .menu-action:hover { border-color: var(--cream); color: var(--cream); }
@@ -840,42 +859,36 @@ textarea.text-field {
       var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
     linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
 }
-.slider-axis input[type="range"] {
+/* one rule set for the input, reached two ways: makeSlider's .slider-axis, or a bare .range-slider
+   that draws the axis on itself - they were a verbatim copy, a retune waiting to miss one */
+.slider-axis input[type="range"], .range-slider {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
 }
-.slider-axis input[type="range"]::-webkit-slider-runnable-track { background: transparent; height: 22px; }
-.slider-axis input[type="range"]::-moz-range-track { background: transparent; height: 22px; }
-/* THE PIPE. 5px of cream, full height of the axis - the one bright thing in the control */
-.slider-axis input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 5px; height: 18px;
-  background: var(--cream); border: none; cursor: ew-resize;
-}
-.slider-axis input[type="range"]::-moz-range-thumb {
-  width: 5px; height: 18px;
-  background: var(--cream); border: none; cursor: ew-resize;
-}
-.slider-axis input[type="range"]:focus { outline: none; }
-.slider-axis input[type="range"]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
-/* the same look on a bare <input type=range>: opt in with the class, no makeSlider needed */
 .range-slider {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 22px; margin: 0; cursor: pointer; background:
+  background:
     repeating-linear-gradient(to right,
       var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
     linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
 }
+.slider-axis input[type="range"]::-webkit-slider-runnable-track,
 .range-slider::-webkit-slider-runnable-track { background: transparent; height: 22px; }
+.slider-axis input[type="range"]::-moz-range-track,
 .range-slider::-moz-range-track { background: transparent; height: 22px; }
+/* THE PIPE. 5px of cream, full height of the axis - the one bright thing in the control */
+.slider-axis input[type="range"]::-webkit-slider-thumb,
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 5px; height: 18px; background: var(--cream); border: none; cursor: ew-resize;
+  width: 5px; height: 18px;
+  background: var(--cream); border: none; cursor: ew-resize;
 }
+.slider-axis input[type="range"]::-moz-range-thumb,
 .range-slider::-moz-range-thumb {
-  width: 5px; height: 18px; background: var(--cream); border: none; cursor: ew-resize;
+  width: 5px; height: 18px;
+  background: var(--cream); border: none; cursor: ew-resize;
 }
-.range-slider:focus { outline: none; }
+.slider-axis input[type="range"]:focus, .range-slider:focus { outline: none; }
+.slider-axis input[type="range"]:focus::-webkit-slider-thumb,
 .range-slider:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
 .slider-ends {
   position: relative; display: flex; justify-content: space-between;
@@ -926,7 +939,9 @@ textarea.text-field {
    rides .panel-floating for the same reason expand.js does - a floating surface here has one
    border and one shadow, not a second set invented per component */
 .drawer {
-  z-index: 55; display: flex; flex-direction: column; overflow: hidden;
+  position: fixed; z-index: 55; display: flex; flex-direction: column; overflow: hidden;
+  /* the slide reads the kit's one motion timing - drawer.js used to carry its own 220ms */
+  transition: left var(--motion-duration) var(--motion-ease);
 }
 .drawer:not(.open) { cursor: pointer; }
 .drawer-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
@@ -938,8 +953,10 @@ textarea.text-field {
 .count-badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px;
-  background: var(--lichen-deep); color: var(--cream);
-  font-size: var(--font-size); line-height: 1; flex: 0 0 auto;
+  /* dark text: the deep lichen is a fill, not a bed for cream (3.00 contrast, under the 4.5 text
+     needs; near-black on it is 4.93) - it shipped as cream against its own palette note */
+  background: var(--lichen-deep); color: var(--accent-on-text);
+  line-height: 1; flex: 0 0 auto;
 }
 
 /* ---- indicate.js: focus marker ----
@@ -951,6 +968,9 @@ textarea.text-field {
   border: 2px solid var(--cream);
   transition: left 120ms, top 120ms, width 120ms, height 120ms;
 }
+/* indicate.js hides it while its target is out of the dom; stated here like .help-tip's, so a
+   host rule that sets display on the marker cannot bring it back */
+.focus-marker[hidden] { display: none; }
 
 
 /* ---- hazard stripes: a placeholder for content that is not there yet ----

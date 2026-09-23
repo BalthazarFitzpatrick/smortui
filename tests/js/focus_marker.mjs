@@ -14,23 +14,9 @@ globalThis.cancelAnimationFrame = id => { if (frames[id]) frames[id].cancelled =
 const runTimers = () => timers.forEach(t => { if (!t.cleared) { t.cleared = true; t.fn(); } });
 const runFrames = () => frames.forEach(f => { if (!f.cancelled) { f.cancelled = true; f.fn(); } });
 
-const docListeners = {};
-function element(tag) {
-  const listeners = {};
-  return {
-    tag, style: {}, className: '', children: [], rect: {left: 0, top: 0, width: 100, height: 30},
-    addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
-    removeEventListener(type, fn) { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
-    fire(type) { (listeners[type] || []).slice().forEach(fn => fn({})); },
-    listenerCount: type => (listeners[type] || []).length,
-    appendChild(child) { this.children.push(child); return child; },
-    getBoundingClientRect() { return {...this.rect}; },
-  };
-}
-globalThis.document = {
-  createElement: element, body: element('body'),
-  addEventListener(type, fn) { (docListeners[type] ||= []).push(fn); },
-};
+import {installDom, element} from './_dom.mjs';
+
+const {document} = installDom();
 globalThis.getComputedStyle = () => ({transform: 'none'});
 
 const src = readFileSync(new URL('../../ui_base/assets/indicate.js', import.meta.url), 'utf8');
@@ -71,7 +57,23 @@ assert.equal(a.listenerCount('transitionend'), 0, 'which also drops the listener
 
 // ---- a list scrolling under the fixed marker takes it along
 a.rect.top = 60;
-(docListeners.scroll || []).forEach(fn => fn({}));
+document.fire('scroll');
 assert.equal(marker().style.top, '60px', 'a scroll re-places the marker on the current target');
+
+// ---- a target that left the dom hides the marker instead of collapsing it into the corner
+a.isConnected = false;
+a.rect = {left: 0, top: 0, width: 0, height: 0};
+document.fire('scroll');
+assert.equal(marker().hidden, true, 'a detached target hides the marker');
+assert.equal(marker().style.top, '60px', 'and leaves it where it was rather than at 0,0');
+indicateFocus(b);
+assert.equal(marker().hidden, false, 'the next real target shows it again');
+assert.equal(marker().style.top, '450px', 'placed on b where the test last put it');
+
+// ---- indicateFocus(null) clears it, for a host that knows its focused row is gone
+indicateFocus(null);
+assert.equal(marker().hidden, true, 'null hides the marker');
+indicateFocus(c);
+assert.equal(marker().hidden, false);
 
 console.log('ok');

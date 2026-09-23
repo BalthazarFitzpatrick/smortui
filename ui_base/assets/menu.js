@@ -83,8 +83,11 @@ class Menu {
       flags].filter(Boolean).join(' ');
     row.dataset.id = item.id ?? item.label;
     row.appendChild(textSpan('name', item.label));
-    if (item.stats) row.appendChild(textSpan('stats', item.stats));
-    if (item.stats) row.title = `${item.label} - ${item.stats}`;
+    if (item.stats) {
+      row.appendChild(textSpan('stats', item.stats));
+      // the row's title carries both in full, since the name ellipsises first (see base.css)
+      row.title = `${item.label} - ${item.stats}`;
+    }
     if (item.action) {
       // a trailing control, which is how "sources" gets its per-row close without a bespoke panel
       const act = document.createElement('span');
@@ -136,7 +139,9 @@ class Menu {
       row.append(input, btn);
       wrap.appendChild(row);
     } else if (section.kind === 'list') {
-      if (!section.items.length) {
+      // a heading is not a row: a list holding only its heading is empty and says so. dirMenu's
+      // "empty folder" never showed before this, because the folder's own name counted
+      if (!section.items.some(item => !item.heading)) {
         const empty = document.createElement('span');
         empty.className = 'none';
         empty.textContent = section.empty || 'nothing here';
@@ -305,7 +310,7 @@ class Menu {
     const at = items.indexOf(document.activeElement);
     const next = evt.key === 'ArrowDown'
       ? Math.min(items.length - 1, at + 1)
-      : Math.max(0, at <= 0 ? 0 : at - 1);
+      : Math.max(0, at - 1);
     items[next].tabIndex = -1;
     items[next].focus();
   }
@@ -367,6 +372,10 @@ class Menu {
     // mousedown, not click: a click handler fires after the trigger's own, which reopens what it
     // just closed. deferred so the opening click does not immediately dismiss it
     setTimeout(() => {
+      // a menu closed in the same tick it opened (a refresh that failed, a host that opened and
+      // immediately shut it) must not register listeners that nothing will ever remove - they
+      // would sit on document and close the NEXT menu on its first mousedown
+      if (openMenu !== this) return;
       document.addEventListener('mousedown', this._onDocDown);
       document.addEventListener('keydown', this._onKey);
     }, 0);
@@ -382,15 +391,17 @@ class Menu {
   }
 
   close() {
+    // once per dismissal: a single-select pick already closes the menu, and a host whose onPick
+    // then calls close() itself used to fire onDismiss twice and drop a selection the first firing
+    // had handled - the same guard the expander keeps for escape and backdrop click together
+    if (!this.el) return;
     document.removeEventListener('mousedown', this._onDocDown);
     document.removeEventListener('keydown', this._onKey);
     this._trigger?.classList.remove('open');
     // an adopted element belongs to the page, so it is hidden rather than destroyed
-    if (this.el) {
-      if (this.adopt) this.el.classList.add('hidden');
-      else this.el.remove();
-      this.el = null;
-    }
+    if (this.adopt) this.el.classList.add('hidden');
+    else this.el.remove();
+    this.el = null;
     if (openMenu === this) openMenu = null;
     // ALWAYS, however it was dismissed. the caller uses this to drop a selection that would
     // otherwise ride along into the next action
@@ -401,38 +412,62 @@ class Menu {
 }
 
 // convenience for the commonest shape by far: a titled single-select list
-function listMenu(title, items, onPick, extra = {}) {
+function listMenu(title, items, onPick, {onDismiss = null, ...extra} = {}) {
   return new Menu({
     title,
     sections: [{kind: 'list', items, onPick: item => onPick(item), ...extra}],
-    onDismiss: extra.onDismiss,
+    onDismiss,
   });
 }
 
 // a directory browser: one list section rebuilt on every navigation. the host supplies
-// fetchDir(path) -> {path, parent, dirs, files}, so this knows nothing about where paths live
-function dirMenu(title, fetchDir, onPick, {start = '', onDismiss = null} = {}) {
-  // persistent, because a click on a folder is a step and must not dismiss the panel
-  const menu = new Menu({title, persistent: true, sections: [], onDismiss});
-  const join = (dir, name) => `${dir.replace(/\/$/, '')}/${name}`;
-  const show = async path => {
-    const listing = await fetchDir(path);
-    if (!menu.isOpen) return;
+// fetchDir(path) -> {path, parent, dirs, files}, so this knows nothing about where paths live.
+// persistent, because a click on a folder is a step and must not dismiss the panel
+class DirMenu extends Menu {
+  constructor(title, fetchDir, onPick, {start = '', onDismiss = null} = {}) {
+    super({title, persistent: true, sections: [], onDismiss});
+    this._fetchDir = fetchDir;
+    this._onPick = onPick;
+    this._start = start;
+    this._request = 0;
+  }
+
+  openAt(where) {
+    super.openAt(where);
+    if (this.isOpen) this._show(this._start);
+    return this;
+  }
+
+  async _show(path) {
+    // only the latest navigation may draw: two quick clicks fire two fetches, and a slow first one
+    // resolving after the fast second would redraw the folder you had already left
+    const request = ++this._request;
+    let listing;
+    try {
+      listing = await this._fetchDir(path);
+    } catch (err) {
+      // a rejected fetch is the host's failure, shown as a folder that could not be read; the
+      // previous folder must not stay on screen pretending to be this one
+      listing = {path, parent: null, dirs: [], files: [], error: String(err?.message || err)};
+    }
+    if (!this.isOpen || request !== this._request) return;
+    const join = name => `${listing.path.replace(/\/$/, '')}/${name}`;
     const items = [{heading: listing.path}];
     if (listing.parent != null) items.push({id: '..', label: '..', dir: listing.parent});
-    listing.dirs.forEach(name => items.push({id: `d:${name}`, label: `${name}/`, dir: join(listing.path, name)}));
-    listing.files.forEach(name => items.push({id: `f:${name}`, label: name, file: join(listing.path, name)}));
-    menu.refresh([{
-      kind: 'list', items, empty: 'empty folder',
+    listing.dirs.forEach(name => items.push({id: `d:${name}`, label: `${name}/`, dir: join(name)}));
+    listing.files.forEach(name => items.push({id: `f:${name}`, label: name, file: join(name)}));
+    this.refresh([{
+      kind: 'list', items, empty: listing.error ? `could not read: ${listing.error}` : 'empty folder',
       onPick: item => {
-        if (item.file != null) { onPick(item.file); menu.close(); }
-        else show(item.dir);
+        if (item.file != null) { this._onPick(item.file); this.close(); }
+        else this._show(item.dir);
       },
     }]);
-  };
-  const open = menu.openAt.bind(menu);
-  menu.openAt = where => { open(where); if (menu.isOpen) show(start); return menu; };
-  return menu;
+  }
+}
+
+function dirMenu(title, fetchDir, onPick, opts = {}) {
+  return new DirMenu(title, fetchDir, onPick, opts);
 }
 
 window.Menu = Menu;
@@ -538,13 +573,13 @@ function makeSlider(container, {
 
   const ends = document.createElement('div');
   ends.className = 'slider-ends';
-  ends.innerHTML = `<span>${format(min)}</span><span class="slider-value">${format(value)}</span>`
-    + `<span>${format(max)}</span>`;
+  // text, never markup: format() is caller code and its output is data, the same rule every
+  // label in this file follows
+  const minLabel = textSpan('', format(min));
+  const readout = textSpan('slider-value', format(value));
+  const maxLabel = textSpan('', format(max));
+  ends.append(minLabel, readout, maxLabel);
   container.appendChild(ends);
-
-  const readout = ends.querySelector('.slider-value');
-  const minLabel = ends.firstElementChild;
-  const maxLabel = ends.lastElementChild;
   // MEASURED, NOT GUESSED, and still safe inside a display:none tab.
   //
   // this counted characters at hardcoded sizes - 10.5px for the end labels, 11.5px for the
@@ -555,8 +590,9 @@ function makeSlider(container, {
   //
   // canvas measures the real advance and, unlike offsetWidth, needs no layout - which is the
   // property the old comment actually wanted.
-  const charWidth = text => textWidth(text);
-  const readoutWidth = text => textWidth(text);
+  // the end labels never change after build, so they are measured once; only the readout is
+  // measured per event
+  const endWidths = {min: textWidth(minLabel.textContent), max: textWidth(maxLabel.textContent)};
   const paint = () => {
     const v = Number(input.value);
     const text = format(v);
@@ -572,9 +608,10 @@ function makeSlider(container, {
     const pct = (v - min) / (max - min);
     const raw = pct * ends.clientWidth || pct * container.clientWidth || pct * 190;
     const gap = 6;
-    const low = charWidth(minLabel.textContent) + gap + readoutWidth(text) / 2;
+    const half = textWidth(text) / 2;
+    const low = endWidths.min + gap + half;
     const width = ends.clientWidth || container.clientWidth || 190;
-    const high = width - charWidth(maxLabel.textContent) - gap - readoutWidth(text) / 2;
+    const high = width - endWidths.max - gap - half;
     const clamped = Math.max(low, Math.min(high, raw));
     readout.style.left = `${clamped}px`;
     return v;
@@ -669,7 +706,7 @@ function makePanZoom(wrap, stage, {
 
   // plain wheel zooms, ANCHORED ON THE POINTER - zooming about the corner walks whatever you are
   // aiming at off screen, which is the thing zoom exists to prevent
-  wrap.addEventListener('wheel', evt => {
+  const onWheel = evt => {
     evt.preventDefault();
     const box = wrap.getBoundingClientRect();
     const mx = evt.clientX - box.left;
@@ -685,26 +722,40 @@ function makePanZoom(wrap, stage, {
     panY = my - (my - panY) * (next / zoom);
     zoom = next;
     apply();
-  }, {passive: false});
+  };
+  wrap.addEventListener('wheel', onWheel, {passive: false});
 
   // the modifier keeps a plain drag free for whatever the host uses it for - marking, on the
   // interface tab. pass panModifier: null where a plain drag should pan.
   let pan = null;
-  wrap.addEventListener('mousedown', evt => {
+  const onDown = evt => {
     if (panModifier && !evt[`${panModifier}Key`]) return;
     evt.preventDefault();
     pan = {x: evt.clientX, y: evt.clientY, px: panX, py: panY};
-  });
-  window.addEventListener('mousemove', evt => {
+  };
+  const onMove = evt => {
     if (!pan) return;
     panX = pan.px + (evt.clientX - pan.x);
     panY = pan.py + (evt.clientY - pan.y);
     apply();
-  });
-  window.addEventListener('mouseup', () => { pan = null; });
+  };
+  const onUp = () => { pan = null; };
+  wrap.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
 
   apply();
-  return {reset, apply, zoom: () => zoom, set: z => { zoom = z; apply(); }};
+  return {
+    reset, apply, zoom: () => zoom, set: z => { zoom = z; apply(); },
+    // the move/up listeners are on window, so a host that rebuilds its viewport must drop them or
+    // every rebuild leaves one more pair behind - the same leak align.js's destroy exists for
+    destroy() {
+      wrap.removeEventListener('wheel', onWheel);
+      wrap.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    },
+  };
 }
 
 window.makePanZoom = makePanZoom;

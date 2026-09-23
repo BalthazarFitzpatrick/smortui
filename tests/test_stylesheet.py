@@ -1,174 +1,12 @@
-"""the package's one job: hand a consumer an asset, and refuse everything else.
-
-WHAT THESE GUARD. ui_base has no runtime of its own - it is files plus a reader - so the failures
-available to it are: serving something it should not, failing to serve something a consumer links,
-and shipping CSS or JS that is broken in a way no python test would ever notice. One test each.
+"""base.css: the rules the stylesheet's own header promises, each pinned by the failure that paid
+for it. A rule stated only in a comment is a rule the next edit removes by accident.
 """
 
 from __future__ import annotations
 
 import re
-import shutil
-import subprocess
-from pathlib import Path
 
-import pytest
-
-from ui_base import ASSETS, UiBaseError, asset_names, read_asset
-
-# what a consumer's page links. named explicitly rather than globbed: a test that reads the
-# directory it is checking passes just as happily when the directory is empty
-EXPECTED = {
-    "base.css",
-    "menu.js",
-    "shell.js",
-    "align.js",
-    "select.js",
-    "buckets.js",
-    "expand.js",
-    "indicate.js",
-    "drawer.js",
-    "help.js",
-    "entrytext.js",
-    "pile.js",
-    "chart.js",
-}
-
-
-def test_every_expected_asset_is_present_and_not_empty():
-    assert EXPECTED <= set(asset_names())
-    for name in EXPECTED:
-        assert read_asset(name).strip(), f"{name} is empty"
-
-
-def test_asset_names_matches_what_is_on_disk():
-    assert set(asset_names()) == {p.name for p in ASSETS.iterdir() if p.is_file()}
-
-
-@pytest.mark.parametrize(
-    "name",
-    [
-        "../pyproject.toml",
-        "../../etc/passwd",
-        "..%2Fpyproject.toml",
-        "subdir/../../pyproject.toml",
-        "",
-        ".",
-        "no-such-file.js",
-    ],
-)
-def test_nothing_outside_the_assets_directory_can_be_read(name):
-    """RESOLVE THEN CONTAIN, not a blocklist on "..". A route that concatenates a caller-supplied
-    name onto a directory is the classic traversal, and a consumer serves this over http.
-    """
-    with pytest.raises(UiBaseError):
-        read_asset(name)
-
-
-def test_a_symlink_out_of_the_directory_is_refused(tmp_path):
-    """resolve() follows symlinks, so containment is checked on the real path - a link planted in
-    assets/ cannot become a way to read the rest of the disk
-    """
-    outside = tmp_path / "secret.txt"
-    outside.write_text("nope")
-    link = ASSETS / "_test_link.css"
-    try:
-        link.symlink_to(outside)
-        with pytest.raises(UiBaseError):
-            read_asset("_test_link.css")
-    finally:
-        link.unlink(missing_ok=True)
-
-
-# ---------------------------------------------------------------- the assets themselves
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-@pytest.mark.parametrize("name", sorted(n for n in EXPECTED if n.endswith(".js")))
-def test_the_scripts_parse(name):
-    """a syntax error ships silently: the browser drops the whole file and the page goes inert"""
-    result = subprocess.run(
-        ["node", "--check", str(ASSETS / name)], capture_output=True, text=True, check=False
-    )
-    assert result.returncode == 0, f"{name} does not parse:\n{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_menu_builds_the_sections_it_promises():
-    """PARSING IS NOT BEHAVIOUR. `node --check` proves the file loads, which says nothing about
-    whether a column carries its own heading or an item's state reaches the row. This runs the real
-    class against a DOM stub - the two things under test are pure structure, so a full jsdom would
-    be testing the browser as much as the code.
-    """
-    script = Path(__file__).parent / "js" / "menu_sections.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"menu sections misbehave:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_entry_text_primitives_derive_headers_and_split_paragraphs():
-    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this exercises
-    deriveEntryHeader and splitEntryParagraphs directly against real strings, no DOM needed.
-    """
-    script = Path(__file__).parent / "js" / "entrytext.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, (
-        f"entry text primitives misbehave:\n{result.stdout}{result.stderr}"
-    )
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_pile_layout_picks_its_regime_by_measurement():
-    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above. What this guards is the one
-    rule the pile/fan model exists for - A CARD IS NEVER SHRUNK, what gives is how the cards meet -
-    plus the group stepping one card at a time and the fold shutting a card at its pile's own edge
-    without moving it. All pure, so no DOM stub is needed at all.
-    """
-    script = Path(__file__).parent / "js" / "pile_layout.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"pile layout misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_buckets_navigate_in_two_axes():
-    """PARSING IS NOT BEHAVIOUR, same reasoning as the menu test above - this runs makeBuckets
-    against a dom stub to prove the roving focus actually moves across both axes and clamps or
-    exits where the contract says it should.
-    """
-    script = Path(__file__).parent / "js" / "buckets_navigation.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"bucket navigation misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_expander_dismisses_exactly_once():
-    """the risk with an animated open/close is a double-fire - escape and an outside click both
-    reachable in one dismissal - so this proves onClose runs once per dismissal, not per trigger.
-    """
-    script = Path(__file__).parent / "js" / "expander.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"expander misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_drawer_parks_opens_and_closes():
-    """proves the parked sliver, the move into the viewport on open, close returning to the
-    parked position, toggle alternating, and onOpen/onClose each firing once per transition.
-    """
-    script = Path(__file__).parent / "js" / "drawer.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"drawer misbehaves:\n{result.stdout}{result.stderr}"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_the_chart_draws_lines_bands_and_markers():
-    """proves a null in a series splits its line (and its band) into separate paths, markers draw
-    one line each, and nearest() finds the closest point to a pixel position - the structural
-    behaviour a DOM stub can check without a real browser laying anything out.
-    """
-    script = Path(__file__).parent / "js" / "chart.mjs"
-    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
-    assert result.returncode == 0, f"chart misbehaves:\n{result.stdout}{result.stderr}"
+from ui_base import ASSETS, read_asset
 
 
 def _css() -> str:
@@ -186,9 +24,10 @@ def test_every_token_the_stylesheet_uses_is_one_it_defines():
 
 
 def test_the_light_palette_is_complete_on_bare_root():
-    """THE THREE THEME STATES. an explicit choice stamps data-theme; the default "system" setting
-    stamps nothing, so a token whose only definition sits inside a media or [data-theme] block is
-    undefined for most viewers. every token must therefore exist on bare :root.
+    """the palette is one dark set today (see CLAUDE.md, Theming); if a second is ever added under
+    a media or [data-theme] block, every token must still exist on bare :root, because the
+    default "system" setting stamps no attribute and a token defined only under a condition is
+    undefined for most viewers. this guards that rule now so the second palette cannot break it.
     """
     css = _css()
     base = re.search(r":root\s*\{(.*?)\}", css, re.DOTALL)
@@ -283,6 +122,15 @@ def test_a_rule_does_not_add_to_the_gap_it_sits_in():
     rule = re.search(r"\.h-divider\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
     margin = re.search(r"margin:\s*([^;]+);", rule).group(1)
     assert margin.strip().startswith("0 "), f"the rule must add no vertical space: {margin}"
+
+
+def test_a_filter_row_keeps_baseline_because_its_column_wraps():
+    """measured against base.css with a 54px caption beside six pills wrapping to three rows in
+    300px: baseline leaves the caption's centre 0px off the first pill's, centre drops it 37px to
+    the middle of the column. .strip centres because its cells never wrap; this row does.
+    """
+    row = re.search(r"\.filter-row\s*\{(.*?)\}", _css(), re.DOTALL).group(1)
+    assert "align-items: baseline" in row
 
 
 def test_a_strip_centres_its_cells_and_shares_the_width():
@@ -445,6 +293,62 @@ def test_a_menu_holding_columns_is_allowed_more_width_than_one_holding_a_list():
     line = next(ln for ln in css.splitlines() if ln.startswith(rule))
     assert "45vw" in line, "the viewport share is the half that protects a narrow window"
     assert "min(" in line, "a pixel ceiling and a viewport share, whichever binds first"
+
+
+def test_the_drawer_slides_on_the_shared_motion_tokens():
+    """drawer.js carried its own 220ms while base.css declared --motion-duration THE one timing
+    every animated thing reads; a host retuning motion moved the expander and not the drawer
+    """
+    css = _css()
+    # the main rule, not the reduced-motion one that also names .drawer earlier in the file
+    rule = next(r for r in re.findall(r"\.drawer\s*\{(.*?)\}", css, re.DOTALL) if "z-index" in r)
+    assert "transition: left var(--motion-duration) var(--motion-ease)" in rule
+    reduced = css.split("@media (prefers-reduced-motion: reduce)")[1]
+    assert re.search(r"\.drawer\s*\{[^}]*transition: none", reduced), (
+        "and it stops under reduced motion"
+    )
+    assert "position: fixed" in rule, "the drawer's placement is the stylesheet's, not inline"
+    drawer = (ASSETS / "drawer.js").read_text()
+    assert not re.search(r"\d+\s*ms\b", drawer), "no second timing source"
+    assert "style.transition" not in drawer, "the timing is the stylesheet's"
+    assert "style.position = 'fixed'" in drawer, "the geometry stays the script's"
+
+
+def test_the_range_look_is_one_rule_set_under_two_selectors():
+    """.range-slider and makeSlider's input used to be a verbatim copy of each other - a retune of
+    the pipe that reached one and not the other would ship two sliders that no longer match
+    """
+    css = _css()
+    thumb = re.findall(r"::-webkit-slider-thumb\s*\{", css)
+    assert len(thumb) == 2, f"one thumb rule and one focus rule, found {len(thumb)}"
+    assert re.search(
+        r"\.slider-axis input\[type=\"range\"\]::-webkit-slider-thumb,\s*\n\s*\.range-slider::-webkit-slider-thumb",
+        css,
+    ), "both selectors share the one thumb rule"
+
+
+def test_the_nav_bar_is_reachable_by_class():
+    """every other primitive is a class; the bar was an id, which means a page cannot carry two
+    and a consumer's markup must use that exact id or get an unstyled strip
+    """
+    assert re.search(r"^\.nav-bar, #nav-bar\s*\{", _css(), re.MULTILINE)
+
+
+def test_a_fan_item_transitions_everything_the_focus_glow_does():
+    """two transition shorthands on one element do not merge; the later wins whole. .fan-item's
+    `transform 140ms` alone left a glowing fan card sliding smoothly while its ring and light
+    snapped - measured as transition-property `transform` against the plain card's three.
+    """
+    css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)  # the comments quote the old literal
+    fan = re.search(r"\.fan-item\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    glow = re.search(r"\.focus-glow\s*\{(.*?)\}", css, re.DOTALL).group(1)
+
+    def transitioned(body: str) -> list[str]:
+        shorthand = re.search(r"transition:\s*([^;]+);", body).group(1)
+        return sorted(part.strip().split()[0] for part in shorthand.split(","))
+
+    assert transitioned(fan) == transitioned(glow) == ["box-shadow", "filter", "transform"]
+    assert "140" not in fan, "the slide reads the glow's token, not its own literal"
 
 
 def test_edge_pulse_keeps_focus_and_reduced_motion_visible():

@@ -10,29 +10,29 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from ui_base import UiBaseError, read_asset
+from ui_base import UiBaseError, content_type, read_asset
 
 DEMO = Path(__file__).resolve().parent / "index.html"
 
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        path = self.path.split("?", 1)[0]
+        if path in ("/", "/index.html"):
             self._send(DEMO.read_bytes(), "text/html")
             return
-        if self.path.startswith("/ui/"):
-            name = self.path[len("/ui/") :]
+        if path.startswith("/ui/"):
+            name = path[len("/ui/") :]
             try:
                 body = read_asset(name)
             except UiBaseError:
                 self.send_response(404)
                 self.end_headers()
                 return
-            self._send(body, mimetypes.guess_type(name)[0] or "application/octet-stream")
+            self._send(body, content_type(name))
             return
         self.send_response(404)
         self.end_headers()

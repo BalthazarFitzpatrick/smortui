@@ -40,6 +40,11 @@ function _marker() {
 // the resting box straight away, so the marker travels once, to the right place.
 function _placeMarker(target) {
   if (!target || target !== _focusTarget) return;
+  // a target that left the dom has no box: a host re-rendering its rows drops the focused one and
+  // the next scroll measured it as 0x0 at (0,0), a stray cream dot in the corner - hide until
+  // something that exists takes focus
+  if (target.isConnected === false) { _focusMarker.hidden = true; return; }
+  _focusMarker.hidden = false;
   const r = target.getBoundingClientRect();
   const t = getComputedStyle(target).transform;
   let dx = 0, dy = 0;
@@ -59,10 +64,13 @@ function _placeMarker(target) {
 // THE TARGET MAY BE MOVING WHEN IT TAKES FOCUS - a fan item slides back to its resting place - so
 // place it now, again on the next frame, and once more when its own transition ends, all of it
 // cancelled the moment focus moves on
+// indicateFocus(null) clears it: a host re-rendering its rows knows the focused one is gone
+// before any scroll does, and nothing here can see a removal
 function indicateFocus(target) {
   _marker();
   if (_dropPending) _dropPending();
   _focusTarget = target;
+  if (!target) { _focusMarker.hidden = true; return; }
   _placeMarker(target);
 
   const settle = () => { _placeMarker(target); drop(); };

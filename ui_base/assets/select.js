@@ -57,7 +57,7 @@ function makeSelection(container, options = {}) {
     announce();
   }
 
-  container.addEventListener('click', evt => {
+  const onClick = evt => {
     const el = evt.target.closest(itemSelector);
     if (!el || !isPickable(el)) return;
     // the net owns shift and its own mouseup has already answered; a click arriving after it must
@@ -69,15 +69,17 @@ function makeSelection(container, options = {}) {
       return;
     }
     only(el);
-  });
+  };
+  container.addEventListener('click', onClick);
 
-  container.addEventListener('contextmenu', evt => {
+  const onContextMenu = evt => {
     const el = evt.target.closest(itemSelector);
     if (!el || !isPickable(el) || !onContext) return;
     evt.preventDefault();
     if (!selected.has(keyOf(el))) only(el);   // see the header: never act on what was not pointed at
     onContext([...selected], evt.clientX, evt.clientY);
-  });
+  };
+  container.addEventListener('contextmenu', onContextMenu);
 
   // ---- the net
   let band = null, origin = null, pointer = null, frame = null;
@@ -121,7 +123,7 @@ function makeSelection(container, options = {}) {
     frame = requestAnimationFrame(step);
   };
 
-  container.addEventListener('mousedown', evt => {
+  const onDown = evt => {
     if (!evt.shiftKey || evt.button !== 0) return;
     evt.preventDefault();   // or the drag becomes a text selection across every label in the grid
     origin = {x: evt.clientX, y: evt.clientY};
@@ -130,13 +132,13 @@ function makeSelection(container, options = {}) {
     band.className = 'rubber-band';
     document.body.appendChild(band);
     frame = requestAnimationFrame(step);
-  });
-  window.addEventListener('mousemove', evt => {
+  };
+  const onMove = evt => {
     if (!band) return;
     pointer = {x: evt.clientX, y: evt.clientY};
     draw();
-  });
-  window.addEventListener('mouseup', () => {
+  };
+  const onUp = () => {
     if (!band) return;
     if (frame) cancelAnimationFrame(frame);
     frame = null;
@@ -144,7 +146,10 @@ function makeSelection(container, options = {}) {
     band = null;
     origin = pointer = null;
     announce();
-  });
+  };
+  container.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
 
   return {
     selected: () => [...selected],
@@ -160,5 +165,21 @@ function makeSelection(container, options = {}) {
       announce();
     },
     repaint: () => items().forEach(paint),   // call after re-rendering the list
+    // the move/up listeners are on window - a host that rebuilds its grid must drop them, or each
+    // rebuild leaves one more pair behind netting a container that is gone
+    destroy: () => {
+      // a net in progress is dropped, not finished: teardown fires no onChange into a host that
+      // is mid-rebuild
+      if (frame) cancelAnimationFrame(frame);
+      frame = null;
+      band?.remove();
+      band = null;
+      origin = pointer = null;
+      container.removeEventListener('click', onClick);
+      container.removeEventListener('contextmenu', onContextMenu);
+      container.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    },
   };
 }

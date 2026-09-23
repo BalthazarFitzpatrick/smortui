@@ -4,32 +4,10 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-class Element {}
-globalThis.Element = Element;
+import {installDom} from './_dom.mjs';
 
-function element(tag) {
-  const listeners = {};
-  const el = Object.assign(new Element(), {
-    tag, style: {}, children: [],
-    addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
-    removeEventListener(type, fn) { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
-    _listeners: listeners,
-    appendChild(child) { el.children.push(child); return child; },
-    classList: {
-      _set: new Set(),
-      add(name) { this._set.add(name); },
-      remove(name) { this._set.delete(name); },
-      contains(name) { return this._set.has(name); },
-    },
-  });
-  return el;
-}
-
-// the stub grows a body because the drawer appends itself to it - and asserting that it lands
-// there is the point: the component computed correct geometry while invisible before it did
-const body = element('body');
-globalThis.document = {createElement: element, body};
-globalThis.window = {innerWidth: 1200, innerHeight: 800, addEventListener() {}, removeEventListener() {}};
+const {document} = installDom();
+const body = document.body;
 
 const target = process.argv[2] || new URL('../../ui_base/assets/drawer.js', import.meta.url);
 const src = readFileSync(target, 'utf8');
@@ -100,5 +78,14 @@ assert.ok(leftParked + leftWidth > 0, 'a sliver should remain visible on screen'
 left.open();
 const leftOpenLeft = parseFloat(left.el.style.left);
 assert.ok(leftOpenLeft >= 0 && leftOpenLeft + leftWidth <= vw / 2, 'a left-edge drawer opens within the left half');
+
+// ---- destroy is not a close: no onClose, but isOpen answers false and the element is gone
+let torn = 0;
+const doomed = makeDrawer({edge: 'right', onClose: () => torn++});
+doomed.open();
+doomed.destroy();
+assert.equal(torn, 0, 'teardown fires no onClose');
+assert.equal(doomed.isOpen(), false, 'but it is not open any more');
+assert.ok(doomed.el.removed, 'and its element is gone');
 
 console.log('ok');
