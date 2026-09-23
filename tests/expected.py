@@ -15,4 +15,5 @@ EXPECTED = {
     "help.js",
     "entrytext.js",
     "pile.js",
+    "chart.js",
 }
