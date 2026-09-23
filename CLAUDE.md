@@ -48,10 +48,10 @@ Set `Content-Type` from `content_type(name)` rather than `mimetypes`, which answ
 Order is load-bearing.
 
 ```html
-<link rel="stylesheet" href="/ui/base.css">     <!-- FIRST: yours must be able to override it -->
+<link rel="stylesheet" href="/ui/base.css">     <!-- first: yours must be able to override it -->
 <link rel="stylesheet" href="/ui/your-layout.css">
 <script src="/ui/menu.js"></script>
-<script src="/ui/shell.js"></script>            <!-- BEFORE the script that calls initShell -->
+<script src="/ui/shell.js"></script>            <!-- before the script that calls initShell -->
 <!-- each of the rest only if you use it: align.js select.js buckets.js expand.js drawer.js
      indicate.js help.js entrytext.js pile.js -->
 ```
