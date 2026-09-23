@@ -123,6 +123,7 @@ token with its contrast, and a test fails if a hue arrives without being named i
 | `align.js` | `makeAligner` - drag a crop under a fixed guide, `wasd` nudging, live preview |
 | `entrytext.js` | `deriveEntryHeader`, `splitEntryParagraphs` - header derivation and small-paragraph splitting for a log-like feed entry |
 | `pile.js` | `computeColumnFit`, `computeColumnLayout`, `placeGroup`, `foldFrames`, `pileLayerJitter` - the spread/fan/pile geometry and the fold, all pure |
+| `chart.js` | `timeChart` - an svg time-series chart: history/forecast lines, an uncertainty band, split/origin markers, hover readout |
 
 ### Controls
 
