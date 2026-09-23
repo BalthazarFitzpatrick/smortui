@@ -58,6 +58,7 @@ RUNNER_FOR = {
     "select.js": "listeners.mjs",  # teardown only; the gestures need a real pointer
     "shell.js": "shell_tabs.mjs",
     "align.js": "aligner.mjs",
+    "chart.js": "chart.mjs",
 }
 
 
