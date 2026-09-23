@@ -29,6 +29,7 @@ shell.js before the script that calls initShell:
     <script src="/ui/buckets.js"></script>   <!-- only if you need a bucket layout with 2D focus -->
     <script src="/ui/expand.js"></script>    <!-- only if you need a strip that expands to a panel -->
     <script src="/ui/indicate.js"></script>  <!-- only if you need the count badge or focus marker -->
+    <script src="/ui/chart.js"></script>     <!-- only if you need the time-series chart -->
 """
 
 from __future__ import annotations

@@ -971,3 +971,24 @@ textarea.text-field {
 .stepper { gap: 8px; }
 .stepper .toggle { padding: 0 10px; }
 .stepper .field-value { min-width: 46px; text-align: right; }
+
+/* ---- chart.js: a shared svg time-series primitive ----
+   sizing and colour only - every mark, axis and tooltip row is drawn by the script itself, so this
+   is a small surface: the plot area, the legend row, and the floating readout. */
+.chart-wrap { position: relative; width: 100%; }
+.chart-svg { display: block; width: 100%; }
+.chart-overlay { cursor: crosshair; }
+.chart-hover-rule { pointer-events: none; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; color: var(--text-dim); }
+.chart-legend-item { display: flex; align-items: center; gap: 6px; }
+.chart-legend-swatch { display: inline-block; width: 16px; height: 0; border-top: 3px solid; }
+.chart-tooltip {
+  position: absolute; pointer-events: none; z-index: 1;
+  background: var(--panel-row); border: 2px solid var(--grey-border);
+  padding: 6px 10px; display: grid; grid-template-columns: auto 1fr auto;
+  gap: 2px 8px; align-items: center;
+}
+.chart-tooltip.hidden { display: none; }
+.chart-tooltip-head { grid-column: 1 / -1; color: var(--text-dim); margin-bottom: 2px; }
+.chart-tooltip-swatch { display: inline-block; width: 8px; height: 8px; }
+.chart-tooltip-value { color: var(--cream); text-align: right; }

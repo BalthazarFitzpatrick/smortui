@@ -156,6 +156,55 @@ Two things it already handles, so do not add them: zooming about a corner walks 
 screen, and with a modifier held the browser delivers wheel movement as `deltaX`, so reading `deltaY`
 alone makes every modified scroll take the zoom-out branch.
 
+## `chart.js`
+
+```js
+const chart = timeChart(containerEl, {height, yFormat, xFormat, onHover})
+chart.update({
+  x: [...],                // shared x values: ISO date strings or numbers, ascending
+  series: [{id, label, values: [...], dashed: false}],   // null in values breaks the line
+  bands: [{id, series: seriesId, lo: [...], hi: [...]}], // shaded area between lo and hi, same length as x
+  markers: [{x, label}],   // vertical rule + small label
+})
+chart.destroy()
+chart.nearest(clientX)     // index of the closest x to a pixel position - what drives the hover
+```
+
+One svg time-series primitive: a history line, a forecast line (draw it as its own series with
+`dashed: true`), an 80% band, and vertical markers for train/val/test splits or the forecast origin.
+Breaking down by up to a few dimensions is just more entries in `series` — nothing here knows what
+a dimension is.
+
+**Sizing.** Sizes to the container's width and re-renders on a `ResizeObserver`, which is
+disconnected in `destroy()`. `height` defaults to the container's own height; give it one
+explicitly if the container has none yet (a hidden tab, for instance — same reason `makeSlider`
+measures rather than trusts `offsetWidth`).
+
+**A `null` in `values` (or in either half of a band) is a real break**, not a value to interpolate
+across — it renders as two separate paths either side of the gap. A series with exactly one
+non-null value draws as a point, not an invisible zero-length line. An empty `update()` and an
+all-null series both render nothing and throw nothing.
+
+**Colour.** Cycled from `base.css`'s own tokens (`--lichen`, `--kingfisher`, `--stone-red-lift`,
+`--vanilla`, `--burnt-orange`, `--lichen-deep`), read live via `getComputedStyle` so a theme change
+is picked up on the next render — never hardcoded, and never assuming dark. A band is drawn in its
+series' colour at low opacity. Each token carries a literal fallback for a page that forgot to load
+`base.css`.
+
+**Axes.** A y axis with 4–6 "nice" ticks (rounded to 1/2/5 × 10^n). The x axis picks week/month/year
+formatting from the data's own span when `x` holds dates, and spaces ticks by an approximate pixel
+budget rather than by a fixed count, so a narrow panel does not run its labels into each other.
+`xFormat`/`yFormat` override the label text; they never touch tick placement.
+
+**Hover.** A vertical rule snaps to the nearest x and a small readout lists every visible series'
+value there, plus each band's range. `onHover({index, x, values})` fires on move and `onHover(null)`
+on the pointer leaving; `chart.nearest(clientX)` is the same lookup exposed directly, which is what
+a test drives instead of staging a real mouse event.
+
+**What it deliberately does not do.** No zoom or pan, no legend toggling, no per-series colour
+override, no drawing beyond the series/bands/markers it is given, and no data fetching or
+resampling — the host decides what `x` and `series` are before calling `update()`.
+
 ## `align.js`
 
 ```js

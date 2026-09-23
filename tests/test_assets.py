@@ -31,6 +31,7 @@ EXPECTED = {
     "help.js",
     "entrytext.js",
     "pile.js",
+    "chart.js",
 }
 
 
@@ -157,6 +158,17 @@ def test_the_drawer_parks_opens_and_closes():
     script = Path(__file__).parent / "js" / "drawer.mjs"
     result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
     assert result.returncode == 0, f"drawer misbehaves:\n{result.stdout}{result.stderr}"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_chart_draws_lines_bands_and_markers():
+    """proves a null in a series splits its line (and its band) into separate paths, markers draw
+    one line each, and nearest() finds the closest point to a pixel position - the structural
+    behaviour a DOM stub can check without a real browser laying anything out.
+    """
+    script = Path(__file__).parent / "js" / "chart.mjs"
+    result = subprocess.run(["node", str(script)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, f"chart misbehaves:\n{result.stdout}{result.stderr}"
 
 
 def _css() -> str:
