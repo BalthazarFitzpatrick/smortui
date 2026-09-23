@@ -13,6 +13,7 @@
 <script src="/ui/drawer.js"></script>
 <script src="/ui/help.js"></script>
 <script src="/ui/pile.js"></script>
+<script src="/ui/chart.js"></script>
 <style>
   /* the demo's own layout only - everything that carries the LOOK is in base.css */
   body { display: flex; flex-direction: column; height: 100vh; }
@@ -50,6 +51,7 @@
   <div class="nav-tab" data-tab="menus" role="tab" tabindex="-1">menus</div>
   <div class="nav-tab" data-tab="viewport" role="tab" tabindex="-1">viewport</div>
   <div class="nav-tab" data-tab="primitives" role="tab" tabindex="-1">primitives</div>
+  <div class="nav-tab" data-tab="chart" role="tab" tabindex="-1">chart</div>
   <div class="nav-tab" data-tab="colour" role="tab" tabindex="-1">colour</div>
 </div>
 
@@ -386,6 +388,17 @@
   <div class="hazard-stripes" style="max-width: 460px; height: 90px;">
     <span class="hazard-label">not loaded yet</span>
   </div>
+</div>
+
+<div class="tab-panel hidden" data-panel="chart">
+  <h2>time chart</h2>
+  <p class="demo-note">
+    History, a forecast, an 80% band, and the split/origin markers a forecast screen needs.
+    Hover shows the vertical rule and the readout; the numbers below it update live from
+    <code>onHover</code> rather than being a picture of one.
+  </p>
+  <div id="chart-demo" style="max-width: 760px; height: 260px;"></div>
+  <div class="stat" id="chart-said" style="margin-top: 8px;">hover the chart</div>
 </div>
 
 <div class="tab-panel hidden" data-panel="colour">
@@ -801,6 +814,54 @@ makeExpander(document.getElementById('expand-strip'), {
 
 // ---- focus marker: glides between whichever row last took focus
 document.getElementById('marker-demo').addEventListener('focusin', evt => indicateFocus(evt.target));
+
+// ---- time chart: two years of weekly history, an 8-week forecast with a band, two markers
+(() => {
+  const weeks = 104;
+  const forecastWeeks = 8;
+  const total = weeks + forecastWeeks;
+  const start = new Date('2024-01-01T00:00:00Z');
+  const dates = Array.from({length: total}, (_, i) => {
+    const d = new Date(start);
+    d.setUTCDate(d.getUTCDate() + i * 7);
+    return d.toISOString().slice(0, 10);
+  });
+
+  // a trend plus a yearly wobble plus noise - fake, but shaped enough to look like real demand
+  const trendAt = i => 200 + i * 1.4 + 40 * Math.sin((i / 52) * 2 * Math.PI);
+  const history = dates.map((_, i) => (i < weeks
+    ? Math.round(trendAt(i) + (Math.sin(i * 1.7) * 12))
+    : null));
+  const forecast = dates.map((_, i) => (i >= weeks - 1
+    ? Math.round(trendAt(i))
+    : null));
+  const bandLo = dates.map((_, i) => (i >= weeks - 1 ? Math.round(trendAt(i) * 0.85) : null));
+  const bandHi = dates.map((_, i) => (i >= weeks - 1 ? Math.round(trendAt(i) * 1.15) : null));
+
+  const chartSaid = document.getElementById('chart-said');
+  const chart = timeChart(document.getElementById('chart-demo'), {
+    yFormat: v => Math.round(v).toLocaleString(),
+    onHover: payload => {
+      if (!payload) { chartSaid.textContent = 'hover the chart'; return; }
+      const parts = Object.entries(payload.values)
+        .filter(([, v]) => v != null)
+        .map(([id, v]) => `${id}: ${Math.round(v)}`);
+      chartSaid.textContent = `${payload.x} — ${parts.join(', ')}`;
+    },
+  });
+  chart.update({
+    x: dates,
+    series: [
+      {id: 'history', label: 'history', values: history},
+      {id: 'forecast', label: 'forecast', values: forecast, dashed: true},
+    ],
+    bands: [{id: 'forecast-band', series: 'forecast', lo: bandLo, hi: bandHi}],
+    markers: [
+      {x: dates[Math.round(weeks * 0.7)], label: 'val split'},
+      {x: dates[weeks - 1], label: 'forecast origin'},
+    ],
+  });
+})();
 </script>
 </body>
 </html>
