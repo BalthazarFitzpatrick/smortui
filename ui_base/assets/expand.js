@@ -4,6 +4,13 @@
 //
 // OWNS NO PERSISTENCE. it hands the host the panel element to fill and tells it open/close
 // happened; what goes inside and whether that sticks anywhere is the host's decision
+//
+// returns {open, close, fit, destroy}. the panel opens at a fixed share of the viewport, which
+// leaves a short content floating in empty space - fit(contentHeight) is how a host fixes that
+//
+// fit(contentHeight): the host passes the height its content needs; the panel keeps its width,
+// adds its own padding and border, and eases height and top to that, re-centred. never past the
+// box it opened at, so taller content keeps its scroll. call again whenever the content changes
 
 // TIMING LIVES IN base.css (--motion-duration, --motion-ease), not here, so a host retunes
 // motion for every animated thing in this kit from one place. read at call time (not module
@@ -49,6 +56,8 @@ function makeExpander(strip, {
   onClose = () => {},
 } = {}) {
   let backdrop = null, panel = null, closing = false;
+  // the box the panel opened at caps fit(); shown flips once the grow has started
+  let full = null, from = null, shown = false;
 
   // the box the strip's own click animates out of (or the centred stand-in for 'center' origin) -
   // shared by open (grows out of it) and close (shrinks back into it)
@@ -72,6 +81,26 @@ function makeExpander(strip, {
     return {left: (vw - width) / 2, top: (vh - height) / 2, width, height};
   }
 
+  // height and top ride along once the panel is shown, so a fit() eases instead of jumping. the
+  // width never moves, so no line rewraps while it does
+  function transitionFor(duration, ease, props) {
+    return duration ? props.map(prop => `${prop} ${duration}ms ${ease}`).join(', ') : 'none';
+  }
+
+  // what the panel draws around its content under border-box sizing, top and bottom. zero with no
+  // computed styles (the consumer's test stub), and under content-box, where height is the content
+  function chromeHeight(el) {
+    let styles;
+    try {
+      styles = typeof getComputedStyle === 'function' ? getComputedStyle(el) : null;
+    } catch {
+      styles = null;
+    }
+    if (!styles || styles.boxSizing === 'content-box') return 0;
+    return ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+      .reduce((sum, key) => sum + (parseFloat(styles[key]) || 0), 0);
+  }
+
   // a transform that makes an element laid out at `to` LOOK like it sits at `from` - translate by
   // the corner offset, scale by the size ratio, both against a top-left transform-origin so the
   // two do not fight each other the way they would from the default centred origin
@@ -91,33 +120,54 @@ function makeExpander(strip, {
     panel = document.createElement('div');
     panel.className = 'panel-floating expand-panel';
 
-    // THE CONTENT IS LAID OUT ONCE, AT ITS FINAL SIZE. animating left/top/width/height reflows
-    // text every frame, which is what made the old version look rough - the box only ever has one
-    // width, and a transform (translate+scale) does the visual growing instead, which the
-    // compositor can animate without touching layout at all
-    const final = expandedBox();
-    const from = stripBox();
+    // laid out once at its final size, grown by a transform: animating left/top/width/height
+    // reflowed text every frame, which made the old version look rough. the width never changes
+    full = expandedBox();
+    from = stripBox();
+    shown = false;
     Object.assign(panel.style, {
-      position: 'fixed', left: `${final.left}px`, top: `${final.top}px`,
-      width: `${final.width}px`, height: `${final.height}px`,
+      position: 'fixed', left: `${full.left}px`, top: `${full.top}px`,
+      width: `${full.width}px`, height: `${full.height}px`,
       transformOrigin: '0 0',
-      transform: transformFor(from, final),
+      transform: transformFor(from, full),
       opacity: '0',
-      transition: duration ? `transform ${duration}ms ${ease}, opacity ${duration}ms ${ease}` : 'none',
+      transition: transitionFor(duration, ease, ['transform', 'opacity']),
     });
     backdrop.appendChild(panel);
     document.body.appendChild(backdrop);
 
-    // two rAFs, not one: the browser must PAINT the start transform before the end values are
-    // set, or it collapses both writes into one frame and there is no transition to see
+    // two rAFs, not one: the start transform must paint before the end values land, or both
+    // writes collapse into one frame and there is no transition. held on this panel, not the
+    // variable, so a close and reopen inside those frames cannot start the new one early
+    const growing = panel;
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (!panel) return;
-      Object.assign(panel.style, {transform: 'none', opacity: '1'});
+      if (panel !== growing) return;
+      shown = true;
+      Object.assign(panel.style, {
+        transform: 'none', opacity: '1',
+        transition: transitionFor(duration, ease, ['transform', 'opacity', 'height', 'top']),
+      });
     }));
 
     backdrop.addEventListener('mousedown', evt => { if (evt.target === backdrop) close(); });
     document.addEventListener('keydown', onKey);
     onOpen(panel);
+  }
+
+  // hug the open panel to its content, capped at the box it opened at and re-centred on it
+  function fit(contentHeight) {
+    if (!panel) return;
+    const needed = Number(contentHeight);
+    if (!(needed >= 0)) return;   // nan, negative or missing measures nothing
+    const height = Math.min(needed + chromeHeight(panel), full.height);
+    const top = full.top + (full.height - height) / 2;
+    const geometry = {top: `${top}px`, height: `${height}px`};
+    // before the grow has painted, the start transform is retargeted at the fitted box instead,
+    // so the panel grows straight into it rather than into the full box and then shrinking
+    if (!shown) {
+      Object.assign(geometry, {transition: 'none', transform: transformFor(from, {...full, top, height})});
+    }
+    Object.assign(panel.style, geometry);
   }
 
   // preventDefault, the same signal a Menu gives: a pinned help tip yields its escape to whatever
@@ -150,8 +200,10 @@ function makeExpander(strip, {
       left: parseFloat(dyingPanel.style.left), top: parseFloat(dyingPanel.style.top),
       width: parseFloat(dyingPanel.style.width), height: parseFloat(dyingPanel.style.height),
     };
+    // height and top leave the list on purpose: a fit still easing lands at once on the inline
+    // box the collapse transform is computed from, so the panel shrinks cleanly into the strip
     Object.assign(dyingPanel.style, {
-      transition: duration ? `transform ${duration}ms ${ease}, opacity ${duration}ms ${ease}` : 'none',
+      transition: transitionFor(duration, ease, ['transform', 'opacity']),
       transform: transformFor(collapseBox, final),
       opacity: '0',
     });
@@ -181,5 +233,5 @@ function makeExpander(strip, {
     panel = null;
   }
 
-  return {open, close, destroy};
+  return {open, close, fit, destroy};
 }

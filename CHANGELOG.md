@@ -6,7 +6,9 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
-nothing yet
+- `makeExpander` returns `fit(contentHeight)`: the open panel keeps its width and eases its height
+  and top to the content plus its own padding and border, re-centred, never past the box it opened
+  at. A fit before the grow paints retargets the grow; `close()` collapses from the fitted box
 
 ## v0.2.3 - 2026-09-21
 
