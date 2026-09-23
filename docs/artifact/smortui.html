@@ -150,13 +150,13 @@
         step, no framework, no npm. Every control on this page is drawn by that stylesheet and those scripts,
         loaded unchanged.</p>
       <div class="strip facts">
-        <div class="cell"><span class="field-label">tag</span><span class="field-value">v0.2.3</span></div>
+        <div class="cell"><span class="field-label">tag</span><span class="field-value">v0.2.5</span></div>
         <div class="cell"><span class="field-label">package</span><span class="field-value">ui_base</span></div>
         <div class="cell"><span class="field-label">python</span><span class="field-value">3.11+</span></div>
-        <div class="cell"><span class="field-label">tests</span><span class="field-value">74</span></div>
+        <div class="cell"><span class="field-label">tests</span><span class="field-value">77</span></div>
       </div>
       <pre class="code"><span class="c"># pyproject.toml of a tool that consumes it</span>
-dependencies = [<span class="s">"ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.3"</span>]
+dependencies = [<span class="s">"ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.5"</span>]
 
 <span class="c"># the whole integration: serve the assets, link them in order</span>
 <span class="k">from</span> ui_base <span class="k">import</span> read_asset, content_type, UiBaseError
@@ -529,8 +529,13 @@ ASSETS: Path   asset_names() -> list[str]   read_asset(name) -> bytes   content_
     <section id="changelog" class="changelog">
       <h2>the <b>changelog</b>: what a consumer sees between two tags</h2>
       <p class="dim">Only consumer-visible changes: an api, a class, a dom shape, a behaviour. Internals are in git log.</p>
-      <h3>unreleased</h3>
+      <h3>v0.2.5 <span class="date">2026-09-23</span></h3>
       <ul>
+        <li><code>makeExpander</code> returns <code>fit(contentHeight)</code>: the open panel keeps its width and eases to its content, re-centred, never past the box it opened at</li>
+      </ul>
+      <h3>v0.2.4 <span class="date">2026-09-23</span></h3>
+      <ul>
+        <li><code>chart.js</code>: <code>timeChart(containerEl, opts)</code>, an svg time-series chart with lines, an uncertainty band, split and origin markers and a hover readout; its tooltip is built from text nodes</li>
         <li>an expander that closes on Escape preventDefaults it, so a pinned help tip yields to it as to a menu</li>
         <li><code>dirMenu</code> shows a rejected <code>fetchDir</code> as a folder that could not be read; a list whose only item is a heading shows its empty text</li>
         <li><code>.drawer</code> also stops its slide by rule under reduced motion; the slider measures its end labels once</li>
