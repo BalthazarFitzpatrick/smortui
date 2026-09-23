@@ -4,11 +4,25 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
-## Unreleased
+## v0.2.5 - 2026-09-23
 
 - `makeExpander` returns `fit(contentHeight)`: the open panel keeps its width and eases its height
   and top to the content plus its own padding and border, re-centred, never past the box it opened
   at. A fit before the grow paints retargets the grow; `close()` collapses from the fitted box
+
+## v0.2.4 - 2026-09-23
+
+- new asset `chart.js`: `timeChart(containerEl, opts)` draws an svg time-series chart - lines,
+  an uncertainty band, split and origin markers, a hover rule with a readout - and returns
+  `{update, destroy, nearest}`. Its styles are the `.chart-*` classes in `base.css`; series
+  colours come from six palette tokens, each with a fallback
+- the tooltip is built from text nodes, so a data label cannot inject markup
+- an expander that closes on Escape calls `preventDefault()` on it, so a pinned help tip yields
+  to it as it does to a menu
+- `dirMenu`: a rejected `fetchDir` shows `could not read: <reason>` instead of the previous
+  folder; a list whose only item is a heading shows its empty text
+- `.drawer` also stops its slide by rule under reduced motion; `makeSlider` measures its end
+  labels once, not on every input event
 
 ## v0.2.3 - 2026-09-21
 
