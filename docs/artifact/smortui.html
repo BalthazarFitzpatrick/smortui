@@ -501,7 +501,7 @@ makeSelection(container, {itemSelector, keyOf, selectedClass, onChange, onContex
 makeBuckets(container, {bucketSel, rowSel, onFocus, onExitTop}) -> {moveTo(bi, ri), locate(el)}
 
 <span class="c">// expand.js / drawer.js</span>
-makeExpander(strip, {collapsedRatio, expandedRatio, origin, onOpen, onClose}) -> {open, close, destroy}
+makeExpander(strip, {collapsedRatio, expandedRatio, origin, onOpen, onClose}) -> {open, close, fit(contentHeight), destroy}
 makeDrawer({edge, sliverRatio, heightRatio, top, bottom, width, widthRatio, onOpen, onClose})
   -> {el, body, open, close, toggle, isOpen(), destroy}
 

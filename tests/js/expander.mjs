@@ -97,4 +97,96 @@ let prevented = false;
 docListeners.keydown[0]({key: 'Escape', preventDefault() { prevented = true; }});
 assert.equal(prevented, true, 'an expander that closes on escape says so');
 
+// ---- fit: the open panel hugs its content - same width, eased height and top, re-centred on the
+// box it opened at, never past it. the stub viewport is 1200x800, so the default 1:3 box is 720 tall
+// at top 40; a computed style gives the panel 14px padding and a 2px border, 32px top and bottom
+const chrome = {paddingTop: '14px', paddingBottom: '14px', borderTopWidth: '2px', borderBottomWidth: '2px'};
+let boxSizing = 'border-box';
+globalThis.getComputedStyle = el => (el.className.includes('expand-panel')
+  ? {...chrome, boxSizing, getPropertyValue: () => ''}
+  : {getPropertyValue: () => ''});
+
+const strip5 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
+const expander5 = makeExpander(strip5);
+strip5._listeners.click[0]();
+const panel5 = document.body.children[document.body.children.length - 1].children[0];
+const openWidth = panel5.style.width;
+assert.equal(panel5.style.height, '720px', 'it opens at the full box, as before');
+assert.ok(panel5.style.transition.includes('height 220ms') && panel5.style.transition.includes('top 220ms'),
+  'once shown, height and top ease rather than jump');
+
+expander5.fit(200);
+assert.equal(panel5.style.height, '232px', 'content height plus the panel\'s own padding and border');
+assert.equal(panel5.style.top, '284px', 're-centred on the box it opened at: 40 + (720 - 232) / 2');
+assert.equal(panel5.style.width, openWidth, 'the width does not move');
+
+expander5.fit(5000);
+assert.equal(panel5.style.height, '720px', 'content taller than the box is capped at it and keeps its scroll');
+assert.equal(panel5.style.top, '40px', 'and sits back where it opened');
+
+expander5.fit(200);
+const heightBefore = panel5.style.height;
+expander5.fit(NaN);
+expander5.fit(-5);
+expander5.fit();
+assert.equal(panel5.style.height, heightBefore, 'a missing, negative or nan height changes nothing');
+
+// ---- close collapses from the fitted box, not the one it opened at
+expander5.close();
+const fitted = {left: parseFloat(panel5.style.left), top: 284, width: parseFloat(openWidth), height: 232};
+// origin center: the strip's own size, centred in the viewport - where a grow starts and a collapse ends
+const centred = {left: (1200 - 300) / 2, top: (800 - 100) / 2, width: 300, height: 100};
+assert.equal(panel5.style.transform,
+  `translate(${centred.left - fitted.left}px, ${centred.top - fitted.top}px) ` +
+  `scale(${centred.width / fitted.width}, ${centred.height / fitted.height})`,
+  'the collapse transform is built from the fitted box');
+assert.ok(!panel5.style.transition.includes('height'), 'a fit still easing lands at once, so the collapse math holds');
+expander5.fit(100);
+assert.equal(panel5.style.height, '232px', 'fit on a closed expander is a no-op');
+
+// ---- a fit before the grow has painted retargets the start transform instead of easing after it
+const frames = [];
+globalThis.requestAnimationFrame = fn => frames.push(fn);
+const strip6 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
+const expander6 = makeExpander(strip6);
+strip6._listeners.click[0]();
+const panel6 = document.body.children[document.body.children.length - 1].children[0];
+expander6.fit(100);
+assert.equal(panel6.style.height, '132px', 'the fitted height lands before the first paint');
+assert.equal(panel6.style.transition, 'none', 'with nothing to ease from yet');
+const start = {left: parseFloat(panel6.style.left), top: 40 + (720 - 132) / 2, width: parseFloat(panel6.style.width), height: 132};
+assert.equal(panel6.style.transform,
+  `translate(${centred.left - start.left}px, ${centred.top - start.top}px) ` +
+  `scale(${centred.width / start.width}, ${centred.height / start.height})`,
+  'the grow starts from the strip and lands straight on the fitted box');
+while (frames.length) frames.shift()();
+assert.equal(panel6.style.transform, 'none', 'the grow still runs');
+assert.ok(panel6.style.transition.includes('height 220ms'), 'and later fits ease again');
+expander6.destroy();
+globalThis.requestAnimationFrame = fn => fn();
+
+// ---- content-box: height is already the content's, so nothing is added around it
+boxSizing = 'content-box';
+const strip7 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
+const expander7 = makeExpander(strip7);
+strip7._listeners.click[0]();
+const panel7 = document.body.children[document.body.children.length - 1].children[0];
+expander7.fit(200);
+assert.equal(panel7.style.height, '200px', 'content-box sizing adds no padding or border');
+expander7.destroy();
+
+// ---- reduced motion: the fit lands at once
+boxSizing = 'border-box';
+globalThis.matchMedia = () => ({matches: true});
+const strip8 = element('div', {rect: {left: 10, top: 10, width: 300, height: 100}});
+const expander8 = makeExpander(strip8);
+strip8._listeners.click[0]();
+const panel8 = document.body.children[document.body.children.length - 1].children[0];
+expander8.fit(200);
+assert.equal(panel8.style.transition, 'none', 'reduced motion eases nothing');
+assert.equal(panel8.style.height, '232px', 'but still fits');
+expander8.destroy();
+delete globalThis.matchMedia;
+delete globalThis.getComputedStyle;
+
 console.log('ok');
