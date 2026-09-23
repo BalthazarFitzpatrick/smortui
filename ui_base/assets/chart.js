@@ -1,10 +1,6 @@
-// timeChart: an svg time-series primitive for forecast screens - a history line, a forecast line,
-// an uncertainty band, vertical split/origin markers, and up to a handful of dimension lines drawn
-// together. No build step and no dependency, same as everything else here.
-//
-// PIXEL COORDINATES, NOT A VIEWBOX. x/y map straight onto the svg's own width/height, so nearest()
-// and the hover rule read the same numbers the browser laid out - no scale factor to carry through
-// every call site.
+// timeChart: svg time-series primitive - lines, uncertainty bands, split/origin markers, hover
+// x/y map straight onto the svg's own pixels (no viewbox), so nearest() and the hover rule read
+// the same numbers the browser laid out
 
 const CHART_NS = 'http://www.w3.org/2000/svg';
 const CHART_MARGIN = {top: 12, right: 16, bottom: 26, left: 48};
@@ -331,22 +327,35 @@ function timeChart(containerEl, opts = {}) {
     hoverRule.setAttribute('x1', xPixels[index]);
     hoverRule.setAttribute('x2', xPixels[index]);
 
+    // labels and x values come from the host's data, so text nodes only - never innerHTML
     const values = {};
-    const rows = data.series.map((s, i) => {
+    tooltip.replaceChildren();
+    const head = document.createElement('div');
+    head.className = 'chart-tooltip-head';
+    head.textContent = String(data.x[index] ?? '');
+    tooltip.appendChild(head);
+    const addRow = (color, label, text) => {
+      const swatch = document.createElement('span');
+      swatch.className = 'chart-tooltip-swatch';
+      if (color) swatch.style.background = color;
+      const name = document.createElement('span');
+      name.textContent = label;
+      const value = document.createElement('span');
+      value.className = 'chart-tooltip-value';
+      value.textContent = text;
+      tooltip.append(swatch, name, value);
+    };
+    data.series.forEach((s, i) => {
       const v = (s.values || [])[index];
       values[s.id] = v === undefined ? null : v;
-      const swatch = `<span class="chart-tooltip-swatch" style="background:${seriesColor(s.id, i)}"></span>`;
-      return `${swatch}<span>${s.label || s.id}</span>`
-        + `<span class="chart-tooltip-value">${v == null ? '—' : yFormat(v)}</span>`;
+      addRow(seriesColor(s.id, i), s.label || s.id, v == null ? '-' : yFormat(v));
     });
     data.bands.forEach(band => {
       const lo = (band.lo || [])[index];
       const hi = (band.hi || [])[index];
       if (lo == null || hi == null) return;
-      rows.push('<span class="chart-tooltip-swatch"></span><span>range</span>'
-        + `<span class="chart-tooltip-value">${yFormat(lo)} – ${yFormat(hi)}</span>`);
+      addRow('', 'range', `${yFormat(lo)} - ${yFormat(hi)}`);
     });
-    tooltip.innerHTML = `<div class="chart-tooltip-head">${data.x[index] ?? ''}</div>${rows.join('')}`;
     tooltip.classList.remove('hidden');
 
     const left = xPixels[index] + 10;
