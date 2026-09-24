@@ -150,13 +150,13 @@
         step, no framework, no npm. Every control on this page is drawn by that stylesheet and those scripts,
         loaded unchanged.</p>
       <div class="strip facts">
-        <div class="cell"><span class="field-label">tag</span><span class="field-value">v0.2.6</span></div>
+        <div class="cell"><span class="field-label">tag</span><span class="field-value">v0.2.7</span></div>
         <div class="cell"><span class="field-label">package</span><span class="field-value">ui_base</span></div>
         <div class="cell"><span class="field-label">python</span><span class="field-value">3.11+</span></div>
         <div class="cell"><span class="field-label">tests</span><span class="field-value">94</span></div>
       </div>
       <pre class="code"><span class="c"># pyproject.toml of a tool that consumes it</span>
-dependencies = [<span class="s">"ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.6"</span>]
+dependencies = [<span class="s">"ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.7"</span>]
 
 <span class="c"># the whole integration: serve the assets, link them in order</span>
 <span class="k">from</span> ui_base <span class="k">import</span> read_asset, content_type, UiBaseError
@@ -529,6 +529,10 @@ ASSETS: Path   asset_names() -> list[str]   read_asset(name) -> bytes   content_
     <section id="changelog" class="changelog">
       <h2>the <b>changelog</b>: what a consumer sees between two tags</h2>
       <p class="dim">Only consumer-visible changes: an api, a class, a dom shape, a behaviour. Internals are in git log.</p>
+      <h3>v0.2.7 <span class="date">2026-09-24</span></h3>
+      <ul>
+        <li><code>Menu</code>: Space on a focused row activates it, as Enter does; a focused field in the panel still gets its space</li>
+      </ul>
       <h3>v0.2.6 <span class="date">2026-09-24</span></h3>
       <ul>
         <li>one focus look: anything focusable wears the soft card focus, from a zero-specificity default a class can override; the global 2px cream ring is gone</li>
