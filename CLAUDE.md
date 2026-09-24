@@ -108,7 +108,7 @@ that reports nothing on cancel leaves a stale selection alive, which the next in
 and applies to the wrong thing.
 
 The class owns anchoring, viewport clamping, one-menu-at-a-time, dismissal on outside click and
-Escape, and arrow/Enter keyboard navigation. **Never reimplement any of that at a call site**, and
+Escape, and arrow/Enter/Space keyboard navigation. **Never reimplement any of that at a call site**, and
 never add a global dismiss handler that names trigger ids — a shared selector string means every new
 menu must be added to it or it closes on its own opening click.
 
@@ -363,3 +363,11 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
   `liveListeners()`); never hand-roll a second one.
 - **`CHANGELOG.md` gets a line for every consumer-visible change** under `Unreleased`, moved
   under the tag when one is cut. A consumer reads it to bump a pin; `git log` is for us.
+
+## Releases
+
+Once the human has merged into `main`, draft a release unasked: next tag (pre-1.0:
+minor for features or a changed default, patch for fixes only), notes in their voice via
+`write-like-fabs` — an Upgrading section first (backup, migrations, changed defaults, rebuilds),
+then changes by area, every PR since the last tag. `gh release create <tag> --draft --target main`
+only; never publish, never push a tag. Share the draft link.

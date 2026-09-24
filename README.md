@@ -20,7 +20,7 @@ In a tool, pin it by tag or commit (the repo is `smortui`; the Python package in
 `CHANGELOG.md` says what each tag changed for a consumer):
 
 ```toml
-dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.6"]
+dependencies = ["ui_base @ git+https://github.com/BalthazarFitzpatrick/smortui.git@v0.2.7"]
 ```
 
 Serve its assets from your request handler, then load them in the page. **Order matters**:
@@ -166,7 +166,7 @@ new Menu({
 | `node` | content you built yourself, placed and styled by the panel |
 
 The class owns anchoring, viewport clamping, one menu at a time, dismissal on outside click and
-Escape, and arrow/Enter navigation. An item's `state` flags become classes on its row. `persistent:
+Escape, and arrow/Enter/Space navigation. An item's `state` flags become classes on its row. `persistent:
 true` is for a menu you work in rather than pick from. `menu.refresh(sections)` rebuilds an open menu
 in place, keeping its position and any class you added after opening. `multi` defaults to true in
 `columns` and false in a `list`.

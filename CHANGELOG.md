@@ -4,6 +4,11 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
+## v0.2.7 - 2026-09-24
+
+- `Menu`: Space on a focused `.menu-item` activates it, as Enter does. A focused
+  input or textarea in the panel still gets its space
+
 ## v0.2.6 - 2026-09-24
 
 - a focused `.toggle.on` draws its focus ring in the fill's text colour, so it shows on the light fill
