@@ -261,6 +261,19 @@ Six rules carry the look. Override by redefining tokens, never by fighting the r
 6. **Monospace throughout** — these tools show filenames, counts and coordinates, and those line up
    or they are not readable.
 
+### Focus and selected
+
+**One focus look, drawn by one rule** (`.focus-glow:focus`'s). Controls wear it at the soft
+strength with no class: `.toggle` on `:focus-visible`, `.menu-item` and `.text-field` on `:focus`,
+and everything else focusable (links, `<summary>`, `.nav-tab`, `tabindex` surfaces) through a
+`:where(:focus-visible)` default at zero specificity. A bare `.focus-glow` - a card on a board - is
+the loud strength; `.focus-glow.focus-glow-soft` a quieter surface; `.focus-glow-within` lights a
+container on `:focus-within`. `.panel-floating` wears no focus frame and keeps its drop shadow.
+**Never add a second focus ring or restate the rule** - add a selector to the rule's list instead.
+
+`.toggle.on` is accent fill plus a cream border; `a` is `--link`; headings are `--font-size`,
+cream, normal weight. Consumers do not restate any of these.
+
 ### Theming
 
 `.edge-pulse` adds a breathing ring and a drifting inner glow. It reserves `::before` and

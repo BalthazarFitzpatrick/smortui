@@ -59,7 +59,7 @@ def test_the_focus_highlight_keeps_its_four_parts_separately_tunable():
     three, so every part reads its own token and none of them is a literal in the rule.
     """
     css = _css()
-    rule = re.search(r"\.focus-glow:focus\s*\{(.*?)\}", css, re.DOTALL)
+    rule = re.search(r"\.focus-glow:focus(?![-\w])[^{]*\{(.*?)\}", css, re.DOTALL)
     assert rule, "the treatment must exist as one named class"
     body = rule.group(1)
     for part in (
@@ -84,7 +84,7 @@ def test_the_soft_variant_only_retunes_the_loud_one_rather_than_redrawing_it():
     rule already reads, and it draws nothing itself.
     """
     css = _css()
-    rule = re.search(r"\.focus-glow\.focus-glow-soft\s*\{(.*?)\}", css, re.DOTALL)
+    rule = re.search(r"\.focus-glow\.focus-glow-soft[^{]*\{(.*?)\}", css, re.DOTALL)
     assert rule, "the soft variant must exist as a modifier on the loud class"
     body = rule.group(1)
 
@@ -341,7 +341,7 @@ def test_a_fan_item_transitions_everything_the_focus_glow_does():
     """
     css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)  # the comments quote the old literal
     fan = re.search(r"\.fan-item\s*\{(.*?)\}", css, re.DOTALL).group(1)
-    glow = re.search(r"\.focus-glow\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    glow = re.search(r"\.focus-glow[,\s][^{]*\{(.*?)\}", css, re.DOTALL).group(1)
 
     def transitioned(body: str) -> list[str]:
         shorthand = re.search(r"transition:\s*([^;]+);", body).group(1)
@@ -363,3 +363,121 @@ def test_edge_pulse_keeps_focus_and_reduced_motion_visible():
     assert "animation: none" in reduced
     assert "box-shadow: inset" in reduced
     assert "var(--ambient-pulse-min) + var(--ambient-pulse-max)" in reduced
+
+
+def test_controls_wear_the_card_focus_at_the_soft_strength():
+    """operator, 2026-09-24: a focused menu row or button looked nothing like a focused card. they
+    join the same rules rather than copying them, so the looks cannot drift apart"""
+    css = _css()
+    draw = re.search(r"([^}]*)\{[^}]*scale\(var\(--focus-lift\)\)", css).group(1)
+    assert ".toggle:focus-visible" in draw and ".menu-item:focus" in draw
+    soft = re.search(r"([^}]*)\{\s*--focus-lift: 1\.01", css).group(1)
+    assert ".toggle" in soft and ".menu-item" in soft
+
+
+def test_a_waiting_placeholder_moves_and_holds_still_for_reduced_motion():
+    """operator, 2026-09-24: slow panels showed a static "loading" and read as stuck"""
+    css = _css()
+    assert re.search(r"\.hazard-stripes\.hazard-moving\s*\{[^}]*animation:", css)
+    assert re.search(r"\.working-dots::after\s*\{[^}]*animation:", css)
+    blocks = re.findall(
+        r"prefers-reduced-motion: reduce\)\s*\{((?:[^{}]*\{[^{}]*\})*[^{}]*)\}", css
+    )
+    held = [b for b in blocks if "hazard-moving" in b]
+    assert held and "animation: none" in held[0] and "working-dots" in held[0]
+
+
+def _rule(css: str, selector: str) -> str:
+    """the body of the rule whose selector list is exactly `selector`"""
+    found = re.search(rf"(?:^|\}}|\*/)\s*{re.escape(selector)}\s*\{{([^}}]*)\}}", css)
+    assert found, f"no rule for {selector}"
+    return found.group(1)
+
+
+def _drawing_selectors(css: str) -> str:
+    """the selector list of THE one rule that draws the focus"""
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
+    drawers = re.findall(r"([^{}]*)\{[^}]*scale\(var\(--focus-lift\)\)", css)
+    assert len(drawers) == 1, f"one rule draws the focus, found {len(drawers)}"
+    return drawers[0]
+
+
+def test_there_is_no_plain_focus_ring_left_to_draw_a_second_frame():
+    """operator, 2026-09-24: the global 2px cream ring drew a second frame round everything that
+    already had one - a focused floating panel got a 4px cream border and lost its shadow"""
+    css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)
+    assert "0 0 0 2px var(--cream)" not in css
+    assert _rule(css, ":focus-visible").strip() == "outline: none;"
+
+
+def test_anything_focusable_defaults_to_the_soft_card_focus_at_zero_specificity():
+    """a link, a summary, a tab: one look, and a class with its own shadow still wins"""
+    css = _css()
+    draw = _drawing_selectors(css)
+    assert ":where(:focus-visible:not(.focus-glow, .panel-floating))" in draw
+    soft = re.search(r"([^}]*)\{\s*--focus-lift: 1\.01", css).group(1)
+    assert ":where(:focus-visible:not(.focus-glow))" in soft, "the default is the soft strength"
+
+
+def test_a_text_field_wears_the_soft_glow_not_a_cream_border():
+    css = _css()
+    assert ".text-field:focus" in _drawing_selectors(css)
+    soft = re.search(r"([^}]*)\{\s*--focus-lift: 1\.01", css).group(1)
+    assert ".text-field" in soft
+    assert "border-color" not in _rule(css, ".text-field:focus")
+
+
+def test_a_floating_panel_keeps_its_shadow_and_gets_no_ring():
+    """a menu, a drawer or an expanded panel takes focus when it opens; a frame there is noise"""
+    css = _css()
+    body = _rule(css, ".panel-floating:focus, .panel-floating:focus-visible")
+    assert "outline: none" in body
+    shadow = re.search(r"box-shadow:\s*([^;]+);", body).group(1)
+    assert shadow == re.search(r"\.panel-floating\s*\{[^}]*box-shadow:\s*([^;]+);", css).group(1)
+    assert "inset" not in shadow and "0 0 0" not in shadow
+
+
+def test_a_container_can_light_while_a_control_inside_has_focus():
+    draw = _drawing_selectors(_css())
+    assert ".focus-glow.focus-glow-within:focus-within" in draw
+    assert "focus-glow-within:focus-within) .focus-marker" in _css(), "the marker steps aside"
+
+
+def test_selected_carries_its_cream_border():
+    assert "border-color: var(--cream)" in _rule(_css(), ".toggle.on")
+
+
+def test_links_have_one_colour():
+    css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)
+    assert _rule(css, "a").strip() == "color: var(--link);"
+    assert re.search(r"--link:\s*var\(--kingfisher\)", css)
+    assert not re.search(r"\ba:(?:visited|hover|link|active)[^{]*\{[^}]*color", css), (
+        "a second link colour"
+    )
+
+
+def test_headings_are_one_size_and_stand_out_by_colour():
+    body = _rule(_css(), "h1, h2, h3, h4, h5, h6")
+    assert "font-size: var(--font-size)" in body
+    assert "font-weight: normal" in body
+    assert "color: var(--cream)" in body
+
+
+def test_the_slider_axis_is_drawn_at_2px():
+    """a 1px axis beside 2px controls reads as a different system, the divider rule's reason"""
+    css = _css()
+    for selector in (".slider-axis", ".range-slider"):
+        body = _rule(css, selector)
+        assert "1px" not in body, f"{selector}: {body}"
+        assert "0 2px, transparent 2px" in body and "100% 2px" in body
+
+
+def test_stepper_buttons_use_the_row_gutter_token():
+    assert _rule(_css(), ".stepper .toggle").strip() == "padding: 0 var(--inset-x);"
+
+
+def test_a_selected_button_still_shows_focus_on_its_light_fill():
+    """a cream ring on the near-white .on fill could not be seen"""
+    css = _css()
+    rules = re.findall(r"\.toggle\.on\s*\{([^}]*)\}", css)
+    assert any("--focus-ring-color: var(--accent-on-text)" in r for r in rules)

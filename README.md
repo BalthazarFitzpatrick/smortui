@@ -192,10 +192,11 @@ in place, keeping its position and any class you added after opening. `multi` de
 
 ### The focus glow
 
-One class, `.focus-glow`, for a focused *surface* - a card, a tile, a panel - as opposed to a control,
-which keeps the plain 2px `:focus-visible` ring. Balthazar Fitzpatrick, seeing it on a board: *"it is
-not only the border that glows but the entire card gets that coloured light glow."* That is four
-things, and they are only good together, so they ship as one name:
+**One focus look for everything.** A focused card, button, menu row, text field, link, `<summary>`
+or tab all wear the same treatment, drawn by one rule. `.focus-glow` is its name for a surface; a
+card on a board wears it at full strength, everything else at the soft strength below, with no class
+needed. Balthazar Fitzpatrick, seeing it on a board: *"it is not only the border that glows but the
+entire card gets that coloured light glow."* That is four things, and they are only good together:
 
 | part | token | what it does |
 |---|---|---|
@@ -226,6 +227,21 @@ Two strengths, not six numbers: the lift and the light drop to a **third** of th
 neutral, the ring and its glow to a **half** - an edge thinned to a third stops reading as an edge.
 Colour and `--focus-glow-ms` are unchanged, which is what keeps it recognisably the same treatment.
 A host retunes the soft one exactly as it retunes the loud one, by restating one token.
+
+**Soft is the default for controls.** `.toggle` (on `:focus-visible`), `.menu-item` and `.text-field`
+(on `:focus`) carry the soft tokens themselves. Anything else focusable - a link, a `<summary>`, a
+`.nav-tab`, a `tabindex` surface - gets the same soft treatment from a zero-specificity
+`:where(:focus-visible)` default, so any class that sets its own shadow, transform or filter keeps
+it. A `.panel-floating` (a menu, a drawer, an expanded panel) is exempt: it takes focus when it opens
+and keeps its drop shadow with no frame. There is no second, plain ring anywhere.
+
+**Lighting a container.** `.focus-glow-within` beside `.focus-glow` lights the container while a
+control inside it has focus (`:focus-within`), without copying the rule. Add `.focus-glow-soft` for
+a container that sits inside something else.
+
+Selected is defined here too: `.toggle.on` is the accent fill with a cream border. Links have one
+colour, `--link` (the kingfisher), visited or not. Headings are `--font-size` like everything else
+and stand out by colour (cream), not weight.
 
 ### The pile and the fan
 
