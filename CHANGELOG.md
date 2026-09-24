@@ -4,6 +4,35 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
+## v0.2.6 - 2026-09-24
+
+- a focused `.toggle.on` draws its focus ring in the fill's text colour, so it shows on the light fill
+- `.toggle` (on `:focus-visible`) and `.menu-item` (on `:focus`) wear the card focus at the soft
+  strength: the same rule as `.focus-glow:focus`, with `.focus-glow-soft`'s tokens. `.menu-item:focus`
+  no longer turns its border cream; the inset ring marks it
+- `.hazard-stripes.hazard-moving`: the placeholder's stripes drift while something is still coming
+- `.working-dots`: a line's trailing dots count up while it waits
+- under `prefers-reduced-motion` both hold still
+- the global `:focus-visible { box-shadow: 0 0 0 2px cream }` ring is gone. Anything focusable that
+  names no treatment (a link, a `<summary>`, a `.nav-tab`, a `tabindex` element, a bare input) now
+  wears the soft card focus from a zero-specificity `:where(:focus-visible)` default: lift, inset
+  ring, inner glow and light. A class that sets its own `box-shadow`, `transform` or `filter` wins.
+  A host that restated the old ring, or relied on it, should drop or retune that rule
+- `.panel-floating:focus` / `:focus-visible`: no outline, no ring, keeps its drop shadow (was a 4px
+  cream frame on a focused drawer or expand panel). Replaces the `.menu-panel`-only exemption
+- `.text-field:focus` wears the soft card focus; its border no longer turns cream (text still does)
+- `.focus-glow.focus-glow-within`: lights the container on `:focus-within`, while a control inside it
+  has focus. Combine with `.focus-glow-soft` for the quiet strength. The focus marker hides for it too
+- `.toggle.on` carries `border-color: var(--cream)`; consumers can drop their own restatement
+- `a { color: var(--link) }`, a new token pointing at `--kingfisher`, visited or not
+- a class-less `a` or `summary` on `:focus-visible` gets `padding-inline: 4px; margin-inline: -4px`
+  so the ring clears its glyphs; nothing around it moves
+- `h1`-`h6`: `font-size: var(--font-size)`, `font-weight: normal`, `color: var(--cream)`
+- slider and `.range-slider` axis line and ticks are 2px (were 1px)
+- `.stepper .toggle` padding is `0 var(--inset-x)` (was `0 10px`), so stepper buttons are 8px wider
+- elements matching `a[href], summary, button, input, select, textarea, [tabindex]` get the focus
+  transition at zero specificity, so their focus eases in and out like a card's
+
 ## v0.2.5 - 2026-09-23
 
 - `makeExpander` returns `fit(contentHeight)`: the open panel keeps its width and eases its height

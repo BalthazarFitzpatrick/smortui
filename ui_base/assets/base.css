@@ -105,6 +105,8 @@
   /* the "this really needs attention" slot. NOTHING USES IT BY DEFAULT - an attention colour that
      is always on stops being one */
   --attention: var(--vanilla);
+  /* one link colour, visited or not: a link is a way somewhere, which is what the cold hue says */
+  --link: var(--kingfisher);
   /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
@@ -192,6 +194,9 @@ body {
    whole of. Emphasis is carried by COLOUR in this palette (dim, text, cream) and by the row a
    thing sits in; size was a third channel saying the same thing less clearly, and it made a
    caption and the button beside it look like parts of different applications. */
+/* a heading is the same size too: it stands out by colour, not weight (2026-09-24) */
+h1, h2, h3, h4, h5, h6 { font-size: var(--font-size); font-weight: normal; color: var(--cream); }
+a { color: var(--link); }
 
 /* ---- scrollbars: drawn, not borrowed ----
    Balthazar Fitzpatrick: "I want to have a native scroll bar based on thin line with slider block kinda style on
@@ -228,7 +233,11 @@ body {
   height: var(--row-height); box-sizing: border-box; flex: 0 0 auto;
 }
 .toggle:hover { border-color: var(--cream); color: var(--cream); }
-.toggle.on { background: var(--accent-on); color: var(--accent-on-text); }
+/* the cream border is part of selected, stated here so no consumer restates it (2026-09-24) */
+.toggle.on { background: var(--accent-on); color: var(--accent-on-text); border-color: var(--cream); }
+/* on the near-white fill a cream ring vanishes: the focus ring and its glow take the fill's text
+   colour instead, so a selected button still shows it has focus */
+.toggle.on { --focus-ring-color: var(--accent-on-text); --focus-inner-glow-color: color-mix(in srgb, var(--accent-on-text) 45%, transparent); }
 /* SELECTED CELLS SWAP TO GREY TEXT. the .on background is near-white, so any child that carries its
    own light colour (a .name is cream, a .stats is a light grey) vanishes into it. children must
    therefore re-state a dark colour rather than inherit their unselected one - primary text near
@@ -302,13 +311,10 @@ body {
   background: var(--panel-row); border: 2px solid var(--grey-border); padding: 14px;
 }
 
-/* ---- focus: the popup's stepped cream glow, generalised to :focus-visible everywhere ---- */
-:focus-visible {
-  /* 2px, the same weight as every border in the system. this was a stacked 2+3+4px glow, which on
-     a control that is already 2px-bordered reads as a fat second border rather than as focus */
-  outline: none;
-  box-shadow: 0 0 0 2px var(--cream);
-}
+/* ---- focus: one look for every focusable thing, drawn by .focus-glow's rule below ----
+   the plain 2px cream ring that used to sit here is gone (2026-09-24): it drew a second frame
+   round anything that already had one, and a focused control looked nothing like a focused card */
+:focus-visible { outline: none; }
 
 /* ---- .focus-glow: the loud focus treatment, for a surface rather than a control ---------------
    THE WHOLE THING LIGHTS UP, NOT JUST ITS EDGE. Balthazar Fitzpatrick, on seeing it on a board:
@@ -330,10 +336,17 @@ body {
    key is, and the treatment is the only thing saying which card an action will land on.
    TRANSFORM IS LEFT FREE for the host to animate - the lift is the one thing here that uses it, so
    a host playing its own transform on the same element must state the scale itself. */
-.focus-glow { transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms); }
-/* the element draws its own ring, so the browser's outline would be a second one */
-.focus-glow:focus-visible { outline: none; }
-.focus-glow:focus {
+.focus-glow, .toggle, .menu-item, .text-field,
+:where(a[href], summary, button, input, select, textarea, [tabindex]) { transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms); }
+/* THE ONE FOCUS LOOK (2026-09-24): controls draw this same frame at the soft strength. a button on
+   :focus-visible, so a click does not leave it lifted; a menu row and a text field on :focus, since
+   the menu moves focus onto a row from the keyboard and a field being typed in is always the target */
+/* .focus-glow-within lights a container while a control inside it has focus, without a copy of this
+   rule. the last selector is the default for anything else focusable (a link, a <summary>, a tab, a
+   tabindex surface): :where() keeps it at zero specificity, so a class with its own shadow wins */
+.focus-glow:focus, .focus-glow.focus-glow-within:focus-within,
+.toggle:focus-visible, .menu-item:focus, .text-field:focus,
+:where(:focus-visible:not(.focus-glow, .panel-floating)) {
   transform: scale(var(--focus-lift));
   filter: saturate(var(--focus-light-saturate)) brightness(var(--focus-light-brightness));
   box-shadow:
@@ -353,7 +366,11 @@ body {
    as distance from neutral (1.03 -> 1.01, saturate 1.7 -> 1.23, brightness 1.4 -> 1.13); the ring
    and its inner glow drop to a HALF (3px -> 2px, 8px/1.5px -> 4px/0.75px), because an edge thinned
    to a third stops reading as an edge at all. Same cream, same --focus-glow-ms. */
-.focus-glow.focus-glow-soft {
+/* a control is always inside a surface, so it wears the soft strength by default (2026-09-24) - one
+   focus family across cards, rows, fields and links instead of a ring of its own. only a bare
+   .focus-glow, a card on a board, stays loud */
+.focus-glow.focus-glow-soft, .toggle, .menu-item, .text-field,
+:where(:focus-visible:not(.focus-glow)) {
   --focus-lift: 1.01;
   --focus-ring-width: 2px;
   --focus-inner-glow-blur: 4px;
@@ -365,7 +382,11 @@ body {
 /* indicate.js's shared marker is a fixed overlay above everything: over a glowing element it framed
    the unscaled box on top of that element's own ring and drew over its neighbours. it stays hidden
    while anything wearing this has focus, and shows again for whatever takes focus next */
-body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
+body:has(.focus-glow:focus, .focus-glow-within:focus-within) .focus-marker { opacity: 0; }
+/* a bare link or <summary> has no padding, so the inset ring sat on its glyphs. the frame widens 4px
+   each side and the negative margin hands it back, so nothing around it moves. classed ones are the
+   host's to space */
+:where(a:not([class]), summary:not([class])):focus-visible { padding-inline: 4px; margin-inline: -4px; }
 
 /* separate layers preserve the host's focus shadow, transform and filter
    reserves both pseudo-elements; the host only adds the class and retunes tokens */
@@ -701,9 +722,10 @@ body:has(.focus-glow:focus) .focus-marker { opacity: 0; }
 .menu-column-row { display: flex; align-items: stretch; min-height: 0; flex: 1 1 auto; }
 .menu-column-row > .menu-section { flex: 1 1 0; min-width: 320px; max-height: 60vh; overflow-y: auto; }
 
-/* the panel takes focus when it opens, so it must not inherit the focus ring - that ring is for a
-   keyboard user who tabbed somewhere, not for a menu appearing where it was asked to */
-.menu-panel:focus, .menu-panel:focus-visible { outline: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); }
+/* a floating panel takes focus when it opens, so it wears no focus frame: that is for a keyboard
+   user who tabbed somewhere, not a menu or drawer appearing where it was asked to. it keeps its drop
+   shadow - a ring here replaced it and read as a 4px cream frame */
+.panel-floating:focus, .panel-floating:focus-visible { outline: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); }
 
 .menu-panel {
   /* FIXED, or it lands at the bottom of the page. .panel-floating carries only the border and
@@ -810,11 +832,13 @@ textarea.text-field {
   height: auto; min-height: var(--row-height);
   padding-block: calc((var(--row-height) - 4px - 1lh) / 2);
 }
-.text-field:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+/* the soft card focus above marks it, not a cream border; the text follows, as on a menu row */
+.text-field:focus { color: var(--cream); }
 .text-field::placeholder { color: var(--text-dim); opacity: 1; }
 .menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .menu-section .none { color: var(--text-dim); font-style: italic; }
-.menu-item:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+/* the frame above marks it; the text follows, as on hover */
+.menu-item:focus { color: var(--cream); }
 
 
 /* ---- rubber band: the net a shift+drag draws over the tile grid ----
@@ -856,8 +880,8 @@ textarea.text-field {
   /* the axis line, with ticks every 10% drawn over it */
   background:
     repeating-linear-gradient(to right,
-      var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
-    linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
+      var(--grey-border) 0 2px, transparent 2px 10%) center / 100% 9px no-repeat,
+    linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 2px no-repeat;
 }
 /* one rule set for the input, reached two ways: makeSlider's .slider-axis, or a bare .range-slider
    that draws the axis on itself - they were a verbatim copy, a retune waiting to miss one */
@@ -868,8 +892,8 @@ textarea.text-field {
 .range-slider {
   background:
     repeating-linear-gradient(to right,
-      var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
-    linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
+      var(--grey-border) 0 2px, transparent 2px 10%) center / 100% 9px no-repeat,
+    linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 2px no-repeat;
 }
 .slider-axis input[type="range"]::-webkit-slider-runnable-track,
 .range-slider::-webkit-slider-runnable-track { background: transparent; height: 22px; }
@@ -986,10 +1010,29 @@ textarea.text-field {
 .hazard-stripes .hazard-label {
   background: var(--bg); padding: 2px 8px; border: 2px solid var(--grey-border);
 }
+/* the same placeholder while something is still coming: the stripes drift, so a slow fetch reads as
+   working and not as stuck. one period is 20px * sqrt(2) across at 45deg, so the loop has no seam */
+.hazard-stripes.hazard-moving { animation: hazard-drift 1.2s linear infinite; }
+@keyframes hazard-drift { to { background-position: calc(20px * 1.41421356) 0; } }
+
+/* a line of text that is waiting on something: its dots count up, then start again */
+.working-dots::after {
+  content: ''; display: inline-block; width: 3ch; text-align: left;
+  animation: working-dots 1.2s steps(4, end) infinite;
+}
+@keyframes working-dots {
+  0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; }
+}
+
+/* reduced motion: the stripes hold still and the dots stay, so both still say "not done yet" */
+@media (prefers-reduced-motion: reduce) {
+  .hazard-stripes.hazard-moving { animation: none; }
+  .working-dots::after { animation: none; content: '...'; }
+}
 
 /* a labelled +/- row: label, spacer, right-aligned value, then the two buttons. wrap in .run-controls */
 .stepper { gap: 8px; }
-.stepper .toggle { padding: 0 10px; }
+.stepper .toggle { padding: 0 var(--inset-x); }
 .stepper .field-value { min-width: 46px; text-align: right; }
 
 /* ---- chart.js: a shared svg time-series primitive ----

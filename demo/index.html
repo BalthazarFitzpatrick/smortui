@@ -20,9 +20,9 @@
   .tab-panel { padding: 16px; overflow-y: auto; flex: 1 1 auto; }
   .demo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
     flex-wrap: wrap; }
-  .demo-note { color: var(--text-dim); font-size: 12px; max-width: 70ch; margin: 0 0 18px; }
-  h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-dim); margin: 24px 0 10px; font-weight: 500; }
+  .demo-note { color: var(--text-dim); max-width: 70ch; margin: 0 0 18px; }
+  /* size, weight and colour of a heading are base.css's; the demo only spaces them */
+  h2 { margin: 24px 0 10px; }
   h2:first-child { margin-top: 0; }
   #viewport-demo { width: 420px; height: 200px; border: 2px solid var(--grey-border);
     overflow: hidden; position: relative; }
@@ -36,10 +36,10 @@
   .swatch .meta { padding: 9px 11px; background: var(--panel-row); }
   .swatch .token { color: var(--cream); }
   .swatch .hex { color: var(--text-dim); float: right; }
-  .swatch .what { display: block; color: var(--text-dim); font-size: 11px;
+  .swatch .what { display: block; color: var(--text-dim);
     margin-top: 5px; line-height: 1.45; }
-  .swatch .ratio { display: block; color: var(--text-dim); font-size: 11px; margin-top: 4px; }
-  .swatch .ratio b { color: var(--text); font-weight: 500; }
+  .swatch .ratio { display: block; color: var(--text-dim); margin-top: 4px; }
+  .swatch .ratio b { color: var(--text); font-weight: normal; }
   #viewport-demo .stage div { width: 600px; height: 340px;
     background: repeating-linear-gradient(45deg, #22222a 0 20px, #2b2b34 20px 40px); }
 </style>
@@ -64,11 +64,11 @@
     <em>not</em> a separate widget, and clicking this one opens a real menu that renames it.
   </p>
   <div class="demo-row">
-    <div class="toggle">plain</div>
-    <div class="toggle on">selected</div>
-    <div class="toggle disabled">disabled</div>
-    <div class="toggle dropdown-head" id="head-demo"><span>dropdown head</span></div>
-    <div class="toggle dropdown-head narrow">20%</div>
+    <button type="button" class="toggle">plain</button>
+    <button type="button" class="toggle on">selected</button>
+    <button type="button" class="toggle" disabled>disabled</button>
+    <button type="button" class="toggle dropdown-head" id="head-demo"><span>dropdown head</span></button>
+    <button type="button" class="toggle dropdown-head narrow">20%</button>
   </div>
   <p class="demo-note">
     <code>.dropdown-head</code> holds ONE width whatever it holds, so a picker never stretches to
@@ -77,13 +77,45 @@
     values sit outside their own border.
   </p>
   <div class="demo-row">
-    <div class="toggle dropdown-head stacked">
+    <button type="button" class="toggle dropdown-head stacked">
       <span>C:\datasets\pool-one</span>
       <span>C:\datasets\pool-two</span>
-    </div>
+    </button>
   </div>
 
-  <h2>what a button DOES, in colour</h2>
+  <h2>focus: one look for everything you can reach</h2>
+  <p class="demo-note">
+    Tab through this page. A button, a menu row, a text field, a link and a <code>&lt;summary&gt;</code>
+    all wear the same focus a card does - the lift, the inset ring, the inner glow and the light over
+    the face - at the soft strength. Nothing here states its own focus rule; it is all base.css. Only
+    a bare <code>.focus-glow</code>, a card on a board, stays loud (see the primitives tab). A
+    selected <code>.toggle.on</code> carries its cream border from base.css too.
+  </p>
+  <div class="demo-row" id="focus-demo">
+    <button type="button" class="toggle">a button</button>
+    <button type="button" class="toggle on">selected</button>
+    <input class="text-field" id="field-demo" placeholder="a text field">
+    <a href="#focus-demo">a link</a>
+  </div>
+  <div class="demo-row">
+    <textarea class="text-field" rows="2" placeholder="a textarea, same focus" style="width: 320px;"></textarea>
+  </div>
+  <details style="margin-bottom: 14px; max-width: 460px;">
+    <summary>a summary opens what it heads</summary>
+    <p class="demo-note" style="margin: 8px 0 0;">It focuses like everything else on the page.</p>
+  </details>
+  <p class="demo-note">
+    <code>.focus-glow.focus-glow-soft.focus-glow-within</code> lights a container while a control
+    inside it has focus, without copying the rule. Click into the field below.
+  </p>
+  <div class="panel-inline focus-glow focus-glow-soft focus-glow-within run-controls" id="within-demo"
+       style="max-width: 460px;">
+    <span class="field-label">name</span>
+    <input class="text-field" placeholder="typing here lights the panel" style="flex: 1 1 auto;">
+    <button type="button" class="toggle">save</button>
+  </div>
+
+  <h2>what a button does, in colour</h2>
   <p class="demo-note">
     Only two verbs get a colour, because only two are worth stopping for: one <em>adds</em>, one
     <em>takes away</em>. Everything else stays grey on purpose - a palette where every button is
@@ -92,11 +124,11 @@
     of warnings. Disabled wins over both, whatever verb it carries.
   </p>
   <div class="demo-row">
-    <div class="toggle adds">promote</div>
-    <div class="toggle removes">not a class</div>
-    <div class="toggle adds disabled">adds, disabled</div>
-    <div class="toggle removes disabled">removes, disabled</div>
-    <div class="toggle help" id="tip-demo">?</div>
+    <button type="button" class="toggle adds">promote</button>
+    <button type="button" class="toggle removes">not a class</button>
+    <button type="button" class="toggle adds" disabled>adds, disabled</button>
+    <button type="button" class="toggle removes" disabled>removes, disabled</button>
+    <button type="button" class="toggle help" id="tip-demo">?</button>
   </div>
 
   <h2>columns and dividers</h2>
@@ -106,9 +138,9 @@
     an axis means that axis is not filtered, which is the same as all selected.
   </p>
   <div class="label-columns" style="border: 2px solid var(--grey-border); width: max-content;">
-    <div class="col"><div class="toggle on">alpha</div><div class="toggle">beta</div></div>
+    <div class="col"><button type="button" class="toggle on">alpha</button><button type="button" class="toggle">beta</button></div>
     <div class="divider"></div>
-    <div class="col"><div class="toggle">one</div><div class="toggle on">two</div></div>
+    <div class="col"><button type="button" class="toggle">one</button><button type="button" class="toggle on">two</button></div>
   </div>
 
   <h2>tree</h2>
@@ -155,10 +187,10 @@
     a cancelled menu leaving a stale selection behind for the next one to sweep up.
   </p>
   <div class="demo-row">
-    <div class="toggle dropdown-head" id="open-list"><span>a list</span></div>
-    <div class="toggle dropdown-head" id="open-columns"><span>two columns</span></div>
-    <div class="toggle dropdown-head" id="open-rich"><span>everything at once</span></div>
-    <div class="toggle" id="open-context">right-click me</div>
+    <button type="button" class="toggle dropdown-head" id="open-list"><span>a list</span></button>
+    <button type="button" class="toggle dropdown-head" id="open-columns"><span>two columns</span></button>
+    <button type="button" class="toggle dropdown-head" id="open-rich"><span>everything at once</span></button>
+    <button type="button" class="toggle" id="open-context">right-click me</button>
   </div>
   <div class="stat" id="menu-said">nothing picked yet</div>
 
@@ -168,7 +200,7 @@
     onPick. The fake tree below is in memory; a real host answers fetchDir from its server.
   </p>
   <div class="demo-row">
-    <div class="toggle dropdown-head" id="open-dirs"><span>browse</span></div>
+    <button type="button" class="toggle dropdown-head" id="open-dirs"><span>browse</span></button>
   </div>
   <div class="stat" id="dirs-said">nothing picked yet</div>
 
@@ -188,7 +220,7 @@
     live rather than written into the page.
   </p>
   <div class="demo-row">
-    <div class="toggle dropdown-head" id="open-presets"><span>settings</span></div>
+    <button type="button" class="toggle dropdown-head" id="open-presets"><span>settings</span></button>
   </div>
   <div class="stat" id="presets-said">nothing applied yet</div>
 
@@ -198,10 +230,10 @@
     shared row height make four equal buttons; handlers bind by id.
   </p>
   <div id="grid-2x2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); max-width: 320px;">
-    <div class="toggle" id="grid-alpha">alpha</div>
-    <div class="toggle" id="grid-beta">beta</div>
-    <div class="toggle" id="grid-gamma">gamma</div>
-    <div class="toggle" id="grid-delta">delta</div>
+    <button type="button" class="toggle" id="grid-alpha">alpha</button>
+    <button type="button" class="toggle" id="grid-beta">beta</button>
+    <button type="button" class="toggle" id="grid-gamma">gamma</button>
+    <button type="button" class="toggle" id="grid-delta">delta</button>
   </div>
   <div class="stat" id="grid-said" style="margin-top: 8px;">nothing pressed yet</div>
 
@@ -211,9 +243,9 @@
     with a label, a spacer, a value and two toggles.
   </p>
   <div id="stepper-rows" style="display: flex; flex-direction: column; gap: var(--gap); max-width: 320px;">
-    <div class="run-controls stepper" data-stepper="alpha"><span class="field-label">alpha</span><span class="spacer"></span><span class="field-value">3</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
-    <div class="run-controls stepper" data-stepper="beta"><span class="field-label">beta</span><span class="spacer"></span><span class="field-value">0</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
-    <div class="run-controls stepper" data-stepper="gamma"><span class="field-label">gamma</span><span class="spacer"></span><span class="field-value">7</span><div class="toggle" data-step="-1">-</div><div class="toggle" data-step="1">+</div></div>
+    <div class="run-controls stepper" data-stepper="alpha"><span class="field-label">alpha</span><span class="spacer"></span><span class="field-value">3</span><button type="button" class="toggle" data-step="-1">-</button><button type="button" class="toggle" data-step="1">+</button></div>
+    <div class="run-controls stepper" data-stepper="beta"><span class="field-label">beta</span><span class="spacer"></span><span class="field-value">0</span><button type="button" class="toggle" data-step="-1">-</button><button type="button" class="toggle" data-step="1">+</button></div>
+    <div class="run-controls stepper" data-stepper="gamma"><span class="field-label">gamma</span><span class="spacer"></span><span class="field-value">7</span><button type="button" class="toggle" data-step="-1">-</button><button type="button" class="toggle" data-step="1">+</button></div>
   </div>
 
   <h2>a split toolbar row</h2>
@@ -222,12 +254,12 @@
     written order, a spacer, then the primary actions alone on the right.
   </p>
   <div id="split-toolbar" class="run-controls" style="max-width: 560px;">
-    <div class="toggle">alpha</div>
-    <div class="toggle">beta</div>
-    <div class="toggle">gamma</div>
+    <button type="button" class="toggle">alpha</button>
+    <button type="button" class="toggle">beta</button>
+    <button type="button" class="toggle">gamma</button>
     <span class="spacer"></span>
-    <div class="toggle" id="tb-save">save</div>
-    <div class="toggle" id="tb-apply">apply</div>
+    <button type="button" class="toggle" id="tb-save">save</button>
+    <button type="button" class="toggle" id="tb-apply">apply</button>
   </div>
 
   <h2>rows that carry numbers</h2>
@@ -240,20 +272,20 @@
   </p>
   <div class="menu-panel panel-inline" style="position: static; max-width: 460px;">
     <div class="menu-section">
-      <div class="toggle menu-item"><span class="name">short_name</span><span class="stats">144f &middot; 126d &middot; 126c</span></div>
-      <div class="toggle menu-item on"><span class="name">selected_row</span><span class="stats">86f &middot; 67d</span></div>
-      <div class="toggle menu-item"><span class="name">a_name_long_enough_that_it_has_to_be_truncated_somewhere</span><span class="stats">43f &middot; 56d &middot; 27c &middot; 28n</span></div>
+      <div class="toggle menu-item" tabindex="0"><span class="name">short_name</span><span class="stats">144f &middot; 126d &middot; 126c</span></div>
+      <div class="toggle menu-item on" tabindex="0"><span class="name">selected_row</span><span class="stats">86f &middot; 67d</span></div>
+      <div class="toggle menu-item" tabindex="0"><span class="name">a_name_long_enough_that_it_has_to_be_truncated_somewhere</span><span class="stats">43f &middot; 56d &middot; 27c &middot; 28n</span></div>
     </div>
   </div>
 
-  <h2>modal: the one popup NOT anchored to what opened it</h2>
+  <h2>modal: the one popup not anchored to what opened it</h2>
   <p class="demo-note">
     Every other menu hangs off its trigger, which is right for a choice you can walk away from. This
     one is centred on a dimmed backdrop because it is a decision you must answer before anything
     else happens - overwrite, merge, or abandon. The three buttons carry the verbs above: green
     adds, red takes away, grey is the harmless exit, and Escape always picks the harmless one.
   </p>
-  <div class="demo-row"><div class="toggle" id="open-modal">open the modal</div></div>
+  <div class="demo-row"><button type="button" class="toggle" id="open-modal">open the modal</button></div>
 
   <h2>selection: click, cmd+click, shift+drag, right-click</h2>
   <p class="demo-note">
@@ -277,14 +309,14 @@
     leaving the pan alone reads as a button that half works.
   </p>
   <div class="demo-row">
-    <div class="toggle" id="zoom-reset">reset view</div>
+    <button type="button" class="toggle" id="zoom-reset">reset view</button>
     <span class="stat" id="zoom-value">100%</span>
   </div>
   <div id="viewport-demo"><div class="stage"><div></div></div></div>
 </div>
 
 <div class="tab-panel hidden" data-panel="primitives">
-  <h2>bucket layout, 2D roving focus</h2>
+  <h2>bucket layout, 2d roving focus</h2>
   <p class="demo-note">
     Arrow keys move across both axes: left/right between buckets, up/down between rows. Only the
     focused row sits in the tab order, the same roving-tabindex shell.js already uses for tabs.
@@ -326,11 +358,12 @@
     <div class="card-pile-count"><span>7</span></div>
   </div>
 
-  <h2>the focus glow: a surface, not a control</h2>
+  <h2>the focus glow, loud: a card on a board</h2>
   <p class="demo-note">
-    <code>.focus-glow</code> is for a card, tile or panel rather than a button - it lifts, gains its
-    own inset ring, an inner glow and a coloured light over the whole face. Tab to the card below (or
-    click it) to see all four at once; the fan's cards above wear it too.
+    <code>.focus-glow</code> is the same focus every control wears, at full strength, for a card or
+    tile that sits on a board rather than inside something else - it lifts, gains its own inset ring,
+    an inner glow and a coloured light over the whole face. Tab to the card below (or click it) to
+    see all four at once; the fan's cards above wear it too.
   </p>
   <div class="demo-row">
     <div class="card focus-glow" tabindex="0" style="max-width: 200px;">
@@ -349,7 +382,7 @@
     everything". Dismiss with a click on the backdrop or Escape.
   </p>
   <div class="demo-row">
-    <div class="toggle" id="expand-strip" style="width: 240px; aspect-ratio: 3 / 1;">click to expand</div>
+    <button type="button" class="toggle" id="expand-strip" style="width: 240px; aspect-ratio: 3 / 1;">click to expand</button>
   </div>
 
   <h2>drawer: a sliver that opens into its half of the screen</h2>
@@ -365,8 +398,8 @@
     here" when nothing is. The host's own row height never changes as the count grows.
   </p>
   <div class="demo-row">
-    <div class="toggle" id="badge-demo">a row<span id="badge-slot"></span></div>
-    <div class="toggle" id="badge-bump">+1</div>
+    <button type="button" class="toggle" id="badge-demo">a row<span id="badge-slot"></span></button>
+    <button type="button" class="toggle" id="badge-bump">+1</button>
   </div>
 
   <h2>focus marker</h2>
@@ -375,9 +408,9 @@
     below to see it move.
   </p>
   <div class="demo-row" id="marker-demo">
-    <div class="toggle" tabindex="0">one</div>
-    <div class="toggle" tabindex="0">two</div>
-    <div class="toggle" tabindex="0">three</div>
+    <button type="button" class="toggle">one</button>
+    <button type="button" class="toggle">two</button>
+    <button type="button" class="toggle">three</button>
   </div>
 
   <h2>hazard stripes</h2>
@@ -699,9 +732,9 @@ document.getElementById('open-modal').onclick = () => {
         merging keeps every row from a source this pool does not hold.
       </div>
       <div class="menu-buttons modal-buttons">
-        <div class="toggle adds">merge into</div>
-        <div class="toggle removes">overwrite</div>
-        <div class="toggle">abandon</div>
+        <button type="button" class="toggle adds">merge into</button>
+        <button type="button" class="toggle removes">overwrite</button>
+        <button type="button" class="toggle">abandon</button>
       </div>
     </div>`;
   const close = () => { back.remove(); document.removeEventListener('keydown', onKey); };

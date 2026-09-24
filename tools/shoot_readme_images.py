@@ -38,11 +38,13 @@ def open_tab(page: Page, tab: str) -> None:
 
 def shoot_controls(page: Page) -> None:
     open_tab(page, "controls")
-    # the toggle row plus columns-and-dividers, which is what the caption describes
+    # from the toggle row down to the tree heading, which is what the caption describes
+    # [measured, so a section added above columns-and-dividers never crops it off]
     box = page.eval_on_selector(
         ".tab-panel[data-panel='controls']",
         "el => { const r = el.getBoundingClientRect(); "
-        "return {x: r.x, y: r.y, width: 900, height: 780}; }",
+        "const end = [...el.querySelectorAll('h2')].find(h => h.textContent === 'tree'); "
+        "return {x: r.x, y: r.y, width: 900, height: end.getBoundingClientRect().y - r.y - 8}; }",
     )
     page.screenshot(path=str(OUT / "controls.png"), clip=box)
     print("wrote", OUT / "controls.png")

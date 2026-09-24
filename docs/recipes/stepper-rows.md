@@ -10,8 +10,8 @@ buttons. `.stepper` fixes the gap, the button padding and a right-aligned readou
   <span class="field-label">alpha</span>
   <span class="spacer"></span>
   <span class="field-value">3</span>
-  <div class="toggle" data-step="-1">-</div>
-  <div class="toggle" data-step="1">+</div>
+  <button type="button" class="toggle" data-step="-1">-</button>
+  <button type="button" class="toggle" data-step="1">+</button>
 </div>
 ```
 
