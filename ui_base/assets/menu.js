@@ -57,7 +57,8 @@ class Menu {
     this._onKey = evt => {
       if (evt.key === 'Escape') { evt.preventDefault(); this.close(); }
       else if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') this._move(evt);
-      else if (evt.key === 'Enter') this._activate(evt);
+      // space too, as on every button; _activate only takes a focused row, so a field still types
+      else if (evt.key === 'Enter' || evt.key === ' ') this._activate(evt);
     };
   }
 

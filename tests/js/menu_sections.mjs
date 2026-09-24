@@ -283,4 +283,29 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   assert.equal(live.size, 0, 'and close drops both');
   Object.assign(globalThis.document, {addEventListener, removeEventListener});
 }
+
+// ---- space activates a focused row like enter does, and leaves a focused field alone. enter only
+// meant stepping into a dir picker's folder needed enter while every button answered to space
+{
+  const keyed = new Menu({});
+  keyed.el = element('div');
+  const row = keyed.el.appendChild(element('div'));
+  row.classList.add('menu-item');
+  let clicks = 0;
+  row.click = () => { clicks += 1; };
+  const field = keyed.el.appendChild(element('input'));
+  const press = key => {
+    let prevented = false;
+    keyed._onKey({key, preventDefault() { prevented = true; }});
+    return prevented;
+  };
+  globalThis.document.activeElement = row;
+  assert.ok(press(' '), 'space on a focused row is consumed, so the panel does not scroll');
+  assert.ok(press('Enter'), 'enter still activates');
+  assert.equal(clicks, 2, `space and enter should each click the row, clicked ${clicks}`);
+  globalThis.document.activeElement = field;
+  assert.ok(!press(' '), 'space in a focused field must reach the field');
+  assert.equal(clicks, 2, 'and must not click anything');
+  globalThis.document.activeElement = null;
+}
 console.log('ok');
