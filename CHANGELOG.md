@@ -6,6 +6,7 @@ refactors, docs and tests are in `git log`.
 
 ## Unreleased
 
+- a focused `.toggle.on` draws its focus ring in the fill's text colour, so it shows on the light fill
 - `.toggle` (on `:focus-visible`) and `.menu-item` (on `:focus`) wear the card focus at the soft
   strength: the same rule as `.focus-glow:focus`, with `.focus-glow-soft`'s tokens. `.menu-item:focus`
   no longer turns its border cream; the inset ring marks it

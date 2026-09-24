@@ -235,6 +235,9 @@ a { color: var(--link); }
 .toggle:hover { border-color: var(--cream); color: var(--cream); }
 /* the cream border is part of selected, stated here so no consumer restates it (2026-09-24) */
 .toggle.on { background: var(--accent-on); color: var(--accent-on-text); border-color: var(--cream); }
+/* on the near-white fill a cream ring vanishes: the focus ring and its glow take the fill's text
+   colour instead, so a selected button still shows it has focus */
+.toggle.on { --focus-ring-color: var(--accent-on-text); --focus-inner-glow-color: color-mix(in srgb, var(--accent-on-text) 45%, transparent); }
 /* SELECTED CELLS SWAP TO GREY TEXT. the .on background is near-white, so any child that carries its
    own light colour (a .name is cream, a .stats is a light grey) vanishes into it. children must
    therefore re-state a dark colour rather than inherit their unselected one - primary text near

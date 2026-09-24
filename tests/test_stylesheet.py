@@ -474,3 +474,10 @@ def test_the_slider_axis_is_drawn_at_2px():
 
 def test_stepper_buttons_use_the_row_gutter_token():
     assert _rule(_css(), ".stepper .toggle").strip() == "padding: 0 var(--inset-x);"
+
+
+def test_a_selected_button_still_shows_focus_on_its_light_fill():
+    """a cream ring on the near-white .on fill could not be seen"""
+    css = _css()
+    rules = re.findall(r"\.toggle\.on\s*\{([^}]*)\}", css)
+    assert any("--focus-ring-color: var(--accent-on-text)" in r for r in rules)
