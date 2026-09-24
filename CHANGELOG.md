@@ -4,7 +4,7 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
-## Unreleased
+## v0.2.6 - 2026-09-24
 
 - a focused `.toggle.on` draws its focus ring in the fill's text colour, so it shows on the light fill
 - `.toggle` (on `:focus-visible`) and `.menu-item` (on `:focus`) wear the card focus at the soft
