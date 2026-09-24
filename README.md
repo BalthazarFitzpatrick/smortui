@@ -129,7 +129,7 @@ token with its contrast, and a test fails if a hue arrives without being named i
 
 ### Controls
 
-![Toggles, the two coloured verbs, columns with a divider](docs/images/controls.png)
+![Toggles, the one focus look on a button, a field, a link and a summary, the two coloured verbs, columns with a divider](docs/images/controls.png)
 
 **One clickable class**, `.toggle`, for buttons, list rows, filter pills and dropdown heads. **Only
 two verbs get a colour**: one that adds and one that takes away. Everything else stays grey, because
