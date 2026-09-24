@@ -59,7 +59,7 @@ def test_the_focus_highlight_keeps_its_four_parts_separately_tunable():
     three, so every part reads its own token and none of them is a literal in the rule.
     """
     css = _css()
-    rule = re.search(r"\.focus-glow:focus\s*\{(.*?)\}", css, re.DOTALL)
+    rule = re.search(r"\.focus-glow:focus(?![-\w])[^{]*\{(.*?)\}", css, re.DOTALL)
     assert rule, "the treatment must exist as one named class"
     body = rule.group(1)
     for part in (
@@ -84,7 +84,7 @@ def test_the_soft_variant_only_retunes_the_loud_one_rather_than_redrawing_it():
     rule already reads, and it draws nothing itself.
     """
     css = _css()
-    rule = re.search(r"\.focus-glow\.focus-glow-soft\s*\{(.*?)\}", css, re.DOTALL)
+    rule = re.search(r"\.focus-glow\.focus-glow-soft[^{]*\{(.*?)\}", css, re.DOTALL)
     assert rule, "the soft variant must exist as a modifier on the loud class"
     body = rule.group(1)
 
@@ -341,7 +341,7 @@ def test_a_fan_item_transitions_everything_the_focus_glow_does():
     """
     css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)  # the comments quote the old literal
     fan = re.search(r"\.fan-item\s*\{(.*?)\}", css, re.DOTALL).group(1)
-    glow = re.search(r"\.focus-glow\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    glow = re.search(r"\.focus-glow[,\s][^{]*\{(.*?)\}", css, re.DOTALL).group(1)
 
     def transitioned(body: str) -> list[str]:
         shorthand = re.search(r"transition:\s*([^;]+);", body).group(1)
@@ -363,3 +363,23 @@ def test_edge_pulse_keeps_focus_and_reduced_motion_visible():
     assert "animation: none" in reduced
     assert "box-shadow: inset" in reduced
     assert "var(--ambient-pulse-min) + var(--ambient-pulse-max)" in reduced
+
+
+def test_controls_wear_the_card_focus_at_the_soft_strength():
+    """operator, 2026-09-24: a focused menu row or button looked nothing like a focused card. they
+    join the same rules rather than copying them, so the looks cannot drift apart"""
+    css = _css()
+    draw = re.search(r"([^}]*)\{[^}]*scale\(var\(--focus-lift\)\)", css).group(1)
+    assert ".toggle:focus-visible" in draw and ".menu-item:focus" in draw
+    soft = re.search(r"([^}]*)\{\s*--focus-lift: 1\.01", css).group(1)
+    assert ".toggle" in soft and ".menu-item" in soft
+
+
+def test_a_waiting_placeholder_moves_and_holds_still_for_reduced_motion():
+    """operator, 2026-09-24: slow panels showed a static "loading" and read as stuck"""
+    css = _css()
+    assert re.search(r"\.hazard-stripes\.hazard-moving\s*\{[^}]*animation:", css)
+    assert re.search(r"\.working-dots::after\s*\{[^}]*animation:", css)
+    blocks = re.findall(r"prefers-reduced-motion: reduce\)\s*\{((?:[^{}]*\{[^{}]*\})*[^{}]*)\}", css)
+    held = [b for b in blocks if "hazard-moving" in b]
+    assert held and "animation: none" in held[0] and "working-dots" in held[0]

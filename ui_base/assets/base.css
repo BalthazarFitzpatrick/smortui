@@ -330,10 +330,12 @@ body {
    key is, and the treatment is the only thing saying which card an action will land on.
    TRANSFORM IS LEFT FREE for the host to animate - the lift is the one thing here that uses it, so
    a host playing its own transform on the same element must state the scale itself. */
-.focus-glow { transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms); }
+.focus-glow, .toggle, .menu-item { transition: transform var(--focus-glow-ms), filter var(--focus-glow-ms), box-shadow var(--focus-glow-ms); }
 /* the element draws its own ring, so the browser's outline would be a second one */
-.focus-glow:focus-visible { outline: none; }
-.focus-glow:focus {
+.focus-glow:focus-visible, .toggle:focus-visible, .menu-item:focus-visible { outline: none; }
+/* controls draw the same frame: a button on :focus-visible, so a click does not leave it lifted, a
+   menu row on :focus, since the menu moves focus onto it from the keyboard */
+.focus-glow:focus, .toggle:focus-visible, .menu-item:focus {
   transform: scale(var(--focus-lift));
   filter: saturate(var(--focus-light-saturate)) brightness(var(--focus-light-brightness));
   box-shadow:
@@ -353,7 +355,9 @@ body {
    as distance from neutral (1.03 -> 1.01, saturate 1.7 -> 1.23, brightness 1.4 -> 1.13); the ring
    and its inner glow drop to a HALF (3px -> 2px, 8px/1.5px -> 4px/0.75px), because an edge thinned
    to a third stops reading as an edge at all. Same cream, same --focus-glow-ms. */
-.focus-glow.focus-glow-soft {
+/* a button or a menu row is always inside a surface, so it wears the soft strength by default
+   (2026-09-24) - one focus family across cards, rows and controls instead of a ring of its own */
+.focus-glow.focus-glow-soft, .toggle, .menu-item {
   --focus-lift: 1.01;
   --focus-ring-width: 2px;
   --focus-inner-glow-blur: 4px;
@@ -814,7 +818,8 @@ textarea.text-field {
 .text-field::placeholder { color: var(--text-dim); opacity: 1; }
 .menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .menu-section .none { color: var(--text-dim); font-style: italic; }
-.menu-item:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+/* the frame above marks it; the text follows, as on hover */
+.menu-item:focus { color: var(--cream); }
 
 
 /* ---- rubber band: the net a shift+drag draws over the tile grid ----
@@ -985,6 +990,25 @@ textarea.text-field {
 }
 .hazard-stripes .hazard-label {
   background: var(--bg); padding: 2px 8px; border: 2px solid var(--grey-border);
+}
+/* the same placeholder while something is still coming: the stripes drift, so a slow fetch reads as
+   working and not as stuck. one period is 20px * sqrt(2) across at 45deg, so the loop has no seam */
+.hazard-stripes.hazard-moving { animation: hazard-drift 1.2s linear infinite; }
+@keyframes hazard-drift { to { background-position: calc(20px * 1.41421356) 0; } }
+
+/* a line of text that is waiting on something: its dots count up, then start again */
+.working-dots::after {
+  content: ''; display: inline-block; width: 3ch; text-align: left;
+  animation: working-dots 1.2s steps(4, end) infinite;
+}
+@keyframes working-dots {
+  0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; }
+}
+
+/* reduced motion: the stripes hold still and the dots stay, so both still say "not done yet" */
+@media (prefers-reduced-motion: reduce) {
+  .hazard-stripes.hazard-moving { animation: none; }
+  .working-dots::after { animation: none; content: '...'; }
 }
 
 /* a labelled +/- row: label, spacer, right-aligned value, then the two buttons. wrap in .run-controls */

@@ -4,6 +4,15 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
+## Unreleased
+
+- `.toggle` (on `:focus-visible`) and `.menu-item` (on `:focus`) wear the card focus at the soft
+  strength: the same rule as `.focus-glow:focus`, with `.focus-glow-soft`'s tokens. `.menu-item:focus`
+  no longer turns its border cream; the inset ring marks it
+- `.hazard-stripes.hazard-moving`: the placeholder's stripes drift while something is still coming
+- `.working-dots`: a line's trailing dots count up while it waits
+- under `prefers-reduced-motion` both hold still
+
 ## v0.2.5 - 2026-09-23
 
 - `makeExpander` returns `fit(contentHeight)`: the open panel keeps its width and eases its height
