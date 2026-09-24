@@ -364,6 +364,13 @@ that exercises it live, and append one entry to `index.json`. A recipe never int
 - **`CHANGELOG.md` gets a line for every consumer-visible change** under `Unreleased`, moved
   under the tag when one is cut. A consumer reads it to bump a pin; `git log` is for us.
 
+## Lowercase
+
+Everything you produce is lowercase, in text and code: replies, docs and headings,
+comments, commits, PR text, release notes, UI strings, log messages. Case stays only where it
+carries meaning — identifiers a language or tool dictates (class names, constants, env vars),
+existing names quoted verbatim, text quoted from others.
+
 ## Releases
 
 Once the human has merged into `main`, draft a release unasked: next tag (pre-1.0:
