@@ -6,12 +6,15 @@ the height at `--row-height`, so all four match.
 
 ```html
 <div id="grid-2x2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap);">
-  <div class="toggle" id="btn-alpha">alpha</div>
-  <div class="toggle" id="btn-beta">beta</div>
-  <div class="toggle" id="btn-gamma">gamma</div>
-  <div class="toggle" id="btn-delta">delta</div>
+  <button type="button" class="toggle" id="btn-alpha">alpha</button>
+  <button type="button" class="toggle" id="btn-beta">beta</button>
+  <button type="button" class="toggle" id="btn-gamma">gamma</button>
+  <button type="button" class="toggle" id="btn-delta">delta</button>
 </div>
 ```
+
+Each is a `<button>`, not a `<div>`: a button is reachable with the keyboard, and `base.css` draws
+the soft card focus on it with no rule of your own.
 
 Bind handlers by id, never by position: `document.getElementById('btn-beta').onclick = ...`. The
 layout can then become one column or four without touching a handler.

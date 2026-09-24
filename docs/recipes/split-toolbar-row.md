@@ -6,12 +6,12 @@ reading the row.
 
 ```html
 <div class="run-controls">
-  <div class="toggle" id="tb-alpha">alpha</div>
-  <div class="toggle" id="tb-beta">beta</div>
-  <div class="toggle" id="tb-gamma">gamma</div>
+  <button type="button" class="toggle" id="tb-alpha">alpha</button>
+  <button type="button" class="toggle" id="tb-beta">beta</button>
+  <button type="button" class="toggle" id="tb-gamma">gamma</button>
   <span class="spacer"></span>
-  <div class="toggle" id="tb-save">save</div>
-  <div class="toggle" id="tb-apply">apply</div>
+  <button type="button" class="toggle" id="tb-save">save</button>
+  <button type="button" class="toggle" id="tb-apply">apply</button>
 </div>
 ```
 

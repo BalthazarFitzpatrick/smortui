@@ -142,3 +142,51 @@ def test_assets_are_served_with_the_stated_content_types(demo_url):
     with pytest.raises(urllib.error.HTTPError) as err:
         urllib.request.urlopen(f"{demo_url}ui/../pyproject.toml")
     assert err.value.code == 404
+
+
+def _focus_by_keyboard(page, selector):
+    """a key press first, so a programmatic focus counts as keyboard focus for :focus-visible"""
+    page.keyboard.press("Shift")
+    page.eval_on_selector(selector, "e => e.focus()")
+    page.wait_for_timeout(250)  # past --focus-glow-ms
+
+
+def _style(page, selector, prop):
+    return page.eval_on_selector(selector, f"e => getComputedStyle(e).{prop}")
+
+
+def test_controls_fields_and_links_wear_the_soft_card_focus(page):
+    """one look: an inset ring, no outline, and the light, on a button, a field and a link"""
+    page.click('.nav-tab[data-tab="controls"]')
+    for selector in ("#focus-demo .toggle", "#field-demo", "#focus-demo a", "details summary"):
+        _focus_by_keyboard(page, selector)
+        shadow = _style(page, selector, "boxShadow")
+        assert "inset" in shadow and "2px" in shadow, f"{selector}: {shadow}"
+        assert _style(page, selector, "outlineStyle") == "none", selector
+        assert "saturate(1.23)" in _style(page, selector, "filter"), selector
+    assert _style(page, "#field-demo", "borderTopColor") == "rgb(74, 74, 82)", "no cream border"
+    page.eval_on_selector("#field-demo", "e => e.blur()")
+
+
+def test_a_container_lights_while_its_field_has_focus(page):
+    page.click('.nav-tab[data-tab="controls"]')
+    page.click("#within-demo .text-field")
+    page.wait_for_timeout(250)
+    assert "inset" in _style(page, "#within-demo", "boxShadow")
+    page.eval_on_selector("#within-demo .text-field", "e => e.blur()")
+
+
+def test_a_focused_floating_panel_keeps_its_shadow_and_has_no_ring(page):
+    page.click('.nav-tab[data-tab="primitives"]')
+    page.eval_on_selector(".drawer", "e => { e.tabIndex = -1; }")  # as a menu makes its panel
+    _focus_by_keyboard(page, ".drawer")
+    assert page.eval_on_selector(".drawer", "e => e.matches(':focus-visible')")
+    shadow = _style(page, ".drawer", "boxShadow")
+    assert "inset" not in shadow and "20px" in shadow, shadow
+    assert _style(page, ".drawer", "transform") == "none"
+
+
+def test_a_selected_toggle_carries_the_cream_border(page):
+    page.click('.nav-tab[data-tab="controls"]')
+    assert _style(page, "#focus-demo .toggle.on", "borderTopColor") == "rgb(232, 221, 195)"
+    assert _style(page, "#focus-demo a", "color") == "rgb(82, 190, 217)"
