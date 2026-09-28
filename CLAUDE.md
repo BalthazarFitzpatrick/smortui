@@ -108,7 +108,7 @@ that reports nothing on cancel leaves a stale selection alive, which the next in
 and applies to the wrong thing.
 
 the class owns anchoring, viewport clamping, one-menu-at-a-time, dismissal on outside click and
-escape, and arrow/enter/space keyboard navigation. **never reimplement any of that at a call site**, and
+escape, and arrow/enter/space keyboard navigation, left/right across columns. **never reimplement any of that at a call site**, and
 never add a global dismiss handler that names trigger ids — a shared selector string means every new
 menu must be added to it or it closes on its own opening click.
 

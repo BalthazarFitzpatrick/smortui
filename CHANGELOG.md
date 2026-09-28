@@ -4,7 +4,7 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
-## Unreleased
+## v0.3.0 - 2026-09-29
 
 - `Menu`: left/right move between the columns of a `columns` section. right on a single-select
   row of a persistent menu picks it first, so the next column shows what it opens
