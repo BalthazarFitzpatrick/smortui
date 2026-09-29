@@ -106,8 +106,8 @@ class Menu {
       row.appendChild(act);
     }
     if (section.onFocus && !item.disabled) {
-      // a click focuses the row too, so the pointer and the arrows report the same thing
-      row.tabIndex = -1;
+      // arrows only: a click does not focus a row, so a host that redraws on focus never swaps the
+      // row out between press and release and loses the click
       const key = `${section.column}:${row.dataset.id}`;
       // once per row: a refresh restoring focus to the same row is not a new focus
       row.addEventListener('focus', () => {
