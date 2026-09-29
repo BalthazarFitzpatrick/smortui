@@ -358,7 +358,7 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   menu.sections = build();
   menu.el = menu._build();
   const rowOf = id => menu.el.querySelectorAll('.menu-item').find(r => r.dataset.id === id);
-  assert.equal(rowOf('b1').tabIndex, -1, 'a click should be able to focus the row');
+  assert.equal(rowOf('b1').tabIndex, 0, 'a click must not focus the row - a redraw would eat it');
   rowOf('b1').fire('focus');
   assert.deepEqual(heard, ['b1'], 'focusing b1 should report it once');
   // refresh built a new panel whose b1 now takes focus back: the same row, not a new focus
