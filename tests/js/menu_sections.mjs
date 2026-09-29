@@ -278,9 +278,9 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   const ordinary = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
   ordinary.openAt({x: 0, y: 0});
   await new Promise(resolve => setTimeout(resolve, 0));
-  assert.equal(live.size, 2, 'an open menu listens for mousedown and keydown');
+  assert.equal(live.size, 3, 'an open menu listens for mousedown, keydown and a captured escape');
   ordinary.close();
-  assert.equal(live.size, 0, 'and close drops both');
+  assert.equal(live.size, 0, 'and close drops all three');
   Object.assign(globalThis.document, {addEventListener, removeEventListener});
 }
 
@@ -307,5 +307,87 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   assert.ok(!press(' '), 'space in a focused field must reach the field');
   assert.equal(clicks, 2, 'and must not click anything');
   globalThis.document.activeElement = null;
+}
+
+// ---- right on a lab picks it and steps into its models; left comes back to the picked lab. up and
+// down alone left the second column unreachable as a column, and a pick redrew the panel with focus
+// on <body>, so the next arrow started over at row one
+{
+  const models = {a: ['a1', 'a2'], b: ['b1', 'b2']};
+  let lab = 'a';
+  let menu = null;
+  const build = () => [{kind: 'columns', columns: [
+    {multi: false, items: ['a', 'b'].map(id => ({id, label: id, on: id === lab})),
+      onPick: item => { lab = item.id; menu.refresh(build()); }},
+    {multi: false, items: models[lab].map(id => ({id, label: id}))},
+  ]}];
+  menu = new Menu({persistent: true, sections: build()});
+  menu.el = menu._build();
+  // the stub parses no :not(), has no click(), and its focus never moves document.activeElement
+  menu._items = () => menu.el.querySelectorAll('.menu-item')
+    .map(r => Object.assign(r, {click: () => r.onclick?.()}));
+  menu._focus = el => { globalThis.document.activeElement = el; };
+  const row = (column, id) => menu._items().find(r => r.dataset.id === id
+    && r.closest('.col').dataset.column === String(column));
+  const press = key => menu._onKey({key, preventDefault() {}});
+
+  globalThis.document.activeElement = row(0, 'b');
+  press('ArrowRight');
+  assert.equal(lab, 'b', 'right on an unpicked lab should pick it');
+  assert.equal(globalThis.document.activeElement, row(1, 'b1'), 'and land on its first model');
+  press('ArrowLeft');
+  assert.equal(globalThis.document.activeElement, row(0, 'b'), 'left should return to the picked lab');
+
+  // enter redraws the panel too, and the row it was on keeps focus
+  globalThis.document.activeElement = row(0, 'a');
+  press('Enter');
+  assert.equal(lab, 'a');
+  assert.equal(globalThis.document.activeElement, row(0, 'a'), 'a refresh should keep the focused row');
+  globalThis.document.activeElement = null;
+}
+
+// ---- a column can hear which of its rows has focus - a multi-select column has no single pick to
+// hang a neighbouring column on, so the focused row is what the next column describes
+{
+  const heard = [];
+  const menu = new Menu({persistent: true, sections: []});
+  const build = () => [{kind: 'columns', columns: [
+    {multi: true, items: [{id: 'b1', label: 'b1'}, {id: 'b2', label: 'b2'}],
+      onFocus: item => { heard.push(item.id); menu.refresh(build()); }},
+  ]}];
+  menu.sections = build();
+  menu.el = menu._build();
+  const rowOf = id => menu.el.querySelectorAll('.menu-item').find(r => r.dataset.id === id);
+  assert.equal(rowOf('b1').tabIndex, 0, 'a click must not focus the row - a redraw would eat it');
+  rowOf('b1').fire('focus');
+  assert.deepEqual(heard, ['b1'], 'focusing b1 should report it once');
+  // refresh built a new panel whose b1 now takes focus back: the same row, not a new focus
+  menu.el = menu._build();
+  rowOf('b1').fire('focus');
+  assert.deepEqual(heard, ['b1'], 'a restored focus must not report again');
+  rowOf('b2').fire('focus');
+  assert.deepEqual(heard, ['b1', 'b2']);
+}
+
+// ---- escape closes the menu and stops there, so the panel it was opened from stays open
+{
+  const menu = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+  menu.openAt({x: 0, y: 0});
+  let stopped = false;
+  menu._onEscape({key: 'Escape', preventDefault() {}, stopPropagation() { stopped = true; }});
+  assert.ok(stopped, 'escape should not reach the host panel');
+  assert.ok(!menu.isOpen, 'and should close the menu');
+  let other = false;
+  menu._onEscape({key: 'a', preventDefault() {}, stopPropagation() { other = true; }});
+  assert.ok(!other, 'any other key passes through');
+}
+
+// ---- a host closing its panel takes the menu opened from it along
+{
+  const menu = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+  menu.openAt({x: 0, y: 0});
+  Menu.closeOpen();
+  assert.ok(!menu.isOpen, 'closeOpen should close the open menu');
+  Menu.closeOpen();
 }
 console.log('ok');

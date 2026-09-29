@@ -4,6 +4,18 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
+## v0.3.0 - 2026-09-29
+
+- `Menu`: left/right move between the columns of a `columns` section. right on a single-select
+  row of a persistent menu picks it first, so the next column shows what it opens
+- `Menu.refresh()` keeps focus on the row that had it, instead of dropping it to `<body>`
+- `Menu`: escape closes the menu only. it is captured on document and stopped, so a host panel's
+  own escape listener no longer fires on the same press
+- `Menu.closeOpen()`: closes whatever menu is open, for a host closing the panel it came from
+- `Menu`: a `columns` column takes `onFocus(item, menu)`, called when one of its rows gains focus by
+  arrow, once per row. a click does not focus a row, so a host redrawing on focus keeps the click. a multi-select column has no single pick, so this is what a
+  neighbouring column can describe
+
 ## v0.2.7 - 2026-09-24
 
 - `Menu`: Space on a focused `.menu-item` activates it, as Enter does. A focused

@@ -55,10 +55,18 @@ class Menu {
       this.close();
     };
     this._onKey = evt => {
-      if (evt.key === 'Escape') { evt.preventDefault(); this.close(); }
-      else if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') this._move(evt);
+      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') this._move(evt);
+      else if (evt.key === 'ArrowLeft' || evt.key === 'ArrowRight') this._moveColumn(evt);
       // space too, as on every button; _activate only takes a focused row, so a field still types
       else if (evt.key === 'Enter' || evt.key === ' ') this._activate(evt);
+    };
+    // escape is one level back: this menu only, never the panel it was opened from. captured and
+    // stopped, so a host's own escape listener on document never sees the same press
+    this._onEscape = evt => {
+      if (evt.key !== 'Escape') return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.close();
     };
   }
 
@@ -96,6 +104,17 @@ class Menu {
       act.textContent = item.action.label;
       act.onclick = evt => { evt.stopPropagation(); item.action.onPick(item, this); };
       row.appendChild(act);
+    }
+    if (section.onFocus && !item.disabled) {
+      // arrows only: a click does not focus a row, so a host that redraws on focus never swaps the
+      // row out between press and release and loses the click
+      const key = `${section.column}:${row.dataset.id}`;
+      // once per row: a refresh restoring focus to the same row is not a new focus
+      row.addEventListener('focus', () => {
+        if (this._focusedKey === key) return;
+        this._focusedKey = key;
+        section.onFocus(item, this);
+      });
     }
     if (!item.disabled) {
       row.onclick = () => {
@@ -160,6 +179,9 @@ class Menu {
         }
         const col = document.createElement('div');
         col.className = 'col';
+        // what left/right read: which column a row sits in, and whether moving right picks it
+        col.dataset.column = String(i);
+        col.dataset.multi = String(column.multi ?? true);
         // A COLUMN MAY NAME ITSELF. a section label can only say one thing about the whole row of
         // columns, which is no use when the columns mean different things - "available" beside
         // "open" is the point of having them side by side at all
@@ -176,7 +198,8 @@ class Menu {
           col.appendChild(empty);
         }
         column.items.forEach(item => col.appendChild(
-          this._row(item, {multi: column.multi ?? true, onPick: column.onPick})));
+          this._row(item, {multi: column.multi ?? true, onPick: column.onPick,
+            onFocus: column.onFocus, column: i})));
         cols.appendChild(col);
       });
       wrap.appendChild(cols);
@@ -283,6 +306,11 @@ class Menu {
     if (!this.el) return;
     if (sections) this.sections = sections;
     const {left, top} = this.el.style;
+    // the focused row survives the rebuild: picking a lab redraws its models, and focus falling to
+    // <body> sent the next arrow back to row one
+    const focused = this.el.contains(document.activeElement) ? document.activeElement : null;
+    const rowId = focused?.classList.contains('menu-item') ? focused.dataset.id : null;
+    const column = focused?.closest('.col')?.dataset.column;
     const rebuilt = this._build();
     rebuilt.style.left = left;
     rebuilt.style.top = top;
@@ -290,6 +318,10 @@ class Menu {
     rebuilt.className = this.el.className;
     this.el.replaceWith(rebuilt);
     this.el = rebuilt;
+    if (!focused) return;
+    const again = this._items().find(item => item.dataset.id === rowId
+      && item.closest('.col')?.dataset.column === column);
+    this._focus(again || this.el);
   }
 
   // a multi-select menu's apply button lives or dies by what is ticked, and only the caller knows
@@ -312,8 +344,29 @@ class Menu {
     const next = evt.key === 'ArrowDown'
       ? Math.min(items.length - 1, at + 1)
       : Math.max(0, at - 1);
-    items[next].tabIndex = -1;
-    items[next].focus();
+    this._focus(items[next]);
+  }
+
+  _focus(el) {
+    el.tabIndex = -1;
+    el.focus();
+  }
+
+  // LEFT AND RIGHT CROSS COLUMNS: a lab/model pair needs right to mean "into this lab's models".
+  // right on a single-select row picks it first, so the next column shows what that pick opens -
+  // only in a persistent menu, where a pick is a step rather than the answer
+  _moveColumn(evt) {
+    const from = document.activeElement;
+    const col = this.el?.contains(from) ? from.closest('.col') : null;
+    if (!col) return;
+    evt.preventDefault();
+    const toIndex = String(Number(col.dataset.column) + (evt.key === 'ArrowRight' ? 1 : -1));
+    if (evt.key === 'ArrowRight' && this.persistent && col.dataset.multi === 'false'
+        && !from.classList.contains('on')) from.click();
+    // the pick may have rebuilt the panel, so the target column is read after it
+    const rows = this._items().filter(item => item.closest('.col')?.dataset.column === toIndex);
+    if (!rows.length) return;
+    this._focus(rows.find(row => row.classList.contains('on')) || rows[0]);
   }
 
   _activate(evt) {
@@ -379,6 +432,7 @@ class Menu {
       if (openMenu !== this) return;
       document.addEventListener('mousedown', this._onDocDown);
       document.addEventListener('keydown', this._onKey);
+      document.addEventListener('keydown', this._onEscape, true);
     }, 0);
     // FOCUS THE PANEL, NOT A ROW. this focused the first item so arrows worked immediately, and
     // that lit it up: :focus-visible matched a programmatic focus before any pointer interaction
@@ -398,6 +452,7 @@ class Menu {
     if (!this.el) return;
     document.removeEventListener('mousedown', this._onDocDown);
     document.removeEventListener('keydown', this._onKey);
+    document.removeEventListener('keydown', this._onEscape, true);
     this._trigger?.classList.remove('open');
     // an adopted element belongs to the page, so it is hidden rather than destroyed
     if (this.adopt) this.el.classList.add('hidden');
@@ -410,6 +465,10 @@ class Menu {
   }
 
   get isOpen() { return this.el !== null; }
+
+  // for a host closing the panel a menu was opened from: the menu goes with it rather than
+  // hanging over the page with nothing under it
+  static closeOpen() { openMenu?.close(); }
 }
 
 // convenience for the commonest shape by far: a titled single-select list
