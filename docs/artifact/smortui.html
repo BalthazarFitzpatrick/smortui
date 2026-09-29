@@ -535,6 +535,7 @@ ASSETS: Path   asset_names() -> list[str]   read_asset(name) -> bytes   content_
         <li><code>Menu.refresh()</code> keeps focus on the row that had it instead of dropping it to <code>&lt;body&gt;</code></li>
         <li><code>Menu</code>: Escape closes the menu only; it is captured on document and stopped, so a host panel's own Escape listener no longer fires on the same press</li>
         <li><code>Menu.closeOpen()</code> closes whichever menu is open, for a host closing the panel it came from</li>
+        <li><code>Menu</code>: a <code>columns</code> column takes <code>onFocus(item, menu)</code>, called once per row when it gains focus by arrow or click</li>
       </ul>
       <h3>v0.2.7 <span class="date">2026-09-24</span></h3>
       <ul>

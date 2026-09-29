@@ -12,6 +12,9 @@ refactors, docs and tests are in `git log`.
 - `Menu`: escape closes the menu only. it is captured on document and stopped, so a host panel's
   own escape listener no longer fires on the same press
 - `Menu.closeOpen()`: closes whatever menu is open, for a host closing the panel it came from
+- `Menu`: a `columns` column takes `onFocus(item, menu)`, called when one of its rows gains focus by
+  arrow or click, once per row. a multi-select column has no single pick, so this is what a
+  neighbouring column can describe
 
 ## v0.2.7 - 2026-09-24
 
