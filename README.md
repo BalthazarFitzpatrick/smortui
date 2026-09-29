@@ -168,7 +168,8 @@ new Menu({
 The class owns anchoring, viewport clamping, one menu at a time, dismissal on outside click and
 Escape (which stops at the menu, never reaching the panel under it), and arrow/Enter/Space
 navigation, left/right crossing `columns`. `Menu.closeOpen()` closes whichever menu is open, for a
-host closing the panel it came from. An item's `state` flags become classes on its row. `persistent:
+host closing the panel it came from. A column's `onFocus(item, menu)` hears which of its rows has
+focus. An item's `state` flags become classes on its row. `persistent:
 true` is for a menu you work in rather than pick from. `menu.refresh(sections)` rebuilds an open menu
 in place, keeping its position and any class you added after opening. `multi` defaults to true in
 `columns` and false in a `list`.

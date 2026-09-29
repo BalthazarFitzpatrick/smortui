@@ -346,6 +346,29 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   globalThis.document.activeElement = null;
 }
 
+// ---- a column can hear which of its rows has focus - a multi-select column has no single pick to
+// hang a neighbouring column on, so the focused row is what the next column describes
+{
+  const heard = [];
+  const menu = new Menu({persistent: true, sections: []});
+  const build = () => [{kind: 'columns', columns: [
+    {multi: true, items: [{id: 'b1', label: 'b1'}, {id: 'b2', label: 'b2'}],
+      onFocus: item => { heard.push(item.id); menu.refresh(build()); }},
+  ]}];
+  menu.sections = build();
+  menu.el = menu._build();
+  const rowOf = id => menu.el.querySelectorAll('.menu-item').find(r => r.dataset.id === id);
+  assert.equal(rowOf('b1').tabIndex, -1, 'a click should be able to focus the row');
+  rowOf('b1').fire('focus');
+  assert.deepEqual(heard, ['b1'], 'focusing b1 should report it once');
+  // refresh built a new panel whose b1 now takes focus back: the same row, not a new focus
+  menu.el = menu._build();
+  rowOf('b1').fire('focus');
+  assert.deepEqual(heard, ['b1'], 'a restored focus must not report again');
+  rowOf('b2').fire('focus');
+  assert.deepEqual(heard, ['b1', 'b2']);
+}
+
 // ---- escape closes the menu and stops there, so the panel it was opened from stays open
 {
   const menu = new Menu({sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});

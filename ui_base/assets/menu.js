@@ -105,6 +105,17 @@ class Menu {
       act.onclick = evt => { evt.stopPropagation(); item.action.onPick(item, this); };
       row.appendChild(act);
     }
+    if (section.onFocus && !item.disabled) {
+      // a click focuses the row too, so the pointer and the arrows report the same thing
+      row.tabIndex = -1;
+      const key = `${section.column}:${row.dataset.id}`;
+      // once per row: a refresh restoring focus to the same row is not a new focus
+      row.addEventListener('focus', () => {
+        if (this._focusedKey === key) return;
+        this._focusedKey = key;
+        section.onFocus(item, this);
+      });
+    }
     if (!item.disabled) {
       row.onclick = () => {
         if (section.multi) {
@@ -187,7 +198,8 @@ class Menu {
           col.appendChild(empty);
         }
         column.items.forEach(item => col.appendChild(
-          this._row(item, {multi: column.multi ?? true, onPick: column.onPick})));
+          this._row(item, {multi: column.multi ?? true, onPick: column.onPick,
+            onFocus: column.onFocus, column: i})));
         cols.appendChild(col);
       });
       wrap.appendChild(cols);
