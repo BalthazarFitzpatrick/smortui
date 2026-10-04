@@ -346,6 +346,73 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   globalThis.document.activeElement = null;
 }
 
+// ---- down and up stay in their own column, left and right cross columns, down past a column's last
+// row lands on the footer buttons, up returns to the row they were reached from, and enter presses a
+// focused button. one flat list had down cycle lab, model, effort and never reach the buttons
+{
+  const pressed = [];
+  const menu = new Menu({persistent: true, sections: [
+    {kind: 'columns', columns: [
+      {multi: false, items: [{id: 'a', label: 'a'}, {id: 'b', label: 'b'}]},
+      {multi: false, items: [{id: 'm1', label: 'm1'}, {id: 'm2', label: 'm2'}]},
+      {multi: false, items: [{id: 'low', label: 'low'}, {id: 'high', label: 'high'}]},
+    ]},
+    {kind: 'buttons', buttons: ['save', 'default', 'discard'].map(id => ({
+      id, label: id, onClick: () => pressed.push(id)}))},
+  ]});
+  menu.el = menu._build();
+  menu._items = () => walk(menu.el).filter(n => String(n.className).includes('menu-item'))
+    .map(r => Object.assign(r, {click: () => r.onclick?.()}));
+  menu._buttons = () => walk(menu.el).filter(n => String(n.className).includes('toggle')
+    && n.parentNode?.className === 'menu-buttons')
+    .map(b => Object.assign(b, {click: () => b.onclick?.()}));
+  menu._focus = el => { globalThis.document.activeElement = el; };
+  const row = (column, id) => menu._items().find(r => r.dataset.id === id
+    && r.closest('.col').dataset.column === String(column));
+  const button = id => menu._buttons().find(b => b.dataset.id === id);
+  const press = key => menu._onKey({key, preventDefault() {}});
+  const focused = () => globalThis.document.activeElement;
+
+  globalThis.document.activeElement = row(0, 'a');
+  press('ArrowDown');
+  assert.equal(focused(), row(0, 'b'), 'down moves within the lab column');
+  press('ArrowDown');
+  assert.equal(focused(), button('save'), 'down past the last lab lands on the first button');
+  press('ArrowUp');
+  assert.equal(focused(), row(0, 'b'), 'up from the buttons returns to the column we came from');
+  press('ArrowUp');
+  assert.equal(focused(), row(0, 'a'), 'up walks the lab column, never into another');
+  press('ArrowUp');
+  assert.equal(focused(), row(0, 'a'), 'up at the top of a column stays put');
+
+  globalThis.document.activeElement = row(1, 'm2');
+  press('ArrowDown');
+  assert.equal(focused(), button('save'), 'down from the last model also reaches the buttons');
+  press('ArrowUp');
+  assert.equal(focused(), row(1, 'm2'), 'and up returns to the model column, not the lab');
+
+  globalThis.document.activeElement = row(2, 'low');
+  press('ArrowDown');
+  assert.equal(focused(), row(2, 'high'), 'down stays in the effort column');
+  press('ArrowDown');
+  press('ArrowRight');
+  assert.equal(focused(), button('default'), 'right on a button walks the buttons');
+  press('ArrowRight');
+  press('ArrowRight');
+  press('ArrowRight');
+  assert.equal(focused(), button('menu-close'), 'the panel\'s own close button ends the row');
+  press('ArrowLeft');
+  press('ArrowLeft');
+  assert.equal(focused(), button('default'), 'left walks back');
+  press('ArrowDown');
+  assert.equal(focused(), button('default'), 'down on a button stays on it');
+  press('Enter');
+  assert.deepEqual(pressed, ['default'], 'enter presses the focused button');
+  press('ArrowUp');
+  assert.equal(focused(), row(2, 'high'), 'up goes back to the effort column it came from');
+  globalThis.document.activeElement = null;
+}
+
 // ---- a column can hear which of its rows has focus - a multi-select column has no single pick to
 // hang a neighbouring column on, so the focused row is what the next column describes
 {

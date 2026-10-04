@@ -336,15 +336,56 @@ class Menu {
     return [...this.el.querySelectorAll('.menu-item:not(.disabled)')];
   }
 
+  // the footer buttons are not rows: they are reached by going down past a list's last row, and up
+  // returns to the row they were reached from
+  _buttons() {
+    return [...this.el.querySelectorAll('.menu-buttons .toggle')]
+      .filter(btn => !btn.classList.contains('disabled'));
+  }
+
+  _onButton(el) {
+    return !!el && this.el?.contains(el) && !!el.closest('.menu-buttons');
+  }
+
+  // DOWN AND UP STAY IN THE COLUMN THEY ARE IN. one flat list made down cycle lab, then model, then
+  // effort, and left the buttons unreachable without a mouse: now columns are crossed with left and
+  // right only, down past a column's last row lands on the buttons, and up from them goes back to the
+  // row we came from. a menu with no columns is one list, so the same rules hold
   _move(evt) {
-    const items = this._items();
-    if (!items.length) return;
+    const from = document.activeElement;
+    const down = evt.key === 'ArrowDown';
+    if (this._onButton(from)) {
+      evt.preventDefault();
+      if (!down) this._returnToRows();
+      return;
+    }
+    const col = this.el?.contains(from) ? from.closest('.col') : null;
+    const items = col
+      ? this._items().filter(item => item.closest('.col') === col)
+      : this._items();
+    const buttons = down ? this._buttons() : [];
+    if (!items.length && !buttons.length) return;
     evt.preventDefault();
-    const at = items.indexOf(document.activeElement);
-    const next = evt.key === 'ArrowDown'
-      ? Math.min(items.length - 1, at + 1)
-      : Math.max(0, at - 1);
+    const at = items.indexOf(from);
+    if (down && at === items.length - 1 && at >= 0 && buttons.length) {
+      this._cameFrom = {column: col?.dataset.column ?? null, id: from.dataset.id};
+      this._focus(buttons[0]);
+      return;
+    }
+    if (!items.length) return;
+    const next = down ? Math.min(items.length - 1, at + 1) : Math.max(0, at - 1);
     this._focus(items[next]);
+  }
+
+  // back from the buttons to the row they were reached from. the panel may have been rebuilt since,
+  // so the row is found again by column and id; a row that is gone falls back to the first one
+  _returnToRows() {
+    const items = this._items();
+    const was = this._cameFrom;
+    const target = was && items.find(item => item.dataset.id === was.id
+      && (item.closest('.col')?.dataset.column ?? null) === was.column);
+    const first = target || items.find(item => item.classList.contains('on')) || items[0];
+    if (first) this._focus(first);
   }
 
   _focus(el) {
@@ -357,6 +398,16 @@ class Menu {
   // only in a persistent menu, where a pick is a step rather than the answer
   _moveColumn(evt) {
     const from = document.activeElement;
+    if (this._onButton(from)) {
+      // left and right walk the buttons, so save, board default and close are all reachable
+      const buttons = this._buttons();
+      const at = buttons.indexOf(from);
+      if (at < 0) return;
+      evt.preventDefault();
+      const step = evt.key === 'ArrowRight' ? 1 : -1;
+      this._focus(buttons[Math.max(0, Math.min(buttons.length - 1, at + step))]);
+      return;
+    }
     const col = this.el?.contains(from) ? from.closest('.col') : null;
     if (!col) return;
     evt.preventDefault();
@@ -371,7 +422,11 @@ class Menu {
 
   _activate(evt) {
     const focused = document.activeElement;
-    if (focused && this.el?.contains(focused) && focused.classList.contains('menu-item')) {
+    if (!focused || !this.el?.contains(focused)) return;
+    // a footer button is a div, not a <button>, so enter and space have to press it by hand
+    const pressable = focused.classList.contains('menu-item')
+      || (this._onButton(focused) && !focused.classList.contains('disabled'));
+    if (pressable) {
       evt.preventDefault();
       focused.click();
     }

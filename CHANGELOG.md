@@ -4,6 +4,13 @@ What a consumer sees between two tags. Pins are `ui_base @ git+https://github.co
 Only consumer-visible changes are listed: an api, a class, a dom shape, a behaviour. Internal
 refactors, docs and tests are in `git log`.
 
+## unreleased
+
+- `Menu`: up/down stay inside the column they are in; left/right cross columns. down past a
+  column's last row lands on the footer buttons, up returns to the row they were reached from,
+  left/right walk the buttons, and enter or space presses the focused one. a menu without columns
+  is one list with the same rules
+
 ## v0.3.0 - 2026-09-29
 
 - `Menu`: left/right move between the columns of a `columns` section. right on a single-select
