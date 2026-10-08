@@ -946,6 +946,29 @@ textarea.text-field {
 .bar-fill.warn { background: var(--fill-warn); }
 .bar-fill.attention { background: var(--fill-attention); }
 
+/* ---- fill cell: a framed readout, 2:1, whose bottom edge fills left to right -----------------
+   the frame and the 2px bar share one tone colour, so an empty cell is a plain frame. the host sets
+   the bar's inline width like .bar-fill's; a bar with no width draws nothing, and the host marks
+   "no data" in the text, not here */
+.fill-cell {
+  position: relative; flex: none; box-sizing: border-box;
+  height: calc(var(--row-height) * 1.5); aspect-ratio: 2 / 1;
+  background: var(--panel-row); border: 2px solid var(--fill-good);
+  display: flex; flex-direction: column; justify-content: center; padding: 0 8px 2px;
+  transition: border-color 220ms ease;
+}
+.fill-cell.warn { border-color: var(--fill-warn); }
+.fill-cell.attention { border-color: var(--fill-attention); }
+.fill-cell-bar {
+  position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--fill-good);
+  transition: width 220ms ease, background-color 220ms ease;
+}
+.fill-cell.warn .fill-cell-bar { background: var(--fill-warn); }
+.fill-cell.attention .fill-cell-bar { background: var(--fill-attention); }
+.fill-cell-label { color: var(--text-dim); white-space: nowrap; }
+.fill-cell-value { color: var(--cream); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .fill-cell, .fill-cell-bar { transition: none; } }
+
 /* ---- the sweep row: the recording name takes the slack, the rest sits right ---- */
 .sweep-row { display: flex; align-items: center; gap: 10px; }
 .sweep-row .grow { flex: 1 1 auto; min-width: 0; justify-content: space-between; }

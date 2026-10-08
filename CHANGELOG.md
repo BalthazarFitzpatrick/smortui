@@ -6,6 +6,7 @@ refactors, docs and tests are in `git log`.
 
 ## unreleased
 
+- `.fill-cell`: a framed 2:1 readout whose bottom edge fills left to right. the host sets the inline width of `.fill-cell-bar`, as for `.bar-fill`; the tone classes `warn` and `attention` recolour the frame and bar together. `.fill-cell-label` and `.fill-cell-value` are its text. a bar with no width draws nothing
 - `Menu`: up/down stay inside the column they are in; left/right cross columns. down past a
   column's last row lands on the footer buttons, up returns to the row they were reached from,
   left/right walk the buttons, and enter or space presses the focused one. a menu without columns
