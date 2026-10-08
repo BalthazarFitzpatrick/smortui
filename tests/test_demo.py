@@ -205,3 +205,53 @@ def test_a_selected_toggle_carries_the_cream_border(page):
     page.click('.nav-tab[data-tab="controls"]')
     assert _style(page, "#focus-demo .toggle.on", "borderTopColor") == "rgb(232, 221, 195)"
     assert _style(page, "#focus-demo a", "color") == "rgb(82, 190, 217)"
+
+
+def test_segments_share_borders_and_unavailable_is_dashed_but_focusable(page):
+    page.click('.nav-tab[data-tab="controls"]')
+    boxes = page.eval_on_selector_all(
+        "#segments-lit .segment", "els => els.map(e => e.getBoundingClientRect())"
+    )
+    assert len(boxes) == 3
+    for left, right in zip(boxes, boxes[1:], strict=False):
+        assert right["left"] == pytest.approx(left["right"] - 2, abs=0.5), "borders must overlap"
+    beta = "#segments-unavailable .segment.unavailable"
+    assert _style(page, beta, "borderTopStyle") == "dashed"
+    assert page.get_attribute(beta, "aria-disabled") == "true"
+    assert page.get_attribute(beta, "disabled") is None
+    assert page.get_attribute(beta, "title")
+    assert _style(page, "#segments-lit .segment", "borderRadius") == "0px"
+    assert page.errors == [], page.errors
+
+
+def test_segments_move_only_after_the_host_accepts(page):
+    page.click('.nav-tab[data-tab="controls"]')
+    refuse = "#segments-refuse .segment"
+    page.locator(refuse).nth(1).click()
+    page.wait_for_timeout(50)
+    assert page.eval_on_selector_all(f"{refuse}.on", "els => els.map(e => e.textContent)") == [
+        "alpha"
+    ]
+    page.locator(refuse).nth(2).click()
+    page.wait_for_timeout(50)
+    assert page.eval_on_selector_all(f"{refuse}.on", "els => els.map(e => e.textContent)") == [
+        "gamma"
+    ]
+    assert page.errors == [], page.errors
+
+
+def test_a_closed_disclosure_hides_its_body_and_opens_on_click(page):
+    page.click('.nav-tab[data-tab="controls"]')
+    item = "#disclosure-demo .disclosure:nth-child(1)"
+    expect(page.locator(f"{item} .disclosure-body")).to_be_hidden()
+    expect(page.locator(f"{item} .disclosure-summary")).to_be_visible()
+    page.click(f"{item} .disclosure-head")
+    expect(page.locator(f"{item} .disclosure-body")).to_be_visible()
+    expect(page.locator(f"{item} .disclosure-summary")).to_be_hidden()
+    assert page.get_attribute(f"{item} .disclosure-head", "aria-expanded") == "true"
+    # the second item started open and stays open: items are independent
+    expect(
+        page.locator("#disclosure-demo .disclosure:nth-child(2) .disclosure-body")
+    ).to_be_visible()
+    page.click(f"{item} .disclosure-head")
+    assert page.errors == [], page.errors

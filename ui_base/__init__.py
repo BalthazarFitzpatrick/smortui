@@ -35,6 +35,8 @@ shell.js before the script that calls initShell:
     <script src="/ui/entrytext.js"></script> <!-- only if you need header/paragraph text helpers -->
     <script src="/ui/pile.js"></script>      <!-- only if you need the pile/fan geometry -->
     <script src="/ui/chart.js"></script>     <!-- only if you need the time-series chart -->
+    <script src="/ui/segments.js"></script> <!-- only if you need a segmented control -->
+    <script src="/ui/disclosure.js"></script> <!-- only if you need accordion items -->
 
 The full list is `asset_names()`; the README's Components table says what each one gives you.
 """
