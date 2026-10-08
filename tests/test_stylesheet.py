@@ -533,3 +533,35 @@ def test_the_aside_slides_on_the_motion_tokens_and_stops_under_reduced_motion():
     script = (ASSETS / "aside.js").read_text()
     assert not re.search(r"\d+\s*ms\b", script), "the timing is the stylesheet's"
     assert "innerHTML" not in script.replace("never innerHTML", "")
+
+
+def test_an_unavailable_menu_row_is_dashed_with_dim_text_like_a_segment():
+    rule = _rule(_css(), ".menu-item.unavailable:not(.on)")
+    assert "border-style: dashed" in rule
+    assert "color: var(--text-dim)" in rule
+    segment = _rule(_css(), ".segment.unavailable:not(.on)")
+    assert "border-style: dashed" in segment and "color: var(--text-dim)" in segment
+    hover = _rule(_css(), ".menu-item.unavailable:not(.on):hover")
+    assert "var(--grey-border)" in hover, "hover must not turn the dashed border cream"
+
+
+def test_the_count_and_path_marker_sit_after_the_name_without_fading_anything():
+    count = _rule(_css(), ".menu-item .count")
+    marker = _rule(_css(), ".menu-item .path-mark")
+    assert "flex: 0 0 auto" in count
+    assert "flex: 0 0 1ch" in marker and "text-align: right" in marker
+    # the name still takes the free room, so the stats, count and marker stay at the right edge
+    assert "flex: 1 1 auto" in _rule(_css(), ".menu-item .name")
+    assert "margin-left: auto" in _rule(_css(), ".menu-item .stats")
+
+
+def test_the_menu_dividers_still_stop_short_of_the_panel_edges():
+    assert "margin: 15px 0" in _rule(_css(), ".divider")
+
+
+def test_nothing_in_a_menu_row_is_dimmed_by_opacity():
+    """unavailable dims text only; a picked or parent row keeps full strength"""
+    css = _css()
+    for selector in (r"\.menu-item[^{]*", r"\.toggle\.on[^{]*", r"\.label-columns[^{]*"):
+        for match in re.finditer(rf"(?m)^{selector}\{{(.*?)\}}", css, re.DOTALL):
+            assert "opacity" not in match.group(1), match.group(0)

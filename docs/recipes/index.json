@@ -122,5 +122,25 @@
       "selector": "#aside-demo"
     },
     "added": "2026-10-08"
+  },
+  {
+    "id": "chained-columns",
+    "title": "chained columns that follow the cursor",
+    "summary": "a menu of columns where each child column lists the children of the row under the cursor, with space to pick, enter to confirm, a path marker and host-computed counts, for single, mixed or multi-select columns",
+    "primitives": [
+      "menu.js:Menu"
+    ],
+    "tags": [
+      "menu",
+      "columns",
+      "keyboard",
+      "multi-select"
+    ],
+    "file": "docs/recipes/chained-columns.md",
+    "demo": {
+      "panel": "menus",
+      "selector": "#open-chain-mixed"
+    },
+    "added": "2026-10-08"
   }
 ]

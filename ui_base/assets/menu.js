@@ -37,12 +37,15 @@ class Menu {
   // with no visible way out is a panel people click away from and lose their ticks in.
   constructor({
     title = '', sections = [], onDismiss = null, adopt = null, columns = false, persistent = false,
+    onConfirm = null,
   } = {}) {
     this.title = title;
     this.columns = columns;
     this.persistent = persistent;
     this.sections = sections;
     this.onDismiss = onDismiss;
+    // enter in a column: the host decides what confirming means; the menu never closes itself
+    this.onConfirm = onConfirm;
     this.adopt = adopt;
     this.el = null;
     this._onDocDown = evt => {
@@ -57,8 +60,10 @@ class Menu {
     this._onKey = evt => {
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') this._move(evt);
       else if (evt.key === 'ArrowLeft' || evt.key === 'ArrowRight') this._moveColumn(evt);
-      // space too, as on every button; _activate only takes a focused row, so a field still types
-      else if (evt.key === 'Enter' || evt.key === ' ') this._activate(evt);
+      // space toggles and enter confirms in a column; elsewhere both press the focused row or
+      // button. both only take a focused row, so a field still types
+      else if (evt.key === 'Enter') this._confirm(evt);
+      else if (evt.key === ' ') this._activate(evt);
     };
     // escape is one level back: this menu only, never the panel it was opened from. captured and
     // stopped, so a host's own escape listener on document never sees the same press
@@ -88,14 +93,33 @@ class Menu {
     // its own styling and this stays ignorant of what any flag means
     const flags = Object.entries(item.state || {})
       .filter(([, on]) => on).map(([name]) => name).join(' ');
+    // unavailable is not disabled: dashed and inert, but still in the arrow order so its hint
+    // can be found (see base.css)
+    const unavailable = Boolean(item.unavailable) && !item.disabled;
     row.className = ['toggle', 'menu-item', item.on ? 'on' : '', item.disabled ? 'disabled' : '',
-      flags].filter(Boolean).join(' ');
+      unavailable ? 'unavailable' : '', flags].filter(Boolean).join(' ');
     row.dataset.id = item.id ?? item.label;
     row.appendChild(textSpan('name', item.label));
     if (item.stats) {
       row.appendChild(textSpan('stats', item.stats));
       // the row's title carries both in full, since the name ellipsises first (see base.css)
       row.title = `${item.label} - ${item.stats}`;
+    }
+    // chosen complete paths below this row; the host counts, a zero shows nothing
+    if (item.count > 0) row.appendChild(textSpan('count', item.count));
+    // the path marker sits at the right edge; a non-last column keeps an empty slot so counts
+    // line up whether or not a row carries one. one marker per column, the first the host sets
+    if (section.slot) {
+      const showPath = Boolean(item.path) && section.pathFree;
+      row.appendChild(textSpan('path-mark', showPath ? '>' : ''));
+      if (showPath) {
+        row.classList.add('path');
+        section.pathFree = false;
+      }
+    }
+    if (unavailable) {
+      row.setAttribute('aria-disabled', 'true');
+      if (item.hint) row.title = item.hint;
     }
     if (item.action) {
       // a trailing control, which is how "sources" gets its per-row close without a bespoke panel
@@ -105,29 +129,44 @@ class Menu {
       act.onclick = evt => { evt.stopPropagation(); item.action.onPick(item, this); };
       row.appendChild(act);
     }
+    const key = `${section.column}:${row.dataset.id}`;
+    // once per row: a refresh restoring focus to the same row is not a new focus
+    const reportFocus = () => {
+      if (this._focusedKey === key) return;
+      this._focusedKey = key;
+      section.onFocus(item, this);
+    };
     if (section.onFocus && !item.disabled) {
       // arrows only: a click does not focus a row, so a host that redraws on focus never swaps the
       // row out between press and release and loses the click
-      const key = `${section.column}:${row.dataset.id}`;
-      // once per row: a refresh restoring focus to the same row is not a new focus
-      row.addEventListener('focus', () => {
-        if (this._focusedKey === key) return;
-        this._focusedKey = key;
-        section.onFocus(item, this);
-      });
+      row.addEventListener('focus', reportFocus);
     }
-    if (!item.disabled) {
+    if (!item.disabled && !unavailable) {
       row.onclick = () => {
         if (section.multi) {
           row.classList.toggle('on');
-          section.onPick?.(item, row.classList.contains('on'), this);
+          const on = row.classList.contains('on');
+          // a pick makes the row the described one, so its children show in the next column
+          // even when the pick came by pointer and the row never took focus
+          if (on && section.onFocus) reportFocus();
+          section.onPick?.(item, on, this);
         } else {
+          if (section.onFocus) reportFocus();
           section.onPick?.(item, true, this);
           // a single-select menu has done its job - unless it is one you work in, where the pick
           // is an action rather than an answer
           if (!this.persistent) this.close();
         }
       };
+      // space in a column toggles: a picked single-select row unpicks, which a click never does
+      if (section.column !== undefined) {
+        row._space = () => {
+          if (!section.multi && row.classList.contains('on')) {
+            row.classList.remove('on');
+            section.onPick?.(item, false, this);
+          } else row.onclick();
+        };
+      }
     }
     return row;
   }
@@ -172,6 +211,7 @@ class Menu {
       const cols = document.createElement('div');
       cols.className = 'label-columns';
       section.columns.forEach((column, i) => {
+        const last = i === section.columns.length - 1;
         if (i) {
           const divider = document.createElement('div');
           divider.className = 'divider';
@@ -197,9 +237,10 @@ class Menu {
           empty.textContent = column.empty;
           col.appendChild(empty);
         }
-        column.items.forEach(item => col.appendChild(
-          this._row(item, {multi: column.multi ?? true, onPick: column.onPick,
-            onFocus: column.onFocus, column: i})));
+        // one object per column, so `pathFree` is shared by its rows
+        const spec = {multi: column.multi ?? true, onPick: column.onPick,
+          onFocus: column.onFocus, column: i, slot: !last, pathFree: true};
+        column.items.forEach(item => col.appendChild(this._row(item, spec)));
         cols.appendChild(col);
       });
       wrap.appendChild(cols);
@@ -213,6 +254,8 @@ class Menu {
           .filter(Boolean).join(' ');
         btn.textContent = spec.label;
         btn.dataset.id = spec.id || spec.label;
+        // enter in a column presses the primary button, after onConfirm if the menu has one
+        if (spec.primary) btn.dataset.primary = 'true';
         // CHECKED AT CLICK, not at build. an apply button starts disabled and goes live as rows
         // are picked, and a handler attached only to the enabled version can never be given one
         btn.onclick = () => { if (!btn.classList.contains('disabled')) spec.onClick?.(this); };
@@ -393,9 +436,9 @@ class Menu {
     el.focus();
   }
 
-  // LEFT AND RIGHT CROSS COLUMNS: a lab/model pair needs right to mean "into this lab's models".
-  // right on a single-select row picks it first, so the next column shows what that pick opens -
-  // only in a persistent menu, where a pick is a step rather than the answer
+  // LEFT AND RIGHT CROSS COLUMNS. right enters the child column on its picked row, else its first;
+  // left goes back to the row the child column belongs to (the path row), else the picked one.
+  // neither picks anything: picking is space
   _moveColumn(evt) {
     const from = document.activeElement;
     if (this._onButton(from)) {
@@ -412,17 +455,41 @@ class Menu {
     if (!col) return;
     evt.preventDefault();
     const toIndex = String(Number(col.dataset.column) + (evt.key === 'ArrowRight' ? 1 : -1));
-    if (evt.key === 'ArrowRight' && this.persistent && col.dataset.multi === 'false'
-        && !from.classList.contains('on')) from.click();
-    // the pick may have rebuilt the panel, so the target column is read after it
     const rows = this._items().filter(item => item.closest('.col')?.dataset.column === toIndex);
     if (!rows.length) return;
-    this._focus(rows.find(row => row.classList.contains('on')) || rows[0]);
+    const has = name => row => row.classList.contains(name);
+    const back = evt.key === 'ArrowLeft';
+    this._focus((back && rows.find(has('path'))) || rows.find(has('on')) || rows[0]);
   }
 
+  // ENTER: confirm from a column row, otherwise press the focused row or button as it always did
+  _confirm(evt) {
+    const focused = document.activeElement;
+    if (!focused || !this.el?.contains(focused)) return;
+    if (focused.classList.contains('menu-item') && focused.closest('.col')) {
+      evt.preventDefault();
+      this.onConfirm?.(this);
+      // onConfirm may have closed the menu
+      if (!this.el) return;
+      this._buttons().find(btn => btn.dataset.primary)?.click();
+      return;
+    }
+    this._activate(evt);
+  }
+
+  // SPACE: toggle a column row (a picked single-select row unpicks), press anything else
   _activate(evt) {
     const focused = document.activeElement;
     if (!focused || !this.el?.contains(focused)) return;
+    if (focused.classList.contains('unavailable')) {
+      evt.preventDefault();
+      return;
+    }
+    if (focused._space) {
+      evt.preventDefault();
+      focused._space();
+      return;
+    }
     // a footer button is a div, not a <button>, so enter and space have to press it by hand
     const pressable = focused.classList.contains('menu-item')
       || (this._onButton(focused) && !focused.classList.contains('disabled'));

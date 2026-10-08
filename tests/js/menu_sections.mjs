@@ -309,16 +309,16 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
   globalThis.document.activeElement = null;
 }
 
-// ---- right on a lab picks it and steps into its models; left comes back to the picked lab. up and
-// down alone left the second column unreachable as a column, and a pick redrew the panel with focus
-// on <body>, so the next arrow started over at row one
+// ---- right enters the child column without picking, left comes back to the path row. right used to
+// pick a single-select row first, which made "look at the models" and "choose this lab" one key
 {
   const models = {a: ['a1', 'a2'], b: ['b1', 'b2']};
   let lab = 'a';
   let menu = null;
+  const picked = [];
   const build = () => [{kind: 'columns', columns: [
-    {multi: false, items: ['a', 'b'].map(id => ({id, label: id, on: id === lab})),
-      onPick: item => { lab = item.id; menu.refresh(build()); }},
+    {multi: false, items: ['a', 'b'].map(id => ({id, label: id, on: id === lab, path: id === lab})),
+      onPick: item => { picked.push(item.id); lab = item.id; menu.refresh(build()); }},
     {multi: false, items: models[lab].map(id => ({id, label: id}))},
   ]}];
   menu = new Menu({persistent: true, sections: build()});
@@ -333,16 +333,303 @@ assert.equal(treeNodes.find(n => n.className === 'coords').textContent, payload)
 
   globalThis.document.activeElement = row(0, 'b');
   press('ArrowRight');
-  assert.equal(lab, 'b', 'right on an unpicked lab should pick it');
-  assert.equal(globalThis.document.activeElement, row(1, 'b1'), 'and land on its first model');
+  assert.deepEqual(picked, [], 'right must not pick an unpicked single-select row');
+  assert.equal(globalThis.document.activeElement, row(1, 'a1'), 'right lands on the first row');
   press('ArrowLeft');
-  assert.equal(globalThis.document.activeElement, row(0, 'b'), 'left should return to the picked lab');
+  assert.equal(globalThis.document.activeElement, row(0, 'a'), 'left returns to the path row');
 
-  // enter redraws the panel too, and the row it was on keeps focus
+  // a picked child row is where right lands
   globalThis.document.activeElement = row(0, 'a');
+  menu.el.querySelectorAll('.menu-item').find(r => r.dataset.id === 'a2').classList.add('on');
+  press('ArrowRight');
+  assert.equal(globalThis.document.activeElement, row(1, 'a2'), 'right lands on the picked row');
+
+  // enter no longer toggles: nothing is picked, and without onConfirm it does nothing
+  globalThis.document.activeElement = row(0, 'b');
   press('Enter');
-  assert.equal(lab, 'a');
-  assert.equal(globalThis.document.activeElement, row(0, 'a'), 'a refresh should keep the focused row');
+  assert.deepEqual(picked, [], 'enter must not toggle');
+  // space does
+  press(' ');
+  assert.deepEqual(picked, ['b'], 'space picks the focused row');
+  globalThis.document.activeElement = null;
+}
+
+// ---- enter confirms: onConfirm, then the primary footer button; the menu is not closed for it
+{
+  const log = [];
+  const menu = new Menu({
+    persistent: true,
+    onConfirm: m => log.push(['confirm', m === menu]),
+    sections: [
+      {kind: 'columns', columns: [{multi: true, items: [{id: 'a', label: 'a'}],
+        onPick: item => log.push(['pick', item.id])}]},
+      {kind: 'buttons', buttons: [
+        {id: 'ok', label: 'ok', primary: true, onClick: () => log.push(['ok'])},
+        {id: 'other', label: 'other', onClick: () => log.push(['other'])}]},
+    ],
+  });
+  menu.el = menu._build();
+  menu._items = () => walk(menu.el).filter(n => String(n.className).includes('menu-item'));
+  menu._buttons = () => walk(menu.el).filter(n => n.parentNode?.className === 'menu-buttons')
+    .map(b => Object.assign(b, {click: () => b.onclick?.()}));
+  globalThis.document.activeElement = menu._items()[0];
+  menu._onKey({key: 'Enter', preventDefault() {}});
+  assert.deepEqual(log, [['confirm', true], ['ok']], 'enter confirms, then presses the primary');
+  assert.ok(menu.el, 'confirming does not close the menu');
+  menu._onKey({key: ' ', preventDefault() {}});
+  assert.deepEqual(log.slice(2), [['pick', 'a']], 'space toggles instead');
+  globalThis.document.activeElement = null;
+}
+
+// ---- space toggles: a multi row on and off, a single row replaces its sibling and unpicks itself
+{
+  const log = [];
+  const menu = new Menu({persistent: true, sections: [{kind: 'columns', columns: [
+    {multi: true, items: [{id: 'm', label: 'm'}], onPick: (i, on) => log.push(['m', on])},
+    {multi: false, items: [{id: 's', label: 's'}, {id: 't', label: 't', on: true}],
+      onPick: (i, on) => log.push([i.id, on])},
+  ]}]});
+  menu.el = menu._build();
+  const rowOf = id => walk(menu.el).find(n => n.dataset?.id === id);
+  const space = id => {
+    globalThis.document.activeElement = rowOf(id);
+    menu._onKey({key: ' ', preventDefault() {}});
+  };
+  space('m');
+  space('m');
+  space('s');
+  space('t');
+  assert.deepEqual(log, [['m', true], ['m', false], ['s', true], ['t', false]],
+    'multi toggles; an idle single row picks; a lit one unpicks');
+  // t was lit by the data; space on it unpicks it
+  const lit = new Menu({persistent: true, sections: [{kind: 'columns', columns: [
+    {multi: false, items: [{id: 't', label: 't', on: true}], onPick: (i, on) => log.push([i.id, on])},
+  ]}]});
+  lit.el = lit._build();
+  globalThis.document.activeElement = walk(lit.el).find(n => n.dataset?.id === 't');
+  lit._onKey({key: ' ', preventDefault() {}});
+  assert.deepEqual(log.at(-1), ['t', false], 'space on a picked single row unpicks it');
+  assert.ok(!globalThis.document.activeElement.classList.contains('on'));
+  globalThis.document.activeElement = null;
+}
+
+// ---- unavailable: dashed state class, hint title, aria-disabled, focusable, inert
+{
+  const log = [];
+  const menu = new Menu({persistent: true, sections: [{kind: 'columns', columns: [
+    {multi: true, onPick: i => log.push(i.id), items: [
+      {id: 'u', label: 'u', unavailable: true, hint: 'needs a key'},
+      {id: 'd', label: 'd', disabled: true}]},
+  ]}]});
+  menu.el = menu._build();
+  const rowOf = id => walk(menu.el).find(n => n.dataset?.id === id);
+  const u = rowOf('u');
+  assert.ok(u.classList.contains('unavailable'));
+  assert.equal(u.title, 'needs a key', 'the hint is the title');
+  assert.equal(u.getAttribute('aria-disabled'), 'true');
+  assert.equal(u.onclick, null, 'a click does nothing');
+  globalThis.document.activeElement = u;
+  let prevented = false;
+  menu._onKey({key: ' ', preventDefault() { prevented = true; }});
+  assert.deepEqual(log, [], 'space does nothing');
+  assert.ok(prevented, 'and does not scroll the panel');
+  assert.ok(!u.classList.contains('on'));
+  assert.ok(!rowOf('d').classList.contains('unavailable'), 'disabled stays as it was');
+  assert.equal(rowOf('d').getAttribute('aria-disabled'), null);
+  // the real selector for the arrow order excludes .disabled only, so an unavailable row stays in it
+  assert.ok(!u.classList.contains('disabled'), 'unavailable stays in the arrow order');
+  globalThis.document.activeElement = null;
+}
+
+// ---- the path marker and the count: `name count >`, one marker per column, none in the last
+{
+  const menu = new Menu({});
+  const cols = menu._section({kind: 'columns', columns: [
+    {items: [{id: 'a', label: 'a', count: 2, path: true}, {id: 'b', label: 'b', path: true},
+      {id: 'z', label: 'z', count: 0}]},
+    {items: [{id: 'm', label: 'm', path: true, count: 1}]},
+  ]});
+  const first = walk(cols).filter(n => n.dataset?.column === '0')[0];
+  const rowsOf = col => col.children.filter(n => String(n.className).includes('menu-item'));
+  const [a, b, z] = rowsOf(first);
+  const kinds = r => r.children.map(c => c.className);
+  assert.deepEqual(kinds(a), ['name', 'count', 'path-mark'], 'order is name, count, marker');
+  assert.equal(a.children[1].textContent, '2');
+  assert.equal(a.children[2].textContent, '>');
+  // one marker per column: the second host-set marker is dropped, its slot stays empty
+  assert.deepEqual(kinds(b), ['name', 'path-mark'], 'no count, no count node');
+  assert.equal(b.children[1].textContent, '');
+  assert.equal(b.classList.contains('path'), false);
+  assert.ok(a.classList.contains('path'));
+  assert.equal(z.children.find(c => c.className === 'count'), undefined, 'a zero count shows nothing');
+  assert.equal(z.children.at(-1).textContent, '', 'a row without the marker keeps an empty slot');
+  const second = walk(cols).filter(n => n.dataset?.column === '1')[0];
+  const [m] = rowsOf(second);
+  assert.deepEqual(kinds(m), ['name', 'count'], 'the last column never carries the marker');
+}
+
+// ---- picking a row reports it as the described one, so the next column shows its children even
+// when the pick came by pointer. once only: an arrow focus already reported it
+{
+  const heard = [];
+  const menu = new Menu({persistent: true, sections: [{kind: 'columns', columns: [
+    {multi: true, items: [{id: 'a', label: 'a'}],
+      onFocus: item => heard.push(['focus', item.id]), onPick: item => heard.push(['pick', item.id])},
+  ]}]});
+  menu.el = menu._build();
+  const r = walk(menu.el).find(n => n.dataset?.id === 'a');
+  r.onclick();
+  assert.deepEqual(heard, [['focus', 'a'], ['pick', 'a']], 'a pick reports focus first');
+  r.onclick();
+  r.onclick();
+  assert.deepEqual(heard.slice(2), [['pick', 'a'], ['pick', 'a']], 'focus is not reported twice');
+}
+
+// ---- the worked case: lab (multi) > model (multi) > effort (single), driven by keys alone. the
+// host owns the picks and tells the menu what to show; the menu moves the cursor and toggles
+{
+  const tree = {
+    'claude code': {'fable 5.1': ['low', 'medium', 'high', 'xhigh', 'max'],
+      'opus 5.5': ['low', 'medium', 'high', 'xhigh', 'max'],
+      'sonnet 5.5': ['low', 'medium', 'high', 'xhigh', 'max'], 'haiku 5.5': []},
+    codex: {'gpt-6.1 sol': ['low', 'medium', 'high', 'xhigh', 'max'],
+      'gpt-5.6 luna': ['low', 'medium', 'high']},
+  };
+  const labs = Object.keys(tree);
+  const labPicks = new Set();
+  const modelPicks = new Set();       // 'lab/model'
+  const effortPick = new Map();       // 'lab/model' -> effort
+  let parentLab = 'claude code';
+  let parentModel = null;
+  let menu = null;
+  const pathsBelow = lab => [...effortPick.keys()].filter(k => k.startsWith(`${lab}/`)).length;
+  const build = () => {
+    const models = labPicks.has(parentLab) ? Object.keys(tree[parentLab]) : [];
+    const efforts = parentModel && modelPicks.has(`${parentLab}/${parentModel}`)
+      ? tree[parentLab][parentModel] : [];
+    return [{kind: 'columns', columns: [
+      {multi: true,
+        items: labs.map(id => ({id, label: id, on: labPicks.has(id), path: id === parentLab
+          && labPicks.has(id), count: pathsBelow(id)})),
+        onFocus: item => { parentLab = item.id; parentModel = null; menu.refresh(build()); },
+        onPick: (item, on) => {
+          if (on) labPicks.add(item.id);
+          else {
+            labPicks.delete(item.id);
+            [...modelPicks].filter(k => k.startsWith(`${item.id}/`)).forEach(k => {
+              modelPicks.delete(k);
+              effortPick.delete(k);
+            });
+          }
+          menu.refresh(build());
+        }},
+      {multi: true,
+        items: models.map(id => ({id, label: id, on: modelPicks.has(`${parentLab}/${id}`),
+          path: id === parentModel && modelPicks.has(`${parentLab}/${id}`)})),
+        onFocus: item => { parentModel = item.id; menu.refresh(build()); },
+        onPick: (item, on) => {
+          const k = `${parentLab}/${item.id}`;
+          if (on) modelPicks.add(k);
+          else { modelPicks.delete(k); effortPick.delete(k); }
+          menu.refresh(build());
+        }},
+      {multi: false,
+        items: efforts.map(id => ({id, label: id,
+          on: effortPick.get(`${parentLab}/${parentModel}`) === id})),
+        onPick: (item, on) => {
+          const k = `${parentLab}/${parentModel}`;
+          if (on) effortPick.set(k, item.id); else effortPick.delete(k);
+          menu.refresh(build());
+        }},
+    ]}];
+  };
+  menu = new Menu({persistent: true, sections: build()});
+  menu.el = menu._build();
+  menu.refresh = sections => {
+    // the stub has no focus tracking, so a refresh keeps the cursor by column and id
+    const at = globalThis.document.activeElement;
+    const was = at && {column: at.closest('.col').dataset.column, id: at.dataset.id};
+    menu.sections = sections;
+    menu.el = menu._build();
+    if (was) globalThis.document.activeElement = items().find(r => r.dataset.id === was.id
+      && r.closest('.col').dataset.column === was.column);
+  };
+  const items = () => menu.el.querySelectorAll('.menu-item');
+  menu._items = items;
+  menu._focus = el => {
+    globalThis.document.activeElement = el;
+    el.fire('focus');
+  };
+  menu._buttons = () => [];
+  const press = (...keys) => keys.forEach(key => menu._onKey({key, preventDefault() {}}));
+  const cursor = () => {
+    const at = globalThis.document.activeElement;
+    return `${at.closest('.col').dataset.column}:${at.dataset.id}`;
+  };
+  const text = (column, id) => {
+    const r = items().find(x => x.dataset.id === id && x.closest('.col').dataset.column === column);
+    return r.children.map(c => c.textContent).filter(Boolean).join(' ');
+  };
+  const down = 'ArrowDown', up = 'ArrowUp', left = 'ArrowLeft', right = 'ArrowRight';
+
+  menu._focus(items()[0]);
+  assert.equal(cursor(), '0:claude code');
+  assert.equal(menu.el.querySelectorAll('.col')[1].children.length, 0, 'no models before a pick');
+  press(' ');
+  assert.deepEqual([...labPicks], ['claude code']);
+  assert.equal(items().filter(r => r.closest('.col').dataset.column === '1').length, 4);
+  assert.equal(cursor(), '0:claude code', 'the cursor stays on the item');
+  press(right, down, down);
+  assert.equal(cursor(), '1:sonnet 5.5');
+  press(' ');
+  assert.equal(items().filter(r => r.closest('.col').dataset.column === '2').length, 5);
+  press(right, down);
+  assert.equal(cursor(), '2:medium');
+  press(' ');
+  assert.equal(effortPick.get('claude code/sonnet 5.5'), 'medium');
+  assert.equal(text('1', 'sonnet 5.5'), 'sonnet 5.5 >', 'sonnet carries the path marker');
+  press(left);
+  assert.equal(cursor(), '1:sonnet 5.5', 'left goes back to the path row');
+  press(up);
+  assert.equal(cursor(), '1:opus 5.5');
+  press(' ', right, down, down);
+  assert.equal(cursor(), '2:high');
+  press(' ');
+  assert.equal(effortPick.get('claude code/opus 5.5'), 'high');
+  press(left, left, down);
+  assert.equal(cursor(), '0:codex');
+  press(' ');
+  assert.deepEqual([...labPicks], ['claude code', 'codex']);
+  press(right);
+  assert.equal(cursor(), '1:gpt-6.1 sol');
+  press(' ', right, down, down);
+  assert.equal(cursor(), '2:high');
+  press(' ');
+
+  assert.deepEqual([...effortPick].sort(), [
+    ['claude code/opus 5.5', 'high'], ['claude code/sonnet 5.5', 'medium'],
+    ['codex/gpt-6.1 sol', 'high']]);
+  assert.equal(text('0', 'claude code'), 'claude code 2', 'the host counts, the menu shows');
+  assert.equal(text('0', 'codex'), 'codex 1 >');
+
+  // single-select effort: picking another replaces, space on the picked one unpicks
+  press(down);
+  press(' ');
+  assert.equal(effortPick.get('codex/gpt-6.1 sol'), 'xhigh');
+  press(' ');
+  assert.equal(effortPick.has('codex/gpt-6.1 sol'), false);
+  press(' ');
+  // unpicking a parent clears the picks under it, and the counts vanish
+  press(left, left, up);
+  assert.equal(cursor(), '0:claude code');
+  press(' ');
+  assert.equal(labPicks.has('claude code'), false);
+  assert.equal([...modelPicks].filter(k => k.startsWith('claude code/')).length, 0);
+  assert.equal(text('0', 'claude code'), 'claude code', 'the count vanishes with the picks');
+  // repicking starts empty
+  press(' ');
+  assert.equal(items().filter(r => r.closest('.col').dataset.column === '1')
+    .filter(r => r.classList.contains('on')).length, 0, 're-picking starts the parent empty');
   globalThis.document.activeElement = null;
 }
 
