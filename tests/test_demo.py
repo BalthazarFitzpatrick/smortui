@@ -32,7 +32,7 @@ else:
         "playwright.sync_api", reason="playwright is not installed (uv sync --group shots)"
     )
 # after the importorskip on purpose: a missing playwright must skip before this line runs
-from playwright.sync_api import sync_playwright  # noqa: E402
+from playwright.sync_api import expect, sync_playwright  # noqa: E402
 
 
 def _demo_handler():
@@ -90,6 +90,21 @@ def test_every_tab_opens_and_shows_its_panel(page):
             ".tab-panel:not(.hidden)", "els => els.map(e => e.dataset.panel)"
         )
         assert shown == [name], f"after clicking {name}: {shown}"
+    assert page.errors == [], page.errors
+
+
+def test_chart_series_styles_resolve_tokens_without_fading_swatches(page):
+    page.click('.nav-tab[data-tab="chart"]')
+    line = '#chart-demo .chart-line[data-series="forecast"]'
+    expect(page.locator(line)).to_have_css("stroke", "rgb(224, 111, 45)")
+    expect(page.locator(line)).to_have_css("opacity", "0.5")
+    swatch = "#chart-demo .chart-legend-item:nth-child(2) .chart-legend-swatch"
+    expect(page.locator(swatch)).to_have_css("border-top-color", "rgb(224, 111, 45)")
+    expect(page.locator(swatch)).to_have_css("opacity", "1")
+    page.locator("#chart-demo .chart-overlay").hover()
+    swatch = "#chart-demo .chart-tooltip-swatch:nth-of-type(4)"
+    expect(page.locator(swatch)).to_have_css("background-color", "rgb(224, 111, 45)")
+    expect(page.locator(swatch)).to_have_css("opacity", "1")
     assert page.errors == [], page.errors
 
 

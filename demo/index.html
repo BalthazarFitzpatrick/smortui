@@ -442,6 +442,8 @@
     History, a forecast, an 80% band, and the split/origin markers a forecast screen needs.
     Hover shows the vertical rule and the readout; the numbers below it update live from
     <code>onHover</code> rather than being a picture of one.
+    the dashed series uses <code>color: 'var(--burnt-orange)'</code> and
+    <code>opacity: 0.5</code>; its legend and tooltip swatches stay at full opacity.
   </p>
   <div id="chart-demo" style="max-width: 760px; height: 260px;"></div>
   <div class="stat" id="chart-said" style="margin-top: 8px;">hover the chart</div>
@@ -899,7 +901,8 @@ document.getElementById('marker-demo').addEventListener('focusin', evt => indica
     x: dates,
     series: [
       {id: 'history', label: 'history', values: history},
-      {id: 'forecast', label: 'forecast', values: forecast, dashed: true},
+      {id: 'forecast', label: 'forecast', values: forecast, dashed: true,
+        color: 'var(--burnt-orange)', opacity: 0.5},
     ],
     bands: [{id: 'forecast-band', series: 'forecast', lo: bandLo, hi: bandHi}],
     markers: [
