@@ -6,6 +6,8 @@ refactors, docs and tests are in `git log`.
 
 ## unreleased
 
+- `segments.js`: `makeSegments({options, value, onPick, label})`, a segmented control of `.toggle.segment` buttons with shared borders. the lit segment moves only after an async `onPick` resolves true; a `disabled` option is `.unavailable` (dashed, dimmed, focusable, never picks, hint as title); an `auto` option is lit by the host with `setLit`; left/right move focus without picking
+- `disclosure.js`: `makeDisclosure` and `makeDisclosureGroup`, accordion items with a button header, chevron, `indicateBadge` count, a one-line summary while closed and a `hidden` body. items open independently; the group returns `openIds()` and `setOpenIds()`
 - `timeChart`: optional per-series `color` overrides palette colours; `opacity` fades only lines and points. invalid types or opacity outside 0..1 fall back to defaults
 - `.fill-cell`: a framed 2:1 readout whose bottom edge fills left to right. the host sets the inline width of `.fill-cell-bar`, as for `.bar-fill`; the tone classes `warn` and `attention` recolour the frame and bar together. `.fill-cell-label` and `.fill-cell-value` are its text. a bar with no width draws nothing
 - `Menu`: up/down stay inside the column they are in; left/right cross columns. down past a

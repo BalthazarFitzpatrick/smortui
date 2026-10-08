@@ -53,7 +53,7 @@ order is load-bearing.
 <script src="/ui/menu.js"></script>
 <script src="/ui/shell.js"></script>            <!-- before the script that calls initShell -->
 <!-- each of the rest only if you use it: align.js select.js buckets.js expand.js drawer.js
-     indicate.js help.js entrytext.js pile.js -->
+     indicate.js help.js entrytext.js pile.js chart.js segments.js disclosure.js -->
 ```
 
 scripts define globals; there are no modules and no imports. every script is independent of the
@@ -251,6 +251,81 @@ preview. `target` is the guide's own drawn width, which need not equal the rect'
 it — it is what makes the component reusable.
 
 ---
+
+## `segments.js`
+
+```js
+makeSegments({options, value = null, onPick, label = ''})
+  // options: [{label, value, disabled, hint, auto}]
+  // -> {el, set(value), setLit(value), setDisabled(value, flag), buttons}
+```
+
+a segmented control. `el` is `div.segments[role=group][aria-label=label]` holding one
+`button.toggle.segment` per option, in order (`buttons`). neighbours overlap by the 2px border so
+two lines meet as one. square, `--row-height` tall, exactly one `.on` (with `aria-pressed="true"`)
+or none when `value` is `null`.
+
+**behaviour.**
+- `onPick(value)` may be async and answers `true` or `false`. the lit segment moves only after it
+  resolves to exactly `true`; `false`, a throw, or any other answer leaves it where it was (a throw is
+  logged with `console.error`).
+- clicks are ignored while a pick is in flight (`aria-busy` on `el`), so two quick clicks run one
+  `onPick`. a click on the lit segment does nothing.
+- `disabled` means "not allowed right now, here is why": class `.unavailable`, dashed border, dim
+  text, `aria-disabled="true"`, `hint` as its `title`, and a click never calls `onPick`. it is **not**
+  the html `disabled` attribute: it stays in the tab order and focusable, so the reason can be found.
+  `setDisabled(value, flag)` flips it.
+- `auto` is a segment the host lights through `setLit(value)` and the user cannot click: class
+  `.auto`, no click handler, `aria-disabled="true"`, dashed while unlit and the ordinary lit style
+  when lit. `setLit(null)` lights none. the user can still pick a manual segment away from a lit one.
+- `set(value)` and `setLit(value)` move the lit segment without calling `onPick`, for the host
+  syncing state. one lit state sits behind both.
+
+**keyboard.** native buttons, all in the tab order. left/right arrows move focus to the neighbouring
+segment, wrapping, including onto an unavailable or auto one, and never pick. enter or space on the
+focused segment picks it.
+
+**a11y.** group name from `label`; `aria-pressed` follows the lit segment; unavailable and auto
+segments carry `aria-disabled`, not `disabled`.
+
+**what it deliberately does not do.** no persistence, no meaning for a value, no retry, no
+optimistic update (the lit state waits for the host's answer), no tooltip beyond the native `title`,
+no vertical layout, and no wrapping of a long row: the host sizes it.
+
+## `disclosure.js`
+
+```js
+makeDisclosure({title, summary = '', count = 0, open = false, body, onToggle = null})
+  // -> {el, setSummary(text), setCount(n), open(), close(), isOpen(), body}
+makeDisclosureGroup(items)   // [{id, disclosure}] or [{id, ...makeDisclosure options}]
+  // -> {el, openIds(), setOpenIds(ids)}
+```
+
+an accordion item. the header is a real `button[aria-expanded][aria-controls]` holding a chevron
+(`>` closed, `v` open, plain text, `aria-hidden`), the title, and a count badge. under the title a
+one-line `.disclosure-summary` shows only while the item is closed, cut with an ellipsis when long
+(its `title` holds the full text). `body` is the dom node you pass; the returned `body` is the
+container that holds it, with the `hidden` attribute while closed so the tab order and screen
+readers skip it. an open item gives its header the row background token.
+
+**count badge.** drawn by `indicateBadge` when `indicate.js` is loaded, else by an identical
+`.count-badge` made here, so the script works alone. hidden at zero.
+
+**behaviour.** clicking the header toggles (enter and space work as it is a button) and fires
+`onToggle(open)`. `open()`, `close()`, `setSummary` and `setCount` are silent, so a host restoring
+saved state does not write it straight back. items are independent: opening one never closes another.
+
+`makeDisclosureGroup` only returns a container with the disclosures appended, plus `openIds()` (ids
+of the open items, in item order) and `setOpenIds(ids)` (opens exactly those, closes the rest,
+ignores unknown ids), so a host can remember which are open. pass `{id, disclosure}` to keep your
+own reference for `setSummary` and `setCount`.
+
+**a11y.** the header's `aria-controls` is the body's id, `aria-expanded` follows the state, the
+chevron is hidden from readers, and focus uses the shared focus look.
+
+**what it deliberately does not do.** no animation, no persistence, no single-open accordion mode,
+no keyboard roving between headers (each is a tab stop), no nested group handling, and no
+region landmark on the body.
 
 ## `base.css`
 

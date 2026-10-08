@@ -59,6 +59,8 @@ RUNNER_FOR = {
     "shell.js": "shell_tabs.mjs",
     "align.js": "aligner.mjs",
     "chart.js": "chart_series_style.mjs",  # chart.mjs also covers geometry via discovery
+    "segments.js": "segments.mjs",
+    "disclosure.js": "disclosure.mjs",
 }
 
 

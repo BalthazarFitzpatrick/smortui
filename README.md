@@ -125,6 +125,8 @@ token with its contrast, and a test fails if a hue arrives without being named i
 | `align.js` | `makeAligner` - drag a crop under a fixed guide, `wasd` nudging, live preview |
 | `entrytext.js` | `deriveEntryHeader`, `splitEntryParagraphs` - header derivation and small-paragraph splitting for a log-like feed entry |
 | `pile.js` | `computeColumnFit`, `computeColumnLayout`, `placeGroup`, `foldFrames`, `pileLayerJitter` - the spread/fan/pile geometry and the fold, all pure |
+| `segments.js` | `makeSegments` - a segmented control: shared borders, one lit, picks the host confirms, unavailable and auto segments |
+| `disclosure.js` | `makeDisclosure`, `makeDisclosureGroup` - accordion items with a closed-state summary and count badge |
 | `chart.js` | `timeChart` - an svg time-series chart: lines with optional per-series `color` and `opacity`, an uncertainty band, markers, hover readout |
 
 ### Controls

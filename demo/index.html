@@ -14,6 +14,8 @@
 <script src="/ui/help.js"></script>
 <script src="/ui/pile.js"></script>
 <script src="/ui/chart.js"></script>
+<script src="/ui/segments.js"></script>
+<script src="/ui/disclosure.js"></script>
 <style>
   /* the demo's own layout only - everything that carries the LOOK is in base.css */
   body { display: flex; flex-direction: column; height: 100vh; }
@@ -155,6 +157,35 @@
     <div class="fill-cell warn"><div class="fill-cell-bar" style="width: 95%"></div><span class="fill-cell-label">three</span><span class="fill-cell-value">95%</span></div>
     <div class="fill-cell"><div class="fill-cell-bar"></div><span class="fill-cell-label">four</span><span class="fill-cell-value">--</span></div>
   </div>
+
+  <h2>segments</h2>
+  <p class="demo-note">
+    A segmented control: adjacent buttons that share their borders, one lit at a time. The host's
+    <code>onPick</code> answers true or false and the lit segment moves only on true, so the first
+    row accepts every pick after a short wait and the second refuses "beta". A dashed, dimmed segment
+    is unavailable right now (hover it for the reason) and stays focusable; a dashed segment in plain
+    text is auto, lit by the host through <code>setLit</code> and never by a click. Left and right
+    arrows move focus between segments without picking.
+  </p>
+  <div class="demo-row" id="segments-demo">
+    <div id="segments-lit"></div>
+    <div id="segments-refuse"></div>
+  </div>
+  <div class="demo-row" id="segments-states">
+    <div id="segments-unavailable"></div>
+    <div id="segments-auto-unlit"></div>
+    <div id="segments-auto-lit"></div>
+    <button type="button" class="toggle" id="segments-auto-flip">light the auto segment</button>
+    <span class="demo-note" id="segments-said" style="margin: 0;"></span>
+  </div>
+
+  <h2>disclosure</h2>
+  <p class="demo-note">
+    An accordion item: a button header with a chevron, a title and a count badge, and a one-line
+    summary under the title while it is closed. The body is hidden while closed, so it is out of the
+    tab order. Items are independent: opening one never closes another.
+  </p>
+  <div id="disclosure-demo" style="max-width: 520px;"></div>
 
   <h2>tree</h2>
   <p class="demo-note">
@@ -465,6 +496,62 @@ document.getElementById('head-demo').onclick = evt =>
   ], item => {
     evt.currentTarget.innerHTML = `<span>${item.label}</span>`;
   }).openAt(evt.currentTarget);
+
+// segments: the first row confirms after a wait, the second refuses one value
+const segmentsSaid = text => { document.getElementById('segments-said').textContent = text; };
+const segmentOptions = [
+  {label: 'alpha', value: 'a'}, {label: 'beta', value: 'b'}, {label: 'gamma', value: 'c'},
+];
+const segmentsLit = makeSegments({
+  options: segmentOptions, value: 'a', label: 'a confirmed choice',
+  onPick: value => new Promise(resolve => setTimeout(() => { segmentsSaid(`picked ${value}`); resolve(true); }, 250)),
+});
+document.getElementById('segments-lit').appendChild(segmentsLit.el);
+const segmentsRefuse = makeSegments({
+  options: segmentOptions, value: 'a', label: 'a choice that refuses beta',
+  onPick: value => { segmentsSaid(value === 'b' ? 'refused b' : `picked ${value}`); return value !== 'b'; },
+});
+document.getElementById('segments-refuse').appendChild(segmentsRefuse.el);
+document.getElementById('segments-unavailable').appendChild(makeSegments({
+  label: 'one segment unavailable', value: 'a',
+  options: [
+    {label: 'alpha', value: 'a'},
+    {label: 'beta', value: 'b', disabled: true, hint: 'not allowed right now: needs a second source'},
+    {label: 'gamma', value: 'c'},
+  ],
+  onPick: () => true,
+}).el);
+document.getElementById('segments-auto-unlit').appendChild(makeSegments({
+  label: 'auto segment, unlit', value: 'a',
+  options: [{label: 'manual', value: 'a'}, {label: 'auto', value: 'auto', auto: true, hint: 'lit by the host'}],
+  onPick: () => true,
+}).el);
+const segmentsAuto = makeSegments({
+  label: 'auto segment, lit', value: 'auto',
+  options: [{label: 'manual', value: 'a'}, {label: 'auto', value: 'auto', auto: true, hint: 'lit by the host'}],
+  onPick: () => true,
+});
+document.getElementById('segments-auto-lit').appendChild(segmentsAuto.el);
+document.getElementById('segments-auto-flip').onclick = () => {
+  const lit = segmentsAuto.buttons[1].classList.contains('on');
+  segmentsAuto.setLit(lit ? 'a' : 'auto');
+};
+
+// disclosure: closed with summary and count, open with nested content, a long summary, no count
+const nested = document.createElement('div');
+nested.innerHTML = '<p style="margin: 0 0 10px;">nested content, including another control</p>';
+nested.appendChild(makeSegments({
+  label: 'a segmented control inside a body', value: 'a',
+  options: [{label: 'one', value: 'a'}, {label: 'two', value: 'b'}], onPick: () => true,
+}).el);
+const plain = text => { const p = document.createElement('p'); p.style.margin = '0'; p.textContent = text; return p; };
+const disclosureGroup = makeDisclosureGroup([
+  {id: 'closed', title: 'closed with a summary', summary: 'three things set, one needs a look', count: 3, body: plain('hidden until opened')},
+  {id: 'open', title: 'open with nested content', summary: 'not shown while open', count: 12, open: true, body: nested},
+  {id: 'long', title: 'a long summary is cut with an ellipsis', summary: 'this summary is far too long for one line and keeps going well past the edge of the item so that it has to be cut cleanly', body: plain('the full text is in the title attribute')},
+  {id: 'bare', title: 'no summary, no count', body: plain('just a body')},
+]);
+document.getElementById('disclosure-demo').appendChild(disclosureGroup.el);
 
 makeSlider(document.getElementById('slider-demo'), {
   label: 'a threshold, with what the data actually answered drawn over it',
