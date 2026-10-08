@@ -18,4 +18,5 @@ EXPECTED = {
     "chart.js",
     "segments.js",
     "disclosure.js",
+    "aside.js",
 }

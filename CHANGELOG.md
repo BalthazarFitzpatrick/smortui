@@ -6,6 +6,7 @@ refactors, docs and tests are in `git log`.
 
 ## unreleased
 
+- `aside.js`: `makeAside({host, gap})`, a help box that hangs beside a panel at the height of the row being described and slides between rows (`show(anchor, {title, lines})`, `hide()`, `isShown()`, `destroy()`). right of the host if there is room, else left, else under it; never takes focus; no transitions under reduced motion. `placeAside` is the pure placement helper
 - `disclosure.js`: the summary stays visible while an item is open, so the header keeps one height. the item lights as a frame (`focus-glow-within`, ring and glow without lift) while focus is inside it and the header button no longer lifts, which removes the bounce a wide header showed per arrow step. an open body is separated by a rule that stops short of the item's edges
 - `segments.js`: `makeSegments({options, value, onPick, label})`, a segmented control of `.toggle.segment` buttons with shared borders. the lit segment moves only after an async `onPick` resolves true; a `disabled` option is `.unavailable` (dashed, dimmed, focusable, never picks, hint as title); an `auto` option is lit by the host with `setLit`; left/right move focus without picking
 - `disclosure.js`: `makeDisclosure` and `makeDisclosureGroup`, accordion items with a button header, chevron, `indicateBadge` count, a one-line summary while closed and a `hidden` body. items open independently; the group returns `openIds()` and `setOpenIds()`

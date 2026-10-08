@@ -994,6 +994,37 @@ textarea.text-field {
 .drawer-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
 
 
+/* ---- aside.js: a help box that hangs beside a panel and follows the described row ----
+   rides .panel-floating for its surface, with the grey border of an ordinary panel - it is a note,
+   not something that took focus. pointer-events off: it sits beside the host, never over it, and a
+   pointer crossing it must not end the hover on the row it describes. hidden until .shown; the
+   first show lands in place and fades, later ones slide on the drawer's own timing */
+.aside {
+  position: fixed; z-index: 57; max-width: 280px; box-sizing: border-box;
+  border-color: var(--grey-border); pointer-events: none;
+  overflow-wrap: anywhere; line-height: 1.5;
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--motion-duration) var(--motion-ease),
+    visibility 0s linear var(--motion-duration);
+}
+.aside.shown {
+  opacity: 1; visibility: visible;
+  transition: opacity var(--motion-duration) var(--motion-ease),
+    top var(--motion-duration) var(--motion-ease), left var(--motion-duration) var(--motion-ease);
+}
+/* a scroll or resize jump follows the row at once instead of trailing it */
+.aside.shown.snap { transition: opacity var(--motion-duration) var(--motion-ease); }
+.aside-title { color: var(--cream); }
+.aside-line { color: var(--text); margin-top: 6px; }
+.aside-title + .aside-line { margin-top: 8px; }
+.aside-strong { color: var(--cream); margin-right: 0.6ch; }
+/* after the rules above on purpose: at equal specificity the later rule wins, so a block placed
+   earlier in the file would lose to .aside.shown */
+@media (prefers-reduced-motion: reduce) {
+  .aside, .aside.shown, .aside.shown.snap { transition: none; }
+}
+
+
 /* ---- indicate.js: count badge ----
    a small filled pip, never a text sibling that pushes its row's width - the row must not change
    size as the count changes from 1 to 100 */

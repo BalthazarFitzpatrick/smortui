@@ -11,6 +11,7 @@
 <script src="/ui/expand.js"></script>
 <script src="/ui/indicate.js"></script>
 <script src="/ui/drawer.js"></script>
+<script src="/ui/aside.js"></script>
 <script src="/ui/help.js"></script>
 <script src="/ui/pile.js"></script>
 <script src="/ui/chart.js"></script>
@@ -435,6 +436,17 @@
     it into the centre of its half; click its border (not its content) to park it again.
   </p>
   <div class="demo-row" id="drawer-said">closed</div>
+
+  <h2>aside: a help box beside a panel</h2>
+  <p class="demo-note">
+    Hangs beside its panel at the height of the row being described and slides when another row
+    takes focus or the pointer. Right of the panel when there is room, else left, else under it. It
+    never takes focus and never covers the panel; the host calls <code>show</code> from its own
+    focus handler.
+  </p>
+  <div class="demo-row">
+    <div id="aside-demo" class="panel-inline" style="width: 240px; display: flex; flex-direction: column; gap: 6px;"></div>
+  </div>
 
   <h2>count badge</h2>
   <p class="demo-note">
@@ -910,6 +922,32 @@ makeExpander(document.getElementById('expand-strip'), {
   });
   // makeDrawer appends itself to <body>; the host only fills it
   drawer.body.innerHTML = '<div class="modal-body" style="padding:16px;">drawer content</div>';
+})();
+
+// ---- aside: one box that follows whichever row has focus or the pointer
+(() => {
+  const host = document.getElementById('aside-demo');
+  const aside = makeAside({host});
+  const rows = [
+    {label: 'first row', title: 'first row', lines: ['a short note']},
+    {label: 'second row', title: 'second row', lines: [{strong: 'enter', text: 'opens it'}, 'a second line']},
+    {label: 'third row, long text', title: 'a title that runs on for a while to prove it wraps', lines: [
+      'this note is deliberately long so the box grows tall, wraps inside its maximum width and stays inside the viewport without covering the panel it hangs beside',
+      {strong: 'unbroken', text: 'supercalifragilisticexpialidocious_and_then_some_more_characters_without_any_break'},
+    ]},
+    {label: 'fourth row', title: 'fourth row', lines: ['last one']},
+  ];
+  rows.forEach(row => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toggle aside-demo-row';
+    btn.textContent = row.label;
+    const open = () => aside.show(btn, row);
+    btn.addEventListener('focus', open);
+    btn.addEventListener('mouseenter', open);
+    btn.addEventListener('blur', () => aside.hide());
+    host.appendChild(btn);
+  });
 })();
 
 // ---- count badge: hidden at zero, otherwise a small pip beside the row's own label

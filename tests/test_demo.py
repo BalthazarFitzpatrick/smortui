@@ -274,3 +274,51 @@ def test_a_closed_disclosure_hides_its_body_and_opens_on_click(page):
     ).to_be_visible()
     page.click(f"{item} .disclosure-head")
     assert page.errors == [], page.errors
+
+
+def test_the_aside_follows_the_focused_row_beside_its_host(page):
+    """a focused row shows the box beside the host at the row's height; the next row moves it, it
+    never takes focus, and nothing is logged
+    """
+    page.click('.nav-tab[data-tab="primitives"]')
+    page.eval_on_selector("#aside-demo", "e => e.scrollIntoView({block: 'center'})")
+    rows = ".aside-demo-row"
+    page.eval_on_selector(f"{rows}:nth-child(1)", "e => e.focus()")
+    page.wait_for_timeout(450)  # past the fade
+    aside = page.locator(".aside")
+    expect(aside).to_be_visible()
+
+    def boxes():
+        return page.evaluate(
+            """() => {
+              const r = s => document.querySelector(s).getBoundingClientRect();
+              const a = r('.aside'), h = r('#aside-demo'), row = document.activeElement.getBoundingClientRect();
+              return {aside: a.toJSON(), host: h.toJSON(), row: row.toJSON()};
+            }"""
+        )
+
+    first = boxes()
+    centre = lambda b: b["top"] + b["height"] / 2  # noqa: E731
+    assert abs(centre(first["aside"]) - centre(first["row"])) <= 2, first
+    assert first["aside"]["left"] >= first["host"]["right"], "to the right of the host"
+    assert page.eval_on_selector(".aside", "e => e.getAttribute('role')") == "note"
+    assert page.eval_on_selector(".aside", "e => e.tabIndex") == -1, "never focusable"
+    page.keyboard.press("Tab")
+    page.wait_for_timeout(450)  # past the slide
+    second = boxes()
+    assert second["aside"]["top"] != first["aside"]["top"], "moving focus moved the box"
+    assert abs(centre(second["aside"]) - centre(second["row"])) <= 2, second
+    focused = page.evaluate("document.activeElement.className")
+    assert "aside-demo-row" in focused, "focus stayed on the row"
+    assert not page.evaluate("document.querySelector('.aside').contains(document.activeElement)")
+    # the long row: tall, wrapped, still inside the viewport and clear of the host
+    page.keyboard.press("Tab")
+    page.wait_for_timeout(450)
+    long_box = boxes()["aside"]
+    viewport_height = page.evaluate("window.innerHeight")
+    assert long_box["bottom"] <= viewport_height and long_box["top"] >= 0, long_box
+    assert long_box["width"] <= 281, long_box
+    page.eval_on_selector(f"{rows}:nth-child(3)", "e => e.blur()")
+    page.wait_for_timeout(450)
+    expect(aside).to_be_hidden()
+    assert page.errors == [], page.errors

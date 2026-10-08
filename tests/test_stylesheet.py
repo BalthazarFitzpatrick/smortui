@@ -510,3 +510,26 @@ def test_the_fill_cell_takes_its_colours_from_tokens_and_draws_no_bar_by_default
         fill = re.search(rf"\.fill-cell\.{tone} \.fill-cell-bar\s*\{{(.*?)\}}", css, re.DOTALL)
         assert f"var({token})" in frame and f"var({token})" in fill.group(1), tone
     assert not re.search(r"#[0-9a-fA-F]{3,6}", cell + bar), "colours come from tokens"
+
+
+def test_the_aside_slides_on_the_motion_tokens_and_stops_under_reduced_motion():
+    """aside.js is placed by the script and moved by the stylesheet: the slide reads the kit's one
+    timing, the box stays out of the pointer's way, and reduced motion removes every transition
+    """
+    css = _css()
+    rules = re.findall(r"(?m)^\.aside(?:\.shown)?\s*\{(.*?)\}", css, re.DOTALL)
+    base = next(r for r in rules if "position: fixed" in r)
+    shown = next(r for r in rules if "top var(--motion-duration) var(--motion-ease)" in r)
+    assert "pointer-events: none" in base, "it never intercepts the row it describes"
+    assert "max-width: 280px" in base
+    assert "opacity: 0" in base and "opacity var(--motion-duration)" in base, "a fade, not a slide"
+    assert "top var(--motion-duration) var(--motion-ease)" not in base, "first show does not slide"
+    assert "left var(--motion-duration) var(--motion-ease)" in shown
+    assert not re.search(r"\d+\s*ms\b", base + shown), "no second timing source"
+    snap = css.index(".aside.shown.snap { transition: none")
+    media = css.rindex("@media (prefers-reduced-motion: reduce)", 0, snap)
+    assert css.index(".aside.shown {") < media, "after the rules it overrides, or it loses"
+    assert re.search(r"\.aside\.shown\s*,[^{]*\{\s*transition: none", css[media:]), "stops moving"
+    script = (ASSETS / "aside.js").read_text()
+    assert not re.search(r"\d+\s*ms\b", script), "the timing is the stylesheet's"
+    assert "innerHTML" not in script.replace("never innerHTML", "")
