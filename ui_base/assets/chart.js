@@ -141,6 +141,8 @@ function timeChart(containerEl, opts = {}) {
   const plot = {left: CHART_MARGIN.left, top: CHART_MARGIN.top, w: 0, h: 0};
 
   function seriesColor(id, index) {
+    const color = data.series[index]?.color;
+    if (typeof color === 'string') return color;
     const [token, fallback] = CHART_PALETTE_TOKENS[index % CHART_PALETTE_TOKENS.length];
     return chartCssVar(token, fallback);
   }
@@ -248,12 +250,16 @@ function timeChart(containerEl, opts = {}) {
     const linesGroup = chartSvgEl('g', {class: 'chart-lines'});
     data.series.forEach((s, index) => {
       const color = seriesColor(s.id, index);
+      // omit invalid or absent opacity so existing svg output stays unchanged
+      const opacity = Number.isFinite(s.opacity) && s.opacity >= 0 && s.opacity <= 1
+        ? {opacity: s.opacity} : {};
       chartSegments(s.values || []).forEach(seg => {
         if (seg.length === 1) {
           const i = seg[0];
           linesGroup.appendChild(chartSvgEl('circle', {
             class: 'chart-point', 'data-series': s.id,
             cx: xPixels[i], cy: yScale(s.values[i]), r: 3, fill: color,
+            ...opacity,
           }));
           return;
         }
@@ -261,6 +267,7 @@ function timeChart(containerEl, opts = {}) {
         const path = chartSvgEl('path', {
           class: 'chart-line', 'data-series': s.id, d: `M ${d}`,
           fill: 'none', stroke: color, 'stroke-width': 2,
+          ...opacity,
         });
         if (s.dashed) path.setAttribute('stroke-dasharray', '6,4');
         linesGroup.appendChild(path);
