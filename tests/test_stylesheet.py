@@ -481,3 +481,20 @@ def test_a_selected_button_still_shows_focus_on_its_light_fill():
     css = _css()
     rules = re.findall(r"\.toggle\.on\s*\{([^}]*)\}", css)
     assert any("--focus-ring-color: var(--accent-on-text)" in r for r in rules)
+
+
+def test_the_fill_cell_takes_its_colours_from_tokens_and_draws_no_bar_by_default():
+    """A READOUT THAT DRAWS 0% WHEN IT HAS NO DATA IS A LIE. The bar is 0 wide until the host sets
+    a width, so a cell with nothing to show is a plain frame, and every colour is a token so a host
+    retheming the palette moves it too.
+    """
+    css = _css()
+    cell = re.search(r"\.fill-cell\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    bar = re.search(r"\.fill-cell-bar\s*\{(.*?)\}", css, re.DOTALL).group(1)
+    assert "width: 0;" in bar and "height: 2px" in bar, "an unset cell must draw no bar"
+    assert "aspect-ratio: 2 / 1" in cell and "border: 2px solid var(--fill-good)" in cell
+    for tone, token in (("warn", "--fill-warn"), ("attention", "--fill-attention")):
+        frame = re.search(rf"\.fill-cell\.{tone}\s*\{{(.*?)\}}", css, re.DOTALL).group(1)
+        fill = re.search(rf"\.fill-cell\.{tone} \.fill-cell-bar\s*\{{(.*?)\}}", css, re.DOTALL)
+        assert f"var({token})" in frame and f"var({token})" in fill.group(1), tone
+    assert not re.search(r"#[0-9a-fA-F]{3,6}", cell + bar), "colours come from tokens"
