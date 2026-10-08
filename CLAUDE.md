@@ -188,7 +188,8 @@ alone makes every modified scroll take the zoom-out branch.
 const chart = timeChart(containerEl, {height, yFormat, xFormat, onHover})
 chart.update({
   x: [...],                // shared x values: ISO date strings or numbers, ascending
-  series: [{id, label, values: [...], dashed: false}],   // null in values breaks the line
+  series: [{id, label, values: [...], dashed: false, color: 'var(--lichen)', opacity: 0.5}],
+  // dashed, color and opacity are optional; null in values breaks the line
   bands: [{id, series: seriesId, lo: [...], hi: [...]}], // shaded area between lo and hi, same length as x
   markers: [{x, label}],   // vertical rule + small label
 })
@@ -211,7 +212,13 @@ across — it renders as two separate paths either side of the gap. a series wit
 non-null value draws as a point, not an invisible zero-length line. an empty `update()` and an
 all-null series both render nothing and throw nothing.
 
-**colour.** cycled from `base.css`'s own tokens (`--lichen`, `--kingfisher`, `--stone-red-lift`,
+**colour.** optional per-series `color` accepts a css colour string, including `var(--token)`,
+for the line, points, legend swatch, tooltip swatch and associated band. non-string values fall
+back to the palette. optional `opacity` accepts a finite number from 0 to 1, inclusive, for lines
+and points only; axes, bands, legend text and swatches keep their own opacity. invalid or omitted
+opacity adds no attribute. omitting both fields preserves the existing output.
+
+default colours are cycled from `base.css`'s own tokens (`--lichen`, `--kingfisher`, `--stone-red-lift`,
 `--vanilla`, `--burnt-orange`, `--lichen-deep`), read live via `getComputedStyle` so a theme change
 is picked up on the next render — never hardcoded, and never assuming dark. a band is drawn in its
 series' colour at low opacity. each token carries a literal fallback for a page that forgot to load
@@ -227,8 +234,8 @@ value there, plus each band's range. `onHover({index, x, values})` fires on move
 on the pointer leaving; `chart.nearest(clientX)` is the same lookup exposed directly, which is what
 a test drives instead of staging a real mouse event.
 
-**what it deliberately does not do.** no zoom or pan, no legend toggling, no per-series colour
-override, no drawing beyond the series/bands/markers it is given, and no data fetching or
+**what it deliberately does not do.** no zoom or pan, no legend toggling,
+no drawing beyond the series/bands/markers it is given, and no data fetching or
 resampling — the host decides what `x` and `series` are before calling `update()`.
 
 ## `align.js`
