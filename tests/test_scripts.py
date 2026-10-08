@@ -61,6 +61,7 @@ RUNNER_FOR = {
     "chart.js": "chart_series_style.mjs",  # chart.mjs also covers geometry via discovery
     "segments.js": "segments.mjs",
     "disclosure.js": "disclosure.mjs",
+    "aside.js": "aside.mjs",
 }
 
 

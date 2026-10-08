@@ -4,7 +4,7 @@ read this before writing any interface code against this package. it is the prec
 `README.md` beside it is prose for a human.
 
 **what this is.** one stylesheet and a dozen plain scripts that a local python tool serves, giving
-menus, dropdowns, a tab shell, sliders, pan/zoom, crop alignment, selection, an edge drawer, an
+menus, dropdowns, a tab shell, sliders, pan/zoom, crop alignment, selection, an edge drawer, a floating help box, an
 expanding strip, help tips, and the card/fan/pile board layout. no build step, no framework, no npm.
 `README.md`'s components table is the one-line-per-file index; this file is the contract per api.
 
@@ -53,7 +53,7 @@ order is load-bearing.
 <script src="/ui/menu.js"></script>
 <script src="/ui/shell.js"></script>            <!-- before the script that calls initShell -->
 <!-- each of the rest only if you use it: align.js select.js buckets.js expand.js drawer.js
-     indicate.js help.js entrytext.js pile.js chart.js segments.js disclosure.js -->
+     indicate.js help.js entrytext.js pile.js chart.js segments.js disclosure.js aside.js -->
 ```
 
 scripts define globals; there are no modules and no imports. every script is independent of the
@@ -331,6 +331,46 @@ chevron is hidden from readers, and focus uses the shared focus look.
 **what it deliberately does not do.** no animation, no persistence, no single-open accordion mode,
 no keyboard roving between headers (each is a tab stop), no nested group handling, and no
 region landmark on the body.
+
+## `aside.js`
+
+```js
+makeAside({host, gap = 12})
+  // -> {el, show(anchor, {title, lines}), hide(), isShown(), destroy()}
+placeAside({host, anchor, size, viewport, gap = 12, margin = 8})
+  // -> {side: 'right' | 'left' | 'below', left, top}   pure; rects are {left, top, right, bottom}
+```
+
+a floating help box that hangs beside `host` (a floating panel) and describes `anchor`, the row the
+host is on. `el` is `div.panel-floating.aside[role=note][aria-live=polite]`, `position: fixed`,
+appended to `document.body` by `makeAside` itself. it is outside the host's flow, so showing it never
+shifts the host.
+
+**content.** `title` is a short string; `lines` is an array of strings or `{strong, text}` pairs, where
+`strong` is a lead-in drawn in the cream tone before `text`. all of it goes in through `textContent`,
+never `innerHTML`. a title and plain lines are the whole vocabulary.
+
+**placement.** right of `host` when it fits the viewport with `gap` to spare, else left, else docked
+directly under the host (a narrow viewport). beside the host the box's vertical centre equals the
+anchor's, clamped to stay `margin` px inside the viewport; docked under, it sits at the host's bottom
+edge plus `gap` and never rises over the host. the box never covers the host.
+
+**motion.** the first `show` appears in place with a fade; a later `show` with another anchor slides
+(`top`, and `left` when the side changes) on `var(--motion-duration)` and `var(--motion-ease)`, the
+drawer's own timing. `hide()` fades it out. a window resize or a scroll of any ancestor of the anchor
+(a capture-phase listener) re-places it at once, one placement per frame, without the slide. under
+`prefers-reduced-motion: reduce` there are no transitions.
+
+**a11y.** `role="note"` and `aria-live="polite"` so a screen reader hears the text change. no
+`tabindex` and `pointer-events: none`: it never takes focus and a pointer crossing it does not end the
+hover on the row it describes. the cost is that its text cannot be selected.
+
+**teardown.** it listens on `window` and `document` only while shown, so a hidden aside leaves
+nothing behind; `destroy()` hides and removes it. it hides itself when the anchor leaves the document.
+
+**what it deliberately does not do.** no content logic and no focus tracking: the host calls `show`
+from its own focus (or hover) handler and `hide` on blur. no persistence, no arrow pointing at the
+row, no stacking of several asides, no dismissal of its own.
 
 ## `base.css`
 

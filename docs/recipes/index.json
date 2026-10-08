@@ -102,5 +102,25 @@
       "selector": "#split-toolbar"
     },
     "added": "2026-09-20"
+  },
+  {
+    "id": "aside-follows-focus",
+    "title": "a help box that follows the focused row",
+    "summary": "an aside beside a floating panel that describes the current row and slides to the next as focus or the pointer moves, with the host owning the wiring",
+    "primitives": [
+      "aside.js:makeAside"
+    ],
+    "tags": [
+      "aside",
+      "help",
+      "focus",
+      "panel"
+    ],
+    "file": "docs/recipes/aside-follows-focus.md",
+    "demo": {
+      "panel": "primitives",
+      "selector": "#aside-demo"
+    },
+    "added": "2026-10-08"
   }
 ]

@@ -119,6 +119,7 @@ token with its contrast, and a test fails if a hue arrives without being named i
 | `buckets.js` | `makeBuckets` - side-by-side lists with 2D roving focus |
 | `expand.js` | `makeExpander` - a strip that grows into a centred panel and back |
 | `drawer.js` | `makeDrawer` - a sliver at a screen edge that opens into its half |
+| `aside.js` | `makeAside`, `placeAside` - a help box beside a floating panel that follows the described row and slides between rows |
 | `indicate.js` | `indicateBadge`, `indicateFocus` - a count badge and a gliding focus marker |
 | `help.js` | `helpTip` - a round `?` that shows its tip on hover and pins it on click |
 | `select.js` | `makeSelection` - click, cmd+click, shift+drag, right-click over a grid |
