@@ -322,3 +322,145 @@ def test_the_aside_follows_the_focused_row_beside_its_host(page):
     page.wait_for_timeout(450)
     expect(aside).to_be_hidden()
     assert page.errors == [], page.errors
+
+
+# the chained-columns demo: north > alpha/beta/gamma/delta > levels, south > epsilon/zeta > levels
+def _open_chain(page, trigger):
+    page.keyboard.press("Escape")
+    page.click('.nav-tab[data-tab="menus"]')
+    page.click(trigger)
+    page.wait_for_timeout(100)
+
+
+def _press(page, *keys):
+    for key in keys:
+        page.keyboard.press(key)
+
+
+def _rows(page, column):
+    return page.eval_on_selector_all(
+        f'.menu-panel .col[data-column="{column}"] .menu-item',
+        "els => els.map(e => [...e.children].map(c => c.textContent).filter(Boolean).join(' '))",
+    )
+
+
+def _cursor(page):
+    return page.evaluate(
+        "(() => { const a = document.activeElement;"
+        " return a.closest('.col')?.dataset.column + ':' + a.dataset.id; })()"
+    )
+
+
+def _picked(page, column):
+    return page.eval_on_selector_all(
+        f'.menu-panel .col[data-column="{column}"] .menu-item.on',
+        "els => els.map(e => e.dataset.id)",
+    )
+
+
+def test_the_worked_keystrokes_pick_three_paths_in_the_real_menu(page):
+    """multi > multi > single: space toggles, right and left move without picking, the next column
+    follows the cursor, the host counts and the path marker show, enter confirms"""
+    _open_chain(page, "#open-chain-mixed")
+    _press(page, "ArrowDown")
+    assert _cursor(page) == "0:north"
+    assert _rows(page, 1) == [], "no children before a pick"
+    _press(page, "ArrowRight")
+    assert _cursor(page) == "0:north", "right with no children stays put"
+    _press(page, "Space")
+    assert _rows(page, 1) == ["alpha", "beta", "gamma", "delta"]
+    assert _cursor(page) == "0:north", "the cursor stays on the item"
+    _press(page, "ArrowRight")
+    assert _cursor(page) == "1:alpha"
+    assert _picked(page, 1) == [], "right picks nothing"
+    _press(page, "ArrowDown", "ArrowDown", "Space")
+    assert _cursor(page) == "1:gamma"
+    assert len(_rows(page, 2)) == 5
+    _press(page, "ArrowRight", "ArrowDown", "Space")
+    assert _cursor(page) == "2:medium"
+    assert _rows(page, 1)[2] == "gamma >", "gamma now carries the path marker"
+    _press(page, "ArrowLeft")
+    assert _cursor(page) == "1:gamma"
+    _press(page, "ArrowUp", "Space", "ArrowRight", "ArrowDown", "ArrowDown", "Space")
+    assert _cursor(page) == "2:high"
+    _press(page, "ArrowLeft", "ArrowLeft", "ArrowDown")
+    assert _cursor(page) == "0:south"
+    _press(page, "Space", "ArrowRight", "Space", "ArrowRight", "ArrowDown", "ArrowDown", "Space")
+    assert _cursor(page) == "2:high"
+    assert _picked(page, 2) == ["high"]
+    _press(page, "ArrowLeft", "ArrowLeft")
+    assert _rows(page, 0) == ["north 2", "south 1 >", "west"]
+    _press(page, "Enter")
+    page.wait_for_timeout(50)
+    assert page.text_content("#chain-said") == (
+        "confirmed north/beta/high, north/gamma/medium, south/epsilon/high"
+    )
+    assert page.query_selector(".menu-panel:not(.panel-inline)") is None, "enter closed it"
+    assert page.errors == [], page.errors
+
+
+def test_unpicking_a_parent_clears_what_hung_below_it_and_a_repick_starts_empty(page):
+    _open_chain(page, "#open-chain-mixed")
+    _press(page, "ArrowDown", "Space", "ArrowRight", "Space", "ArrowRight", "ArrowDown", "Space")
+    _press(page, "ArrowLeft", "ArrowLeft")
+    assert _rows(page, 0)[0] == "north 1 >"
+    _press(page, "Space")
+    assert _rows(page, 0)[0] == "north", "the count goes with the picks"
+    _press(page, "Space")
+    assert _picked(page, 1) == [], "re-picking starts the parent empty"
+    _press(page, "ArrowRight", "ArrowRight")
+    assert _picked(page, 2) == []
+    page.keyboard.press("Escape")
+    assert page.query_selector(".menu-panel:not(.panel-inline)") is None, "escape closes"
+
+
+def test_a_single_select_column_replaces_its_pick_and_space_on_the_pick_unpicks(page):
+    _open_chain(page, "#open-chain-single")
+    _press(page, "ArrowDown", "Space", "ArrowRight", "Space", "ArrowRight", "ArrowDown", "Space")
+    assert _picked(page, 2) == ["medium"]
+    _press(page, "ArrowDown", "Space")
+    assert _picked(page, 2) == ["high"], "picking another replaces the pick"
+    _press(page, "Space")
+    assert _picked(page, 2) == [], "space on the picked row unpicks it"
+    # single select all the way: another group replaces the first
+    _press(page, "ArrowLeft", "ArrowLeft", "ArrowDown", "Space")
+    assert _picked(page, 0) == ["south"]
+    _press(page, "ArrowUp")
+    assert _rows(page, 1) == [], "north is no longer picked, so it shows no children"
+    page.keyboard.press("Escape")
+
+
+def test_all_multi_counts_sit_on_every_parent_whose_children_are_multi(page):
+    _open_chain(page, "#open-chain-multi")
+    _press(page, "ArrowDown", "Space", "ArrowRight", "Space", "ArrowRight", "ArrowDown", "Space")
+    _press(page, "ArrowDown", "Space", "ArrowLeft")
+    assert _rows(page, 1)[0] == "alpha 2 >"
+    assert _rows(page, 0)[0] == "north 2 >"
+    page.keyboard.press("Escape")
+
+
+def test_an_unavailable_row_is_dashed_focusable_and_inert(page):
+    _open_chain(page, "#open-chain-mixed")
+    _press(page, "ArrowDown", "ArrowDown", "ArrowDown")
+    assert _cursor(page) == "0:west", "the arrow order still reaches it"
+    row = ".menu-panel .menu-item[data-id='west']"
+    assert page.get_attribute(row, "aria-disabled") == "true"
+    assert page.get_attribute(row, "title") == "not connected"
+    assert _style(page, row, "borderTopStyle") == "dashed"
+    assert float(_style(page, row, "opacity")) == 1.0
+    _press(page, "Space")
+    page.click(row)
+    assert _picked(page, 0) == []
+    page.keyboard.press("Escape")
+
+
+def test_enter_confirms_without_toggling_and_the_dividers_keep_their_margins(page):
+    _open_chain(page, "#open-chain-mixed")
+    _press(page, "ArrowDown")
+    assert _style(page, ".menu-panel .divider", "marginTop") == "15px"
+    assert _style(page, ".menu-panel .divider", "marginBottom") == "15px"
+    _press(page, "Enter")
+    page.wait_for_timeout(50)
+    assert page.text_content("#chain-said") == "confirmed nothing", "enter picked nothing"
+    assert page.query_selector(".menu-panel:not(.panel-inline)") is None
+    assert page.errors == [], page.errors

@@ -94,7 +94,8 @@ maintained, and only the active tab sits in the tab order. the active tab is rem
 ### `Menu`
 
 ```js
-new Menu({title = '', sections = [], onDismiss = null, adopt = null, columns = false})
+new Menu({title = '', sections = [], onDismiss = null, adopt = null, columns = false,
+          persistent = false, onConfirm = null})
   .openAt(triggerElement)     // anchored below it
   .openAt({x, y})             // for a right-click
   .close()
@@ -108,7 +109,7 @@ that reports nothing on cancel leaves a stale selection alive, which the next in
 and applies to the wrong thing.
 
 the class owns anchoring, viewport clamping, one-menu-at-a-time, dismissal on outside click and
-escape, and arrow/enter/space keyboard navigation, left/right across columns. **never reimplement any of that at a call site**, and
+escape, and arrow/enter/space keyboard navigation, left/right across columns (see `### menu columns`). **never reimplement any of that at a call site**, and
 never add a global dismiss handler that names trigger ids — a shared selector string means every new
 menu must be added to it or it closes on its own opening click.
 
@@ -117,13 +118,59 @@ menu must be added to it or it closes on its own opening click.
 | kind | for |
 |---|---|
 | `list` | rows, with optional `stats`, `on`, `disabled`, and a trailing `action` control |
-| `columns` | two or more multi-select axes side by side, split by dividers |
+| `columns` | two or more axes side by side, split by dividers; single or multi per column, chainable |
 | `add` | a "+ new" row: a text field plus a button |
 | `field` | a single text input |
 | `buttons` | a footer row of actions |
 | `node` | escape hatch — content you built, placed and styled by the panel |
 
 reach for `node` last. if you find yourself building a list by hand inside a `node`, use `list`.
+
+### menu columns
+
+a `columns` section is a chain of columns, e.g. group > item > level. each column is `{label, items,
+multi = true, empty, onPick(item, on, menu), onFocus(item, menu)}`. the host owns every pick and
+tells the menu what to show through `menu.refresh(sections)`; the menu owns the cursor and the keys.
+
+**item fields.** `{id, label, on, stats, disabled, state, path, count, unavailable, hint, action}`.
+
+- states of a row: idle; cursor (the one focus look: real dom focus, or hover); picked (`on`, the
+  flat cream fill); cursor and picked (both); unavailable. nothing is dimmed by opacity, ever: not
+  a child, a pick or a parent.
+- `path: true` draws a `>` at the right edge of the row whose children currently show in the next
+  column. the host sets it from its own state. at most one per column (the first wins); never drawn
+  in the last column. a non-last column keeps an empty one-character slot on every row, so counts
+  line up.
+- `count: n` draws `n` after the name when `n > 0`: how many chosen complete paths (down to the last
+  column) sit below the row. **the host computes it and passes it only when the row's child column is
+  multi-select**; under a single-select child column the tally is at most one and says nothing.
+  a row reads `name  stats  count  >`, the name taking the free room.
+- `unavailable: true` with `hint: 'text'` is "not allowed now, here is why", the look of
+  `.segment.unavailable`: dashed border, dim text only, `hint` as the `title`, `aria-disabled="true"`.
+  it stays focusable and in the arrow order, and a click or space does nothing. `disabled` is a
+  different thing and stays as it was: faded, out of the arrow order.
+
+**keys** (on a column row; a plain `list` row keeps enter and space as a click).
+
+| key | does |
+|---|---|
+| up / down | move the cursor inside the focused column; down past the last row reaches the footer buttons |
+| right | enter the child column on its picked row, else its first row. **picks nothing** |
+| left | back to the parent column, on its `path` row, else its picked row, else its first |
+| space | toggle the focused row: idle becomes picked, picked becomes idle. in a single-select column picking replaces the previous pick, and space on the picked row unpicks it (`onPick(item, false)`) |
+| enter | confirm: calls the menu's `onConfirm(menu)`, then presses the footer button marked `primary: true` if there is one. it never toggles and never closes by itself |
+| escape | close this menu only |
+
+**the next column follows the cursor.** a row reports itself to its column's `onFocus(item, menu)`
+when the cursor reaches it (once per row, restored focus does not count) and also when it is
+picked, whether by space or by pointer, so the host shows the children of the row under the
+cursor, or of the parent the child column belongs to when the cursor sits in the child column. the
+host decides what to show: the usual rule is that a column lists children only for a picked parent.
+`refresh` keeps the cursor on the row it was on.
+
+**unpicking a parent clears the picks below it.** the menu keeps no model of picks: the host's
+`onPick(item, false)` on the parent is the notice, and the host drops every pick under it, so a
+re-pick starts that parent empty. a host that drops them also stops counting them in `count`.
 
 ### `listMenu(title, items, onPick, extra = {})`
 

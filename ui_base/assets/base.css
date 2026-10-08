@@ -805,6 +805,16 @@ body:has(.focus-glow:focus, .focus-glow-within:focus-within) .focus-marker { opa
   color: var(--text-dim);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* a row reads `name  count  >`. the name takes the free room, so the stats, the count and the path
+   marker all sit at the right edge in that order whatever each row holds. the marker's slot is
+   one character wide even when empty, so counts line up down a column. the count and marker
+   inherit the row's colour, which keeps them readable on a picked row, and nothing here fades */
+.menu-item .count { flex: 0 0 auto; }
+.menu-item .path-mark { flex: 0 0 1ch; text-align: right; }
+/* an unavailable row is the segment's look: dashed, dim text only, a hint as its title. it stays
+   focusable, so the hover keeps the dim text and the plain border instead of going cream */
+.menu-item.unavailable:not(.on) { border-style: dashed; color: var(--text-dim); cursor: not-allowed; }
+.menu-item.unavailable:not(.on):hover { border-color: var(--grey-border); color: var(--text-dim); }
 /* 2px and square, like every other control - this was 1px with a 2px radius, the one place in the
    file that broke both rules at once, and it read as a foreign widget inside the row */
 .menu-item .menu-action {

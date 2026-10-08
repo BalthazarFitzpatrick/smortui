@@ -249,6 +249,21 @@
   </div>
   <div class="stat" id="dirs-said">nothing picked yet</div>
 
+  <h2>chained columns</h2>
+  <p class="demo-note">
+    Recipe - see <a href="../docs/recipes/chained-columns.md">docs/recipes</a>. Three columns, each
+    child column describing the parent under the cursor. Space picks or unpicks, right and left move
+    between columns without picking, enter confirms, escape closes. One trigger per class of menu:
+    every column single-select, mixed, every column multi-select. A dashed row is unavailable and
+    still reachable.
+  </p>
+  <div class="demo-row">
+    <button type="button" class="toggle dropdown-head" id="open-chain-single"><span>all single</span></button>
+    <button type="button" class="toggle dropdown-head" id="open-chain-mixed"><span>mixed</span></button>
+    <button type="button" class="toggle dropdown-head" id="open-chain-multi"><span>all multi</span></button>
+  </div>
+  <div class="stat" id="chain-said">nothing confirmed yet</div>
+
   <h2>a range input with the slider look</h2>
   <p class="demo-note">
     A bare <code>&lt;input type=range&gt;</code> plus the <code>range-slider</code> class; not routed
@@ -724,6 +739,78 @@ document.getElementById('open-dirs').onclick = evt =>
   dirMenu('pick a file', fetchFakeDir, file => {
     document.getElementById('dirs-said').textContent = `picked ${file}`;
   }).openAt(evt.currentTarget);
+
+// ---- recipe: chained columns (docs/recipes/chained-columns.md) ----
+const chainLevels = n => Object.fromEntries(
+  ['low', 'medium', 'high', 'xhigh', 'max'].slice(0, n).map(name => [name, {}]));
+const CHAIN_TREE = {
+  north: {alpha: chainLevels(5), beta: chainLevels(5), gamma: chainLevels(5), delta: {}},
+  south: {epsilon: chainLevels(5), zeta: chainLevels(3)},
+  west: {},
+};
+
+// the host owns every pick as a path key ('north/gamma/medium'); the menu moves the cursor and
+// toggles, and asks the host what each column shows. `multis` says which columns are multi-select
+function openChain(trigger, multis) {
+  const picks = new Set();
+  const depth = key => key.split('/').length;
+  let shown = ['north'];       // the parent whose children each later column lists
+  let menu = null;
+  const last = multis.length - 1;
+  const below = key => [...picks].filter(k => depth(k) === multis.length
+    && k.startsWith(`${key}/`)).length;
+  const column = c => {
+    const parents = shown.slice(0, c);
+    const parentKey = parents.join('/');
+    let node = CHAIN_TREE;
+    parents.forEach(id => { node = node[id] || {}; });
+    const ids = c === 0 || picks.has(parentKey) ? Object.keys(node) : [];
+    return {
+      multi: multis[c],
+      items: ids.map(id => {
+        const key = [...parents, id].join('/');
+        return {
+          id, label: id, on: picks.has(key),
+          unavailable: id === 'west', hint: id === 'west' ? 'not connected' : undefined,
+          path: c < last && shown[c] === id && picks.has(key),
+          // a count only where the child column is multi-select: a single pick below is not a tally
+          count: c < last && multis[c + 1] ? below(key) : 0,
+        };
+      }),
+      onFocus: c < last ? item => { shown = [...shown.slice(0, c), item.id]; menu.refresh(build()); } : null,
+      onPick: (item, on) => {
+        const key = [...shown.slice(0, c), item.id].join('/');
+        const parentKey = shown.slice(0, c).join('/');
+        const drop = k => k === key || k.startsWith(`${key}/`);
+        if (on && !multis[c]) {
+          // a single-select pick replaces its siblings, and what hung below them
+          [...picks].filter(k => depth(k) > c && k.split('/').slice(0, c).join('/') === parentKey
+            && k.split('/')[c] !== item.id).forEach(k => picks.delete(k));
+        }
+        if (on) picks.add(key);
+        else [...picks].filter(drop).forEach(k => picks.delete(k));
+        menu.refresh(build());
+      },
+    };
+  };
+  const build = () => [{kind: 'columns', columns: multis.map((_, c) => column(c))}];
+  const paths = () => [...picks].filter(k => depth(k) === multis.length).sort();
+  menu = new Menu({
+    title: 'chained columns', persistent: true, sections: build(),
+    onConfirm: m => {
+      document.getElementById('chain-said').textContent =
+        `confirmed ${paths().join(', ') || 'nothing'}`;
+      m.close();
+    },
+  });
+  menu.openAt(trigger);
+}
+document.getElementById('open-chain-single').onclick = evt =>
+  openChain(evt.currentTarget, [false, false, false]);
+document.getElementById('open-chain-mixed').onclick = evt =>
+  openChain(evt.currentTarget, [true, true, false]);
+document.getElementById('open-chain-multi').onclick = evt =>
+  openChain(evt.currentTarget, [true, true, true]);
 
 // ---- the colour board -------------------------------------------------------------------
 // grouped by ROLE and in reading order, because "which one is which" is the question a bare
