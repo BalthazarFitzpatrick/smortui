@@ -18,7 +18,9 @@ let _disclosureCount = 0;
 function makeDisclosure({title = '', summary = '', count = 0, open = false, body = null, onToggle = null} = {}) {
   const id = `disclosure-body-${++_disclosureCount}`;
   const el = document.createElement('div');
-  el.className = 'disclosure';
+  // the item is the frame that lights while focus is inside it (see .disclosure.focus-glow-within in
+  // base.css): the group holding the cursor wears the card focus, its header does not lift
+  el.className = 'disclosure focus-glow focus-glow-within';
 
   const head = document.createElement('button');
   head.type = 'button';
@@ -71,8 +73,8 @@ function makeDisclosure({title = '', summary = '', count = 0, open = false, body
     chevron.textContent = isOpen ? 'v' : '>';
     // hidden keeps the body out of the tab order and the reader's tree while closed
     bodyBox.hidden = !isOpen;
-    // the summary stands in for the body, so it shows only while the body does not
-    summaryLine.hidden = isOpen || !summaryText;
+    // the summary is the item's one tagline, shown open or closed so the header never changes height
+    summaryLine.hidden = !summaryText;
   }
 
   function setSummary(next) {

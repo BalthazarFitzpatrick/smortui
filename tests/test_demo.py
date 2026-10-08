@@ -240,6 +240,25 @@ def test_segments_move_only_after_the_host_accepts(page):
     assert page.errors == [], page.errors
 
 
+def test_the_focused_disclosure_lights_its_frame_and_its_header_stays_put(page):
+    """the wide header must not lift (a 1.01 scale on a wide button reads as a bounce); the item frames"""
+    page.click('.nav-tab[data-tab="controls"]')
+    item = "#disclosure-demo .disclosure:nth-child(1)"
+    head = f"{item} .disclosure-head"
+    before = page.eval_on_selector(head, "e => e.getBoundingClientRect().toJSON()")
+    _focus_by_keyboard(page, head)
+    assert _style(page, head, "transform") == "none"
+    assert _style(page, head, "filter") == "none"
+    assert _style(page, head, "boxShadow") == "none"
+    assert page.eval_on_selector(head, "e => e.getBoundingClientRect().toJSON()") == before
+    frame = _style(page, item, "boxShadow")
+    assert "inset" in frame and "2px" in frame, frame
+    # a scale(1) and a saturate(1) brightness(1) are identities, which the browser reports as such
+    assert _style(page, item, "transform") in ("none", "matrix(1, 0, 0, 1, 0, 0)"), "no lift"
+    assert _style(page, item, "filter") in ("none", "saturate(1) brightness(1)"), "no filter"
+    assert page.errors == [], page.errors
+
+
 def test_a_closed_disclosure_hides_its_body_and_opens_on_click(page):
     page.click('.nav-tab[data-tab="controls"]')
     item = "#disclosure-demo .disclosure:nth-child(1)"
@@ -247,7 +266,7 @@ def test_a_closed_disclosure_hides_its_body_and_opens_on_click(page):
     expect(page.locator(f"{item} .disclosure-summary")).to_be_visible()
     page.click(f"{item} .disclosure-head")
     expect(page.locator(f"{item} .disclosure-body")).to_be_visible()
-    expect(page.locator(f"{item} .disclosure-summary")).to_be_hidden()
+    expect(page.locator(f"{item} .disclosure-summary")).to_be_visible()
     assert page.get_attribute(f"{item} .disclosure-head", "aria-expanded") == "true"
     # the second item started open and stays open: items are independent
     expect(

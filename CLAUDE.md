@@ -303,10 +303,15 @@ makeDisclosureGroup(items)   // [{id, disclosure}] or [{id, ...makeDisclosure op
 
 an accordion item. the header is a real `button[aria-expanded][aria-controls]` holding a chevron
 (`>` closed, `v` open, plain text, `aria-hidden`), the title, and a count badge. under the title a
-one-line `.disclosure-summary` shows only while the item is closed, cut with an ellipsis when long
-(its `title` holds the full text). `body` is the dom node you pass; the returned `body` is the
+one-line `.disclosure-summary` stays visible open or closed (so the header keeps its height), cut
+with an ellipsis when long (its `title` holds the full text). `body` is the dom node you pass; the returned `body` is the
 container that holds it, with the `hidden` attribute while closed so the tab order and screen
-readers skip it. an open item gives its header the row background token.
+readers skip it. an open item gives its header the row background token and draws a rule between
+header and body that stops short of the item's edges.
+
+**focus.** the item root carries `focus-glow focus-glow-within`, so the whole item lights with the card
+focus (ring and glow, no lift or filter) while any control inside it has focus. the header button
+itself neither lifts nor glows.
 
 **count badge.** drawn by `indicateBadge` when `indicate.js` is loaded, else by an identical
 `.count-badge` made here, so the script works alone. hidden at zero.

@@ -443,6 +443,18 @@ def test_a_container_can_light_while_a_control_inside_has_focus():
     assert "focus-glow-within:focus-within) .focus-marker" in _css(), "the marker steps aside"
 
 
+def test_a_disclosure_frames_the_item_not_the_wide_header():
+    css = _css()
+    head = _rule(css, ".disclosure-head:focus-visible")
+    assert "transform: none" in head and "filter: none" in head and "box-shadow: none" in head
+    frame = _rule(css, ".disclosure.focus-glow-within")
+    assert "--focus-lift: 1" in frame, "the frame lights without scaling the item"
+    assert "--focus-light-brightness: 1" in frame and "--focus-light-saturate: 1" in frame
+    # the rule under the head sits inside the box: padding on the body, drawn by ::before
+    assert "border-top" in _rule(css, ".disclosure-body::before")
+    assert "border-top" not in _rule(css, ".disclosure-body")
+
+
 def test_selected_carries_its_cream_border():
     assert "border-color: var(--cream)" in _rule(_css(), ".toggle.on")
 

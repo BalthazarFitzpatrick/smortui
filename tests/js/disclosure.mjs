@@ -61,7 +61,7 @@ const content = () => element('p', {textContent: 'inside'});
   assert.equal(d.body.hidden, false);
   assert.equal(chevron.textContent, 'v');
   assert.ok(d.el.classList.contains('open'));
-  assert.equal(summary(d).hidden, true, 'the summary hides while open');
+  assert.equal(summary(d).hidden, false, 'the summary stays while open: the header keeps its height');
   d.close();
   assert.equal(d.isOpen(), false);
   assert.equal(head(d).getAttribute('aria-expanded'), 'false');
@@ -94,10 +94,10 @@ const content = () => element('p', {textContent: 'inside'});
   assert.equal(d.isOpen(), true);
   assert.equal(d.body.hidden, false);
   assert.equal(head(d).getAttribute('aria-expanded'), 'true');
-  assert.equal(summary(d).hidden, true);
+  assert.equal(summary(d).hidden, false);
 }
 
-// ---- setSummary: an empty summary draws nothing, and it never shows while open
+// ---- setSummary: an empty summary draws nothing, any other shows open or closed
 {
   const d = makeDisclosure({title: 't', body: content()});
   assert.equal(summary(d).hidden, true, 'no summary, nothing to show');
@@ -106,7 +106,7 @@ const content = () => element('p', {textContent: 'inside'});
   assert.equal(summary(d).hidden, false);
   d.open();
   d.setSummary('changed while open');
-  assert.equal(summary(d).hidden, true, 'still hidden while open');
+  assert.equal(summary(d).hidden, false, 'still shown while open');
   d.close();
   assert.equal(summary(d).textContent, 'changed while open');
   assert.equal(summary(d).hidden, false);

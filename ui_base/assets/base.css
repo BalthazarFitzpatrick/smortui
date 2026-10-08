@@ -1029,9 +1029,13 @@ textarea.text-field {
 .segment.auto.on { cursor: default; }
 
 /* ---- disclosure.js: an accordion item ----
-   the head is a plain button, not a .toggle: it holds two lines (title, then the closed summary) so
-   it cannot be a fixed row height. the box rules itself with the same 2px grey as everything else,
-   and stacked items share a border the way segments do. open items give the head the row ground */
+   the head is a plain button, not a .toggle: it holds two lines (title, then the summary) so it
+   cannot be a fixed row height, and it keeps that height open or closed. the box rules itself with the
+   same 2px grey as everything else, and stacked items share a border the way segments do. open items
+   give the head the row ground and draw a rule between head and body that stops short of the box edges.
+   THE FRAME, NOT THE HEAD, TAKES THE FOCUS: the item lights with the card focus while any control
+   inside it has focus, and the wide head itself neither lifts nor glows - a 570px button scaled 1.01
+   grows ~6px per arrow step, which reads as the whole panel bouncing */
 .disclosure-group { display: flex; flex-direction: column; }
 .disclosure { border: 2px solid var(--grey-border); min-width: 0; }
 .disclosure + .disclosure { margin-top: -2px; }
@@ -1055,7 +1059,18 @@ textarea.text-field {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .disclosure-summary[hidden], .disclosure-body[hidden] { display: none; }
-.disclosure-body { padding: var(--inset) var(--inset-x); border-top: 2px solid var(--grey-border); }
+.disclosure-body { padding: 0 var(--inset-x) var(--inset); }
+.disclosure-body::before {
+  content: ''; display: block; height: 0; margin-bottom: var(--inset);
+  border-top: 2px solid var(--grey-border);
+}
+.disclosure-head:focus-visible { transform: none; filter: none; box-shadow: none; }
+/* the frame draws the ring and glow only: no lift or filter, which would scale and recolour the whole
+   item and everything in it */
+.disclosure.focus-glow-within {
+  --focus-lift: 1; --focus-light-saturate: 1; --focus-light-brightness: 1;
+  --focus-ring-width: 2px; --focus-inner-glow-blur: 4px; --focus-inner-glow-spread: 0.75px;
+}
 
 /* ---- indicate.js: focus marker ----
    NOT .rubber-band - that class already means the net a shift+drag draws over a grid, a
