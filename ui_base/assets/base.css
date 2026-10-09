@@ -113,6 +113,7 @@
   /* ONE SIZE. see the note by `body` - emphasis is colour and position here, not size */
   --font-size: 13px;
   --row-height: 31px;
+  --row-border-width: 2px;
 
   /* ---- THE VERTICAL RHYTHM, and why it is four tokens rather than forty literals.
      Every consumer tab used to supply its own spacing, so the first row started at a different
@@ -494,17 +495,17 @@ body:has(.focus-glow:focus, .focus-glow-within:focus-within) .focus-marker { opa
 .run-controls .slider { height: var(--row-height); min-width: 190px; justify-content: center; gap: 0; }
 .run-controls .slider .slider-label { display: none; }
 
-/* ---- a strip of readouts: equal cells, divided, one row high ----
-   Generalised from a consumer's live-telemetry row. Two things it fixes by existing: cells sized by
-   content bunch to one side and line up with nothing beneath them, and `align-items: baseline` -
-   the obvious choice for a label-and-value pair - pins a short cell's text to the first baseline,
-   so it sat flush against the top of a 31px box with 13px of air under it. */
-.strip { display: flex; gap: 0; border: 2px solid var(--grey-border); }
+/* equal cells centre their text and share width; the frame fits inside one row
+   subtract its borders from the cells so the strip matches adjacent controls */
+.strip {
+  display: flex; gap: 0; box-sizing: border-box; min-height: var(--row-height);
+  border: var(--row-border-width) solid var(--grey-border);
+}
 .strip > .cell {
   flex: 1 1 0; min-width: 0;
   display: flex; align-items: center; gap: var(--gap);
-  padding: 0 12px; height: var(--row-height);
-  border-right: 2px solid var(--grey-border); white-space: nowrap;
+  padding: 0 12px; height: calc(var(--row-height) - 2 * var(--row-border-width));
+  border-right: var(--row-border-width) solid var(--grey-border); white-space: nowrap;
 }
 .strip > .cell:last-child { border-right: 0; }
 
@@ -658,18 +659,18 @@ body:has(.focus-glow:focus, .focus-glow-within:focus-within) .focus-marker { opa
   .row-enter { animation: none; }
 }
 
-/* ---- nav bar: ONE BAR, not a row of folder tabs ----
-   each tab used to be its own box with border-bottom removed, so the strip read as eight open
-   containers competing with the panels below it. one bordered bar with the active tab underlined
-   says the same thing with a single line, and the underline is the only cream on the strip. */
+/* one frame with an underline for the active tab
+   the frame fits inside one row so the bar matches adjacent controls */
 /* .nav-bar is the name; #nav-bar is kept because the first consumers were written against it */
 .nav-bar, #nav-bar {
   display: flex; align-items: stretch; gap: 0;
-  margin: 10px var(--inset-x) 0; border: 2px solid var(--grey-border);
+  box-sizing: border-box; height: var(--row-height);
+  margin: 10px var(--inset-x) 0; border: var(--row-border-width) solid var(--grey-border);
 }
 .nav-tab {
   padding: 0 20px; background: transparent; color: var(--text-dim);
-  border: none; cursor: pointer; height: var(--row-height);
+  border: none; cursor: pointer; box-sizing: border-box;
+  height: calc(var(--row-height) - 2 * var(--row-border-width));
   display: flex; align-items: center; justify-content: center;
   /* the underline is drawn as a border the tab always has, transparent until active - so
      activating a tab never changes its height and the row does not shift under the cursor */

@@ -82,6 +82,10 @@ wrong and it silently does nothing.
 - every panel: `class="tab-panel" data-panel="<name>"`
 - a hidden panel gets `class="hidden"`, which `base.css` defines as `display: none !important`
 
+the bar's outer height is `--row-height`, including its frame. tabs subtract twice
+`--row-border-width` (default 2px); their 3px underline stays inside that height, active or inactive.
+`.strip` and its cells use the same outer-row contract; a wrapping strip grows to contain its rows.
+
 **behaviour.** click and arrow-key navigation (left/right wrap), enter/space activate, `aria-selected`
 maintained, and only the active tab sits in the tab order. the active tab is remembered in
 `localStorage` under `ui-base:tab`. a remembered tab whose button no longer exists falls through to
