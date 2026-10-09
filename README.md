@@ -73,7 +73,10 @@ override something will be looking.
 **One font size, everywhere** (`--font-size`); emphasis is carried by colour and by the row a thing
 sits in. A test fails the build if a `font-size` is set anywhere but the token. Four more tokens
 carry the vertical rhythm: `--gap` between rows in a panel, `--inset` a panel's top and bottom,
-`--inset-x` its sides, and `--row-height`. `.h-divider` adds no space of its own - the parent's
+`--inset-x` its sides, and `--row-height`. `.nav-bar` (also `#nav-bar`) and `.strip` include
+their frame in `--row-height`; tabs and cells subtract twice `--row-border-width` (default 2px).
+the active tab's underline stays inside its height; a wrapping strip grows to contain its rows.
+`.h-divider` adds no space of its own - the parent's
 `gap` spaces it like any other child.
 
 Override by redefining the tokens, not by fighting the rules.

@@ -93,6 +93,100 @@ def test_every_tab_opens_and_shows_its_panel(page):
     assert page.errors == [], page.errors
 
 
+@pytest.mark.parametrize("bar_attribute", ['class="nav-bar"', 'id="nav-bar"'])
+@pytest.mark.parametrize("tokens", [None, {"--row-height": "39px", "--row-border-width": "3px"}])
+def test_a_framed_row_matches_its_adjacent_toggle(page, bar_attribute, tokens):
+    """a frame must not add its vertical borders to the shared row height"""
+    measurements = page.evaluate(
+        """({barAttribute, tokens}) => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          for (const [name, value] of Object.entries(tokens || {}))
+            row.style.setProperty(name, value);
+          row.innerHTML = `<div ${barAttribute}>
+            <button class="nav-tab">alpha</button><button class="nav-tab active">beta</button>
+            </div><button class="toggle">toggle</button>
+            <div class="strip"><div class="cell">alpha</div><div class="cell">beta</div></div>`;
+          document.body.append(row);
+          try {
+            const bar = row.firstElementChild;
+            const tabs = [...bar.children];
+            const strip = row.querySelector('.strip');
+            const style = getComputedStyle(bar);
+            const height = e => e.getBoundingClientRect().height;
+            const before = tabs.map(height);
+            tabs[0].classList.add('active');
+            tabs[1].classList.remove('active');
+            return {
+              expected: parseFloat(style.getPropertyValue('--row-height')),
+              border: parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth),
+              bar: height(bar), toggle: height(row.querySelector('.toggle')),
+              strip: height(strip), cells: [...strip.children].map(height),
+              before, after: tabs.map(height),
+              underlines: tabs.map(e => getComputedStyle(e).borderBottomWidth),
+              demo: height(document.querySelector('.nav-bar')),
+              demoExpected: parseFloat(getComputedStyle(document.documentElement)
+                .getPropertyValue('--row-height'))
+            };
+          } finally {
+            row.remove();
+          }
+        }""",
+        {"barAttribute": bar_attribute, "tokens": tokens},
+    )
+    expected = measurements["expected"]
+    for name in ("bar", "toggle", "strip"):
+        assert measurements[name] == expected, measurements
+    inner_height = expected - measurements["border"]
+    assert measurements["before"] == [inner_height, inner_height]
+    assert measurements["after"] == measurements["before"]
+    assert measurements["underlines"] == ["3px", "3px"]
+    assert measurements["cells"] == [inner_height, inner_height]
+    assert measurements["demo"] == measurements["demoExpected"]
+
+
+@pytest.mark.parametrize("width", [1400, 600])
+def test_artifact_strips_keep_cells_inside_their_frame(page, demo_url, width):
+    """the single-row strip matches controls; the wrapping strip still contains every row"""
+    artifact = page.context.browser.new_page(viewport={"width": width, "height": 900})
+    artifact.route("https://**/*", lambda route: route.abort())
+    artifact.route(
+        f"{demo_url}artifact.html",
+        lambda route: route.fulfill(
+            body=(ROOT / "docs/artifact/smortui.html").read_text(), content_type="text/html"
+        ),
+    )
+    try:
+        artifact.goto(f"{demo_url}artifact.html")
+        measurements = artifact.eval_on_selector_all(
+            ".strip",
+            """els => els.map(e => {
+              const box = e.getBoundingClientRect();
+              const style = getComputedStyle(e);
+              return {
+                height: box.height,
+                expected: parseFloat(style.getPropertyValue('--row-height')),
+                top: box.top + parseFloat(style.borderTopWidth),
+                bottom: box.bottom - parseFloat(style.borderBottomWidth),
+                cells: [...e.children].map(c => c.getBoundingClientRect().toJSON())
+              };
+            })""",
+        )
+        assert len(measurements) == 2
+        for strip in measurements:
+            for cell in strip["cells"]:
+                assert cell["top"] >= strip["top"], strip
+                assert cell["bottom"] <= strip["bottom"], strip
+        assert measurements[1]["height"] == measurements[1]["expected"]
+        if width == 1400:
+            assert measurements[0]["height"] == measurements[0]["expected"]
+        else:
+            assert measurements[0]["height"] > measurements[0]["expected"]
+    finally:
+        artifact.close()
+
+
 def test_chart_series_styles_resolve_tokens_without_fading_swatches(page):
     page.click('.nav-tab[data-tab="chart"]')
     line = '#chart-demo .chart-line[data-series="forecast"]'
