@@ -459,6 +459,16 @@ def test_selected_carries_its_cream_border():
     assert "border-color: var(--cream)" in _rule(_css(), ".toggle.on")
 
 
+def test_a_selected_verb_fills_like_its_hover():
+    """the verb's text colour beat .on's, so a selected adds put lichen on near-white"""
+    css = _css()
+    for verb in ("adds", "removes"):
+        fill = re.search(r"background:\s*var\(([^)]*)\)", _rule(css, f".toggle.{verb}:hover"))
+        selected = _rule(css, f".toggle.{verb}.on")
+        assert f"background: var({fill.group(1)})" in selected, verb
+        assert "color:" in selected.replace("border-color:", ""), verb
+
+
 def test_links_have_one_colour():
     css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.DOTALL)
     assert _rule(css, "a").strip() == "color: var(--link);"
