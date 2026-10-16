@@ -276,6 +276,12 @@ a { color: var(--link); }
 .toggle.removes:hover {
   background: var(--stone-red); border-color: var(--stone-red-lift); color: var(--cream);
 }
+/* a selected verb fills like its hover. the verb's text colour outranks .on's by source order, so
+   without this a selected adds button put lichen text on the near-white fill (2026-10-16) */
+.toggle.adds.on { background: var(--lichen); border-color: var(--lichen); color: var(--bg); }
+.toggle.removes.on {
+  background: var(--stone-red); border-color: var(--stone-red-lift); color: var(--cream);
+}
 /* the disabled rules come last so they win over both - a greyed button must look greyed whatever
    verb it carries, which is the whole point of greying it */
 .toggle:disabled, .toggle.disabled { opacity: 0.4; cursor: not-allowed; }

@@ -6,6 +6,7 @@ refactors, docs and tests are in `git log`.
 
 ## unreleased
 
+- `.toggle.adds.on` and `.toggle.removes.on`: a selected verb button fills like its hover (lichen with dark text, stone red with cream text). before, a selected `.adds` showed lichen text on the near-white `.on` fill, about 1.1:1 contrast
 - `.nav-bar` / `#nav-bar` and single-row `.strip`: outer height includes their borders within `--row-height`, matching adjacent controls; tabs and cells subtract twice `--row-border-width` (default 2px), and the active tab underline stays inside its height. wrapping strips still grow to contain their rows
 - `Menu` columns: space toggles the focused row and enter confirms. **behaviour change:** right no longer picks a single-select row on its way into the next column, and enter no longer toggles in a column (plain `list` rows keep enter and space as a click). a host that relied on right-to-pick now picks with space, and one that relied on enter picking sets `onConfirm` or a `primary: true` footer button. left lands on the parent's `path` row
 - `Menu` columns: item fields `path` (a `>` at the right edge of the row whose children show next), `count` (chosen complete paths below, host-computed, shown when above zero) and `unavailable` with `hint` (dashed, dim text, focusable, inert). a row is also reported to `onFocus` when picked, so a pointer pick shows its children. `new Menu({onConfirm})` and `primary: true` on a footer button. a picked single-select row unpicks on space
