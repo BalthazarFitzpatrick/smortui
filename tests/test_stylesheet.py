@@ -450,6 +450,11 @@ def test_a_disclosure_frames_the_item_not_the_wide_header():
     frame = _rule(css, ".disclosure.focus-glow-within")
     assert "--focus-lift: 1" in frame, "the frame lights without scaling the item"
     assert "--focus-light-brightness: 1" in frame and "--focus-light-saturate: 1" in frame
+    # an open head has a background, which would cover an inset ring on the item: the ring is an overlay
+    assert "box-shadow: none" in _rule(css, ".disclosure.focus-glow.focus-glow-within:focus-within")
+    overlay = _rule(css, ".disclosure.focus-glow-within:focus-within::after")
+    assert "position: absolute" in overlay and "inset: 0" in overlay
+    assert "pointer-events: none" in overlay and "inset 0 0 0 var(--focus-ring-width)" in overlay
     # the rule under the head sits inside the box: padding on the body, drawn by ::before
     assert "border-top" in _rule(css, ".disclosure-body::before")
     assert "border-top" not in _rule(css, ".disclosure-body")
