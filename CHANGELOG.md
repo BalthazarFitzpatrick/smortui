@@ -6,6 +6,8 @@ refactors, docs and tests are in `git log`.
 
 ## unreleased
 
+- `Menu`: kept open panels inside the viewport after content growth and window resize, with scrolling lists and visible footer buttons
+
 - `.toggle.adds.on` and `.toggle.removes.on`: a selected verb button fills like its hover (lichen with dark text, stone red with cream text). before, a selected `.adds` showed lichen text on the near-white `.on` fill, about 1.1:1 contrast
 - `.nav-bar` / `#nav-bar` and single-row `.strip`: outer height includes their borders within `--row-height`, matching adjacent controls; tabs and cells subtract twice `--row-border-width` (default 2px), and the active tab underline stays inside its height. wrapping strips still grow to contain their rows
 - `Menu` columns: space toggles the focused row and enter confirms. **behaviour change:** right no longer picks a single-select row on its way into the next column, and enter no longer toggles in a column (plain `list` rows keep enter and space as a click). a host that relied on right-to-pick now picks with space, and one that relied on enter picking sets `onConfirm` or a `primary: true` footer button. left lands on the parent's `path` row

@@ -338,13 +338,7 @@ class Menu {
     return el;
   }
 
-  // REBUILD IN PLACE, keeping the panel where it is. A menu whose columns MOVE items between
-  // themselves - available on one side, open on the other - has to redraw when you pick, and the
-  // alternatives are both wrong: close-and-reopen flickers and loses the scroll, while mutating
-  // the two columns by hand puts the layout in the caller and lets it drift from _section.
-  //
-  // The position is kept deliberately. Re-anchoring would let the panel jump as its content grows
-  // or shrinks, which is exactly the moment you are reading it.
+  // rebuild without closing or losing focus; the observer follows the replacement panel
   refresh(sections) {
     if (!this.el) return;
     if (sections) this.sections = sections;
@@ -359,8 +353,11 @@ class Menu {
     rebuilt.style.top = top;
     // classes a caller added after opening (a width, a centred placement) survive the rebuild
     rebuilt.className = this.el.className;
+    this._resizeObserver?.disconnect();
     this.el.replaceWith(rebuilt);
     this.el = rebuilt;
+    this._resizeObserver?.observe(this.el);
+    this._position();
     if (!focused) return;
     const again = this._items().find(item => item.dataset.id === rowId
       && item.closest('.col')?.dataset.column === column);
@@ -499,6 +496,33 @@ class Menu {
     }
   }
 
+  _position() {
+    if (!this.el || (!this._trigger && !this._point)) return;
+    const rect = this.el.getBoundingClientRect();
+    let left, top;
+    if (this._trigger) {
+      const box = this._trigger.getBoundingClientRect();
+      left = box.left;
+      const below = box.bottom + MENU_MARGIN;
+      const above = box.top - rect.height - MENU_MARGIN;
+      const roomBelow = window.innerHeight - box.bottom - MENU_MARGIN;
+      const roomAbove = box.top - MENU_MARGIN;
+      // a low trigger should not make its menu lose the rows nearest the bottom edge. open above
+      // when below cannot hold the panel and above gives it more room; clamping still handles a
+      // panel too tall for either side
+      top = rect.height > roomBelow && roomAbove > roomBelow ? above : below;
+    } else {
+      left = this._point.x;
+      top = this._point.y;
+    }
+    // clamped into the viewport - a menu opened near the right or bottom edge used to render
+    // half off screen, and only the right-click popup got this right
+    this.el.style.left =
+      `${Math.max(MENU_EDGE, Math.min(left, window.innerWidth - rect.width - MENU_EDGE))}px`;
+    this.el.style.top =
+      `${Math.max(MENU_EDGE, Math.min(top, window.innerHeight - rect.height - MENU_EDGE))}px`;
+  }
+
   // ---- lifecycle -----------------------------------------------------------------
   openAt(where) {
     const trigger = where instanceof Element ? where : null;
@@ -518,29 +542,14 @@ class Menu {
     if (!this.adopt) document.body.appendChild(this.el);
     this._trigger = trigger;
 
-    const rect = this.el.getBoundingClientRect();
-    let left, top;
-    if (this._trigger) {
-      const box = this._trigger.getBoundingClientRect();
-      left = box.left;
-      const below = box.bottom + MENU_MARGIN;
-      const above = box.top - rect.height - MENU_MARGIN;
-      const roomBelow = window.innerHeight - box.bottom - MENU_MARGIN;
-      const roomAbove = box.top - MENU_MARGIN;
-      // a low trigger should not make its menu lose the rows nearest the bottom edge. open above
-      // when below cannot hold the panel and above gives it more room; clamping still handles a
-      // panel too tall for either side
-      top = rect.height > roomBelow && roomAbove > roomBelow ? above : below;
-    } else {
-      left = where.x;
-      top = where.y;
+    this._point = trigger ? null : {x: where.x, y: where.y};
+    this._position();
+    this._onResize = () => this._position();
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver(this._onResize);
+      this._resizeObserver.observe(this.el);
     }
-    // clamped into the viewport - a menu opened near the right or bottom edge used to render
-    // half off screen, and only the right-click popup got this right
-    this.el.style.left =
-      `${Math.max(MENU_EDGE, Math.min(left, window.innerWidth - rect.width - MENU_EDGE))}px`;
-    this.el.style.top =
-      `${Math.max(MENU_EDGE, Math.min(top, window.innerHeight - rect.height - MENU_EDGE))}px`;
+    window.addEventListener('resize', this._onResize);
 
     openMenu = this;
     // the head shows it is open, the way a dropdown does everywhere else
@@ -572,6 +581,9 @@ class Menu {
     // then calls close() itself used to fire onDismiss twice and drop a selection the first firing
     // had handled - the same guard the expander keeps for escape and backdrop click together
     if (!this.el) return;
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = null;
+    window.removeEventListener('resize', this._onResize);
     document.removeEventListener('mousedown', this._onDocDown);
     document.removeEventListener('keydown', this._onKey);
     document.removeEventListener('keydown', this._onEscape, true);
