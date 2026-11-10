@@ -105,6 +105,9 @@ new Menu({title = '', sections = [], onDismiss = null, adopt = null, columns = f
   .close()
 ```
 
+the panel keeps itself inside the viewport while open, including content growth and window resize.
+inner lists scroll while the title and footer stay visible.
+
 one class for every popup: dropdowns, context menus, pickers. `columns: true` lays sections side by
 side split by a vertical rule.
 

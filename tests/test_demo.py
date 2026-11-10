@@ -81,6 +81,74 @@ def test_the_demo_loads_without_a_single_error(page):
     assert page.errors == [], page.errors
 
 
+@pytest.mark.parametrize("anchor", ["trigger", "point"])
+@pytest.mark.parametrize("columns", [False, True])
+def test_a_growing_menu_stays_inside_after_growth_and_resize(page, anchor, columns):
+    page.set_viewport_size({"width": 1000, "height": 800})
+    try:
+        page.evaluate(
+            """({anchor, columns}) => {
+              const trigger = document.createElement('button');
+              trigger.id = 'position-trigger';
+              trigger.style.cssText = 'position:fixed;left:750px;top:600px;height:30px';
+              document.body.append(trigger);
+              window.positionMenu = new Menu({title: 'choices', columns, sections: [
+                {kind: 'list', items: [{id: 'first', label: 'first'}]},
+                {kind: 'buttons', buttons: [{label: 'save', onClick() {}}]}
+              ]});
+              positionMenu.openAt(anchor === 'trigger' ? trigger : {x: 750, y: 630});
+            }""",
+            {"anchor": anchor, "columns": columns},
+        )
+        page.evaluate(
+            """() => positionMenu.refresh([
+              {kind: 'list', items: Array.from({length: 100}, (_, i) => ({id: i, label: 'item ' + i}))},
+              {kind: 'buttons', buttons: [{label: 'save', onClick() {}}]}
+            ])"""
+        )
+
+        def check_bounds():
+            page.wait_for_function(
+                """() => {
+                  const panel = positionMenu.el.getBoundingClientRect();
+                  const footer = positionMenu.el.querySelector('.menu-buttons').getBoundingClientRect();
+                  return panel.top >= 4 && panel.left >= 4 && panel.right <= innerWidth - 4
+                    && panel.bottom <= innerHeight - 4 && footer.bottom <= panel.bottom
+                    && footer.height > 0;
+                }"""
+            )
+            assert page.evaluate(
+                "() => { const body = positionMenu.el.querySelector('.menu-body, .menu-column-row > .menu-section'); return body.scrollHeight > body.clientHeight; }"
+            )
+
+        check_bounds()
+        page.evaluate(
+            """() => {
+              positionMenu.refresh([{kind: 'list', items: [{id: 'first', label: 'first'}]},
+                {kind: 'buttons', buttons: [{label: 'save', onClick() {}}]}]);
+            }"""
+        )
+        page.wait_for_function("positionMenu.el.getBoundingClientRect().height < 200")
+        page.evaluate(
+            """() => {
+              const section = positionMenu.el.querySelector('.menu-section');
+              const content = document.createElement('div');
+              content.style.height = '1200px';
+              content.style.flexShrink = '0';
+              section.append(content);
+            }"""
+        )
+        page.wait_for_function("positionMenu.el.getBoundingClientRect().height > 400")
+        check_bounds()
+        page.set_viewport_size({"width": 650, "height": 300})
+        check_bounds()
+        page.evaluate("positionMenu.close()")
+        assert page.errors == [], page.errors
+    finally:
+        page.evaluate("positionMenu.close(); document.querySelector('#position-trigger')?.remove()")
+        page.set_viewport_size({"width": 1400, "height": 900})
+
+
 def test_every_tab_opens_and_shows_its_panel(page):
     names = page.eval_on_selector_all(".nav-tab", "els => els.map(e => e.dataset.tab)")
     assert len(names) >= 4

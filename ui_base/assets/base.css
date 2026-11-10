@@ -744,12 +744,13 @@ body:has(.focus-glow:focus, .focus-glow-within:focus-within) .focus-marker { opa
   z-index: 58;
   display: flex; flex-direction: column; gap: 0;
   min-width: 180px; max-width: min(560px, 92vw);
-  /* THE PANEL IS BOUNDED, THE BODY IS WHAT SCROLLS. this used to be overflow-y:auto on the panel
-     itself, so a long list scrolled its own title and apply button out of view on the way down */
-  max-height: 70vh; overflow: hidden;
+  /* bound the panel to the viewport; only the body scrolls so title and footer stay visible */
+  max-height: min(70vh, calc(100vh - 8px)); overflow: hidden;
 }
 /* min-height:0 or it refuses to shrink below its content in the flex column, which is the one rule
    that makes the difference between the body scrolling and the panel growing past the viewport */
+.menu-panel > :not(.menu-body):not(.menu-column-row) { flex-shrink: 0; }
+.menu-body > .menu-section { flex-shrink: 0; }
 .menu-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 
 /* THE COLLAPSED HALF OF A DROPDOWN. it is the part you click, so it keeps ONE width whatever it
